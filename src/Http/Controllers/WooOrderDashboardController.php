@@ -18,7 +18,18 @@ class WooOrderDashboardController extends Controller
 
     public function index()
     {
-        return view('woo-order-dashboard::index');
+        $filters = [
+            'per_page' => config('woo-order-dashboard.pagination.per_page'),
+            'page' => 1
+        ];
+        
+        $cacheKey = 'woo_orders_' . md5(json_encode($filters));
+        
+        $orders = Cache::remember($cacheKey, config('woo-order-dashboard.cache.ttl.orders'), function () use ($filters) {
+            return $this->wooService->getOrders($filters);
+        });
+
+        return view('woo-order-dashboard::index', compact('orders', 'filters'));
     }
 
     public function orders(Request $request)

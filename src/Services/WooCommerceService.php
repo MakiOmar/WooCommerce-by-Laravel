@@ -4,6 +4,7 @@ namespace Makiomar\WooOrderDashboard\Services;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class WooCommerceService
 {
@@ -17,7 +18,7 @@ class WooCommerceService
     public function getOrders(array $filters = [])
     {
         try {
-            $query = DB::connection('woocommerce')->table($this->prefix . 'posts as p')
+            $query = DB::connection('woocommerce')->table('posts as p')
                 ->select([
                     'p.ID as id',
                     'p.post_date as date_created',
@@ -25,7 +26,7 @@ class WooCommerceService
                     'p.post_type',
                     'pm.meta_value as order_data'
                 ])
-                ->join($this->prefix . 'postmeta as pm', function($join) {
+                ->join('postmeta as pm', function ($join) {
                     $join->on('p.ID', '=', 'pm.post_id')
                         ->where('pm.meta_key', '=', '_order_data');
                 })
@@ -49,18 +50,21 @@ class WooCommerceService
             }
 
             if (isset($filters['meta_key']) && isset($filters['meta_value'])) {
-                $query->join($this->prefix . 'postmeta as pm2', function($join) use ($filters) {
+                $query->join('postmeta as pm2', function ($join) use ($filters) {
                     $join->on('p.ID', '=', 'pm2.post_id')
                         ->where('pm2.meta_key', '=', $filters['meta_key'])
                         ->where('pm2.meta_value', 'LIKE', '%' . $filters['meta_value'] . '%');
                 });
             }
 
+            // Get total count for pagination
+            $total = $query->count();
+
             // Pagination
             $perPage = $filters['per_page'] ?? config('woo-order-dashboard.pagination.per_page');
             $page = $filters['page'] ?? 1;
 
-            $total = $query->count();
+            // Get the paginated results
             $orders = $query->orderBy('p.post_date', 'desc')
                 ->skip(($page - 1) * $perPage)
                 ->take($perPage)
@@ -69,14 +73,25 @@ class WooCommerceService
                     return $this->formatOrder($order);
                 });
 
+            // Create a new paginator instance
+            $paginator = new LengthAwarePaginator(
+                $orders,
+                $total,
+                $perPage,
+                $page,
+                [
+                    'path' => request()->url(),
+                    'query' => request()->query(),
+                ]
+            );
+
             return [
-                'data' => $orders,
+                'data' => $paginator,
                 'headers' => [
                     'X-WP-Total' => $total,
                     'X-WP-TotalPages' => ceil($total / $perPage)
                 ]
             ];
-
         } catch (\Exception $e) {
             Log::error('WooCommerce Database Error', [
                 'message' => $e->getMessage(),
@@ -90,12 +105,12 @@ class WooCommerceService
     public function getOrder($id)
     {
         try {
-            $order = DB::connection('woocommerce')->table($this->prefix . 'posts as p')
+            $order = DB::connection('woocommerce')->table('posts as p')
                 ->select([
                     'p.*',
                     'pm.meta_value as order_data'
                 ])
-                ->join($this->prefix . 'postmeta as pm', function($join) {
+                ->join('postmeta as pm', function ($join) {
                     $join->on('p.ID', '=', 'pm.post_id')
                         ->where('pm.meta_key', '=', '_order_data');
                 })
@@ -108,7 +123,6 @@ class WooCommerceService
             }
 
             return $this->formatOrder($order);
-
         } catch (\Exception $e) {
             Log::error('WooCommerce Database Error', [
                 'message' => $e->getMessage(),
@@ -122,7 +136,7 @@ class WooCommerceService
     protected function formatOrder($order)
     {
         // Get order meta data
-        $metaData = DB::connection('woocommerce')->table($this->prefix . 'postmeta')
+        $metaData = DB::connection('woocommerce')->table('postmeta')
             ->where('post_id', $order->id)
             ->get()
             ->mapWithKeys(function ($item) {
@@ -130,13 +144,13 @@ class WooCommerceService
             });
 
         // Get order items
-        $items = DB::connection('woocommerce')->table($this->prefix . 'woocommerce_order_items as oi')
+        $items = DB::connection('woocommerce')->table('woocommerce_order_items as oi')
             ->select([
                 'oi.*',
                 'oim.meta_key',
                 'oim.meta_value'
             ])
-            ->leftJoin($this->prefix . 'woocommerce_order_itemmeta as oim', 'oi.order_item_id', '=', 'oim.order_item_id')
+            ->leftJoin('woocommerce_order_itemmeta as oim', 'oi.order_item_id', '=', 'oim.order_item_id')
             ->where('oi.order_id', $order->id)
             ->where('oi.order_item_type', 'line_item')
             ->get()
@@ -159,12 +173,12 @@ class WooCommerceService
             });
 
         // Get order notes
-        $notes = DB::connection('woocommerce')->table($this->prefix . 'comments as c')
+        $notes = DB::connection('woocommerce')->table('comments as c')
             ->select([
                 'c.*',
                 'cm.meta_value as is_customer_note'
             ])
-            ->leftJoin($this->prefix . 'commentmeta as cm', function($join) {
+            ->leftJoin('commentmeta as cm', function ($join) {
                 $join->on('c.comment_ID', '=', 'cm.comment_id')
                     ->where('cm.meta_key', '=', 'is_customer_note');
             })
@@ -226,4 +240,4 @@ class WooCommerceService
             'meta_data' => $metaData->toArray()
         ];
     }
-} 
+}

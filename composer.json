@@ -1,12 +1,12 @@
 {
-    "name": "your-vendor/woo-order-dashboard",
+    "name": "makiomar/woo-order-dashboard",
     "description": "A Laravel package for managing WooCommerce orders with advanced filtering capabilities",
     "type": "library",
     "license": "MIT",
     "authors": [
         {
-            "name": "Your Name",
-            "email": "your.email@example.com"
+            "name": "Mohammad Omar",
+            "email": "maki3omar@gmail.com"
         }
     ],
     "require": {
@@ -20,18 +20,18 @@
     },
     "autoload": {
         "psr-4": {
-            "YourVendor\\WooOrderDashboard\\": "src/"
+            "Makiomar\\WooOrderDashboard\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "YourVendor\\WooOrderDashboard\\Tests\\": "tests/"
+            "Makiomar\\WooOrderDashboard\\Tests\\": "tests/"
         }
     },
     "extra": {
         "laravel": {
             "providers": [
-                "YourVendor\\WooOrderDashboard\\WooOrderDashboardServiceProvider"
+                "Makiomar\\WooOrderDashboard\\WooOrderDashboardServiceProvider"
             ]
         }
     },

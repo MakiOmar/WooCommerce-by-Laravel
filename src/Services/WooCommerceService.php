@@ -1,6 +1,6 @@
 <?php
 
-namespace YourVendor\WooOrderDashboard\Services;
+namespace Makiomar\WooOrderDashboard\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;

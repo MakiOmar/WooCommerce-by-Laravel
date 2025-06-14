@@ -1,11 +1,11 @@
 <?php
 
-namespace YourVendor\WooOrderDashboard\Http\Controllers;
+namespace Makiomar\WooOrderDashboard\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use YourVendor\WooOrderDashboard\Services\WooCommerceService;
+use Makiomar\WooOrderDashboard\Services\WooCommerceService;
 
 class WooOrderDashboardController extends Controller
 {

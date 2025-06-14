@@ -31,13 +31,13 @@ A powerful Laravel package that provides a comprehensive dashboard for managing 
 1. Install the package via Composer:
 
 ```bash
-composer require your-vendor/woo-order-dashboard
+composer require makiomar/woo-order-dashboard
 ```
 
 2. Publish the package assets and configuration:
 
 ```bash
-php artisan vendor:publish --provider="YourVendor\WooOrderDashboard\WooOrderDashboardServiceProvider"
+php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider"
 ```
 
 3. Run the migrations:
@@ -71,7 +71,7 @@ The package configuration file will be published to `config/woo-order-dashboard.
 Add the following to your routes file (`routes/web.php`):
 
 ```php
-use YourVendor\WooOrderDashboard\WooOrderDashboard;
+use Makiomar\WooOrderDashboard\WooOrderDashboard;
 
 Route::prefix('woo-dashboard')->group(function () {
     Route::get('/', [WooOrderDashboard::class, 'index'])->name('woo.dashboard');
@@ -157,7 +157,7 @@ The MIT License (MIT). Please see [License File](LICENSE.md) for more informatio
 
 ## Support
 
-For support, please open an issue in the GitHub repository or contact support@your-vendor.com.
+For support, please open an issue in the GitHub repository or contact support@makiomar.com.
 
 ## Changelog
 

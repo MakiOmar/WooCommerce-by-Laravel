@@ -1,6 +1,6 @@
 <?php
 
-namespace YourVendor\WooOrderDashboard;
+namespace Makiomar\WooOrderDashboard;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Route;

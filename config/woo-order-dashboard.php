@@ -6,6 +6,9 @@ return [
     | WooCommerce API Configuration
     |--------------------------------------------------------------------------
     */
+    'store_url' => env('WOO_STORE_URL', ''),
+    'consumer_key' => env('WOO_CONSUMER_KEY', ''),
+    'consumer_secret' => env('WOO_CONSUMER_SECRET', ''),
     'api' => [
         'version' => 'wc/v3',
         'timeout' => 30,

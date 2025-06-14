@@ -42,7 +42,7 @@ class WooOrderDashboardController extends Controller
             return $this->wooService->getOrders($filters);
         });
 
-        return view('woo-order-dashboard::orders.index', compact('orders', 'filters'));
+        return view('woo-order-dashboard::index', compact('orders', 'filters'));
     }
 
     public function show($id)

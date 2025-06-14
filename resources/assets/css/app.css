@@ -1,0 +1,78 @@
+/* WooCommerce Order Dashboard Styles */
+
+/* Custom styles can be added here */
+.dashboard-card {
+    @apply bg-white rounded-lg shadow-lg p-6;
+}
+
+.dashboard-title {
+    @apply text-2xl font-bold mb-6;
+}
+
+.filter-section {
+    @apply mb-8;
+}
+
+.filter-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4;
+}
+
+.filter-label {
+    @apply block text-sm font-medium text-gray-700;
+}
+
+.filter-input {
+    @apply mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500;
+}
+
+.table-container {
+    @apply overflow-x-auto;
+}
+
+.table {
+    @apply min-w-full divide-y divide-gray-200;
+}
+
+.table-header {
+    @apply bg-gray-50;
+}
+
+.table-header-cell {
+    @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+}
+
+.table-body {
+    @apply bg-white divide-y divide-gray-200;
+}
+
+.table-cell {
+    @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900;
+}
+
+.status-badge {
+    @apply px-2 inline-flex text-xs leading-5 font-semibold rounded-full;
+}
+
+.status-completed {
+    @apply bg-green-100 text-green-800;
+}
+
+.status-processing {
+    @apply bg-blue-100 text-blue-800;
+}
+
+.status-cancelled {
+    @apply bg-red-100 text-red-800;
+}
+
+.status-default {
+    @apply bg-gray-100 text-gray-800;
+}
+
+.button-primary {
+    @apply inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500;
+}
+
+.button-secondary {
+    @apply inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500;
+} 

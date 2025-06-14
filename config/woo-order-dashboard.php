@@ -3,38 +3,52 @@
 return [
     /*
     |--------------------------------------------------------------------------
-    | WooCommerce API Configuration
+    | Database Configuration
     |--------------------------------------------------------------------------
+    |
+    | Here you can specify the database prefix used by your WooCommerce installation.
+    | This is typically 'wp_' by default, but may be different if you've changed it.
+    |
     */
-    'store_url' => env('WOO_STORE_URL', ''),
-    'consumer_key' => env('WOO_CONSUMER_KEY', ''),
-    'consumer_secret' => env('WOO_CONSUMER_SECRET', ''),
-    'api' => [
-        'version' => 'wc/v3',
-        'timeout' => 30,
-    ],
+    'db_prefix' => env('WOO_DB_PREFIX', 'wp_'),
 
     /*
     |--------------------------------------------------------------------------
-    | Cache Configuration
+    | Route Configuration
     |--------------------------------------------------------------------------
+    |
+    | Here you can configure the routes for the WooCommerce Order Dashboard.
+    |
     */
-    'cache' => [
-        'enabled' => true,
-        'ttl' => [
-            'orders' => 300, // 5 minutes
-            'order' => 600,  // 10 minutes
-        ],
+    'routes' => [
+        'prefix' => 'woo-dashboard',
+        'middleware' => ['web', 'auth'],
     ],
 
     /*
     |--------------------------------------------------------------------------
     | Pagination Configuration
     |--------------------------------------------------------------------------
+    |
+    | Here you can configure the pagination settings for the orders list.
+    |
     */
     'pagination' => [
-        'per_page' => 20,
-        'max_per_page' => 100,
+        'per_page' => 15,
+        'page_name' => 'page',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cache Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Here you can configure the cache settings for the orders data.
+    |
+    */
+    'cache' => [
+        'enabled' => true,
+        'ttl' => 300, // 5 minutes
     ],
 
     /*
@@ -56,18 +70,6 @@ return [
     'date_format' => [
         'display' => 'Y-m-d H:i:s',
         'api' => 'Y-m-d\TH:i:s',
-    ],
-
-    /*
-    |--------------------------------------------------------------------------
-    | Route Configuration
-    |--------------------------------------------------------------------------
-    */
-    'routes' => [
-        'prefix' => 'woo-dashboard',
-        'middleware' => ['web', 'auth'],
-        'api_prefix' => 'api/woo',
-        'api_middleware' => ['api', 'auth:api'],
     ],
 
     /*

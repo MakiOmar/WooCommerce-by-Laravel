@@ -2,46 +2,83 @@
 
 namespace Makiomar\WooOrderDashboard\Services;
 
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class WooCommerceService
 {
-    protected $baseUrl;
-    protected $consumerKey;
-    protected $consumerSecret;
-    protected $apiVersion;
+    protected $prefix;
 
     public function __construct()
     {
-        $this->baseUrl = rtrim(config('woo-order-dashboard.store_url'), '/');
-        $this->consumerKey = config('woo-order-dashboard.consumer_key');
-        $this->consumerSecret = config('woo-order-dashboard.consumer_secret');
-        $this->apiVersion = config('woo-order-dashboard.api.version');
+        $this->prefix = config('woo-order-dashboard.db_prefix', 'wp_');
     }
 
     public function getOrders(array $filters = [])
     {
         try {
-            $response = Http::withBasicAuth($this->consumerKey, $this->consumerSecret)
-                ->timeout(config('woo-order-dashboard.api.timeout'))
-                ->get("{$this->baseUrl}/wp-json/{$this->apiVersion}/orders", $this->prepareFilters($filters));
+            $query = DB::connection('woocommerce')->table($this->prefix . 'posts as p')
+                ->select([
+                    'p.ID as id',
+                    'p.post_date as date_created',
+                    'p.post_status as status',
+                    'p.post_type',
+                    'pm.meta_value as order_data'
+                ])
+                ->join($this->prefix . 'postmeta as pm', function($join) {
+                    $join->on('p.ID', '=', 'pm.post_id')
+                        ->where('pm.meta_key', '=', '_order_data');
+                })
+                ->where('p.post_type', 'shop_order');
 
-            if ($response->successful()) {
-                return [
-                    'data' => $response->json(),
-                    'headers' => $response->headers(),
-                ];
+            // Apply filters
+            if (isset($filters['order_id'])) {
+                $query->where('p.ID', $filters['order_id']);
             }
 
-            Log::error('WooCommerce API Error', [
-                'status' => $response->status(),
-                'body' => $response->body(),
-            ]);
+            if (isset($filters['start_date'])) {
+                $query->where('p.post_date', '>=', $filters['start_date']);
+            }
 
-            return null;
+            if (isset($filters['end_date'])) {
+                $query->where('p.post_date', '<=', $filters['end_date']);
+            }
+
+            if (isset($filters['status'])) {
+                $query->where('p.post_status', 'wc-' . $filters['status']);
+            }
+
+            if (isset($filters['meta_key']) && isset($filters['meta_value'])) {
+                $query->join($this->prefix . 'postmeta as pm2', function($join) use ($filters) {
+                    $join->on('p.ID', '=', 'pm2.post_id')
+                        ->where('pm2.meta_key', '=', $filters['meta_key'])
+                        ->where('pm2.meta_value', 'LIKE', '%' . $filters['meta_value'] . '%');
+                });
+            }
+
+            // Pagination
+            $perPage = $filters['per_page'] ?? config('woo-order-dashboard.pagination.per_page');
+            $page = $filters['page'] ?? 1;
+
+            $total = $query->count();
+            $orders = $query->orderBy('p.post_date', 'desc')
+                ->skip(($page - 1) * $perPage)
+                ->take($perPage)
+                ->get()
+                ->map(function ($order) {
+                    return $this->formatOrder($order);
+                });
+
+            return [
+                'data' => $orders,
+                'headers' => [
+                    'X-WP-Total' => $total,
+                    'X-WP-TotalPages' => ceil($total / $perPage)
+                ]
+            ];
+
         } catch (\Exception $e) {
-            Log::error('WooCommerce API Exception', [
+            Log::error('WooCommerce Database Error', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -53,22 +90,27 @@ class WooCommerceService
     public function getOrder($id)
     {
         try {
-            $response = Http::withBasicAuth($this->consumerKey, $this->consumerSecret)
-                ->timeout(config('woo-order-dashboard.api.timeout'))
-                ->get("{$this->baseUrl}/wp-json/{$this->apiVersion}/orders/{$id}");
+            $order = DB::connection('woocommerce')->table($this->prefix . 'posts as p')
+                ->select([
+                    'p.*',
+                    'pm.meta_value as order_data'
+                ])
+                ->join($this->prefix . 'postmeta as pm', function($join) {
+                    $join->on('p.ID', '=', 'pm.post_id')
+                        ->where('pm.meta_key', '=', '_order_data');
+                })
+                ->where('p.ID', $id)
+                ->where('p.post_type', 'shop_order')
+                ->first();
 
-            if ($response->successful()) {
-                return $response->json();
+            if (!$order) {
+                return null;
             }
 
-            Log::error('WooCommerce API Error', [
-                'status' => $response->status(),
-                'body' => $response->body(),
-            ]);
+            return $this->formatOrder($order);
 
-            return null;
         } catch (\Exception $e) {
-            Log::error('WooCommerce API Exception', [
+            Log::error('WooCommerce Database Error', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -77,38 +119,111 @@ class WooCommerceService
         }
     }
 
-    protected function prepareFilters(array $filters)
+    protected function formatOrder($order)
     {
-        $preparedFilters = [];
+        // Get order meta data
+        $metaData = DB::connection('woocommerce')->table($this->prefix . 'postmeta')
+            ->where('post_id', $order->id)
+            ->get()
+            ->mapWithKeys(function ($item) {
+                return [$item->meta_key => $item->meta_value];
+            });
 
-        if (isset($filters['order_id'])) {
-            $preparedFilters['id'] = $filters['order_id'];
-        }
+        // Get order items
+        $items = DB::connection('woocommerce')->table($this->prefix . 'woocommerce_order_items as oi')
+            ->select([
+                'oi.*',
+                'oim.meta_key',
+                'oim.meta_value'
+            ])
+            ->leftJoin($this->prefix . 'woocommerce_order_itemmeta as oim', 'oi.order_item_id', '=', 'oim.order_item_id')
+            ->where('oi.order_id', $order->id)
+            ->where('oi.order_item_type', 'line_item')
+            ->get()
+            ->groupBy('order_item_id')
+            ->map(function ($item) {
+                $itemData = $item->first();
+                $meta = $item->mapWithKeys(function ($meta) {
+                    return [$meta->meta_key => $meta->meta_value];
+                });
 
-        if (isset($filters['start_date'])) {
-            $preparedFilters['after'] = $filters['start_date'];
-        }
+                return [
+                    'id' => $itemData->order_item_id,
+                    'name' => $itemData->order_item_name,
+                    'quantity' => $meta['_qty'] ?? 1,
+                    'price' => $meta['_line_total'] ?? 0,
+                    'total' => $meta['_line_total'] ?? 0,
+                    'sku' => $meta['_sku'] ?? null,
+                    'meta_data' => $meta->toArray()
+                ];
+            });
 
-        if (isset($filters['end_date'])) {
-            $preparedFilters['before'] = $filters['end_date'];
-        }
+        // Get order notes
+        $notes = DB::connection('woocommerce')->table($this->prefix . 'comments as c')
+            ->select([
+                'c.*',
+                'cm.meta_value as is_customer_note'
+            ])
+            ->leftJoin($this->prefix . 'commentmeta as cm', function($join) {
+                $join->on('c.comment_ID', '=', 'cm.comment_id')
+                    ->where('cm.meta_key', '=', 'is_customer_note');
+            })
+            ->where('c.comment_post_ID', $order->id)
+            ->where('c.comment_type', 'order_note')
+            ->get()
+            ->map(function ($note) {
+                return [
+                    'id' => $note->comment_ID,
+                    'note' => $note->comment_content,
+                    'date_created' => $note->comment_date,
+                    'added_by' => $note->comment_author,
+                    'is_customer_note' => (bool) $note->is_customer_note
+                ];
+            });
 
-        if (isset($filters['status'])) {
-            $preparedFilters['status'] = $filters['status'];
-        }
-
-        if (isset($filters['meta_key']) && isset($filters['meta_value'])) {
-            $preparedFilters['meta_data'] = [
-                [
-                    'key' => $filters['meta_key'],
-                    'value' => $filters['meta_value'],
-                ],
-            ];
-        }
-
-        $preparedFilters['per_page'] = $filters['per_page'] ?? config('woo-order-dashboard.pagination.per_page');
-        $preparedFilters['page'] = $filters['page'] ?? 1;
-
-        return $preparedFilters;
+        return [
+            'id' => $order->id,
+            'number' => $order->id,
+            'status' => str_replace('wc-', '', $order->status),
+            'currency' => $metaData['_order_currency'] ?? 'USD',
+            'date_created' => $order->date_created,
+            'total' => $metaData['_order_total'] ?? 0,
+            'subtotal' => $metaData['_order_subtotal'] ?? 0,
+            'shipping_total' => $metaData['_order_shipping'] ?? 0,
+            'shipping_tax' => $metaData['_order_shipping_tax'] ?? 0,
+            'total_tax' => $metaData['_order_tax'] ?? 0,
+            'discount_total' => $metaData['_order_discount'] ?? 0,
+            'customer_id' => $metaData['_customer_user'] ?? null,
+            'customer_note' => $metaData['_customer_note'] ?? null,
+            'billing' => [
+                'first_name' => $metaData['_billing_first_name'] ?? '',
+                'last_name' => $metaData['_billing_last_name'] ?? '',
+                'email' => $metaData['_billing_email'] ?? '',
+                'phone' => $metaData['_billing_phone'] ?? '',
+                'address_1' => $metaData['_billing_address_1'] ?? '',
+                'address_2' => $metaData['_billing_address_2'] ?? '',
+                'city' => $metaData['_billing_city'] ?? '',
+                'state' => $metaData['_billing_state'] ?? '',
+                'postcode' => $metaData['_billing_postcode'] ?? '',
+                'country' => $metaData['_billing_country'] ?? '',
+            ],
+            'shipping' => [
+                'first_name' => $metaData['_shipping_first_name'] ?? '',
+                'last_name' => $metaData['_shipping_last_name'] ?? '',
+                'address_1' => $metaData['_shipping_address_1'] ?? '',
+                'address_2' => $metaData['_shipping_address_2'] ?? '',
+                'city' => $metaData['_shipping_city'] ?? '',
+                'state' => $metaData['_shipping_state'] ?? '',
+                'postcode' => $metaData['_shipping_postcode'] ?? '',
+                'country' => $metaData['_shipping_country'] ?? '',
+            ],
+            'payment_method' => $metaData['_payment_method'] ?? '',
+            'payment_method_title' => $metaData['_payment_method_title'] ?? '',
+            'transaction_id' => $metaData['_transaction_id'] ?? null,
+            'shipping_method' => $metaData['_shipping_method'] ?? '',
+            'line_items' => $items->values()->toArray(),
+            'order_notes' => $notes->toArray(),
+            'meta_data' => $metaData->toArray()
+        ];
     }
 } 

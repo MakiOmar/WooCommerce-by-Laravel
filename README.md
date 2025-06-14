@@ -1,30 +1,23 @@
-# Laravel WooCommerce Order Dashboard
+# WooCommerce Order Dashboard
 
-A powerful Laravel package that provides a comprehensive dashboard for managing WooCommerce orders. This package allows you to integrate WooCommerce order management capabilities into any Laravel application.
+A Laravel package for managing and displaying WooCommerce orders with advanced filtering and data visualization capabilities.
 
 ## Features
 
-- Complete WooCommerce order management dashboard
-- Advanced filtering capabilities:
-  - Order ID
-  - Customer information
-  - Date range filtering
-  - Order status
-  - Custom meta key filtering:
-    - Billing phone
-    - Invoice number (_wcpdf_invoice_number)
-    - Odoo order number (odoo_order_number)
-- Extensible meta key filtering system
-- Compatible with WooCommerce versions 9.3.3 and 9.9.3
-- Built with Laravel Blade templates
-- RESTful API endpoints for order management
+- Comprehensive order management dashboard
+- Advanced filtering by date, status, and custom meta fields
+- Detailed order view with all WooCommerce data
+- Responsive design with modern UI
+- Direct database integration with WooCommerce
+- Secure connection handling for live sites
+- Caching support for better performance
 
 ## Requirements
 
 - PHP >= 8.1
 - Laravel >= 10.0
-- WooCommerce >= 9.3.3
-- Composer
+- WooCommerce >= 6.0
+- MySQL >= 5.7
 
 ## Installation
 
@@ -34,131 +27,181 @@ A powerful Laravel package that provides a comprehensive dashboard for managing 
 composer require makiomar/woo-order-dashboard
 ```
 
-2. Publish the package assets and configuration:
+2. Publish the configuration file:
 
 ```bash
-php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider"
+php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="woo-order-dashboard-config"
 ```
 
-3. Run the migrations:
+3. Publish the views:
 
 ```bash
-php artisan migrate
+php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="woo-order-dashboard-views"
 ```
 
-4. Add the following to your `.env` file:
+4. Publish the assets:
 
-```env
-WOO_CONSUMER_KEY=your_consumer_key
-WOO_CONSUMER_SECRET=your_consumer_secret
-WOO_STORE_URL=your_store_url
+```bash
+php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="woo-order-dashboard-assets"
 ```
 
 ## Configuration
 
-The package configuration file will be published to `config/woo-order-dashboard.php`. Here you can customize:
+### Database Connection
 
-- API endpoints
-- Default pagination settings
-- Available meta keys for filtering
-- Cache settings
-- Custom date formats
+The package uses a separate database connection for WooCommerce. Add the following to your `.env` file:
+
+```env
+# WooCommerce Database Configuration
+WOO_DB_HOST=your_woocommerce_db_host
+WOO_DB_PORT=3306
+WOO_DB_DATABASE=your_woocommerce_db_name
+WOO_DB_USERNAME=your_woocommerce_db_user
+WOO_DB_PASSWORD=your_woocommerce_db_password
+WOO_DB_PREFIX=wp_
+```
+
+### Security Considerations for Live Sites
+
+When connecting to a live WooCommerce site, follow these security best practices:
+
+1. **Database User Permissions**:
+   - Create a dedicated database user for the Laravel application
+   - Grant only necessary permissions:
+     ```sql
+     GRANT SELECT ON your_woocommerce_db.* TO 'laravel_user'@'%';
+     ```
+   - Never use the WordPress admin database user
+
+2. **Connection Security**:
+   - Use SSL/TLS for database connections
+   - Add SSL configuration to your `.env`:
+     ```env
+     WOO_DB_SSL=true
+     WOO_DB_SSL_CA=/path/to/ca-certificate.pem
+     ```
+
+3. **Network Security**:
+   - If possible, use a VPN or private network
+   - Configure firewall rules to allow only specific IPs
+   - Use SSH tunneling for remote connections:
+     ```bash
+     ssh -L 3307:localhost:3306 user@woocommerce-server
+     ```
+   Then update your `.env`:
+     ```env
+     WOO_DB_HOST=127.0.0.1
+     WOO_DB_PORT=3307
+     ```
+
+4. **Environment Variables**:
+   - Never commit `.env` files to version control
+   - Use different credentials for development and production
+   - Regularly rotate database passwords
+
+### Performance Optimization
+
+1. **Caching**:
+   Enable caching in `config/woo-order-dashboard.php`:
+   ```php
+   'cache' => [
+       'enabled' => true,
+       'ttl' => 300, // 5 minutes
+   ],
+   ```
+
+2. **Query Optimization**:
+   - The package uses efficient queries with proper indexing
+   - Consider adding these indexes to your WooCommerce database:
+     ```sql
+     ALTER TABLE wp_posts ADD INDEX type_status_date (post_type, post_status, post_date);
+     ALTER TABLE wp_postmeta ADD INDEX post_id_key (post_id, meta_key);
+     ALTER TABLE wp_woocommerce_order_items ADD INDEX order_id_type (order_id, order_item_type);
+     ```
+
+3. **Pagination**:
+   Configure pagination settings in `config/woo-order-dashboard.php`:
+   ```php
+   'pagination' => [
+       'per_page' => 15,
+       'page_name' => 'page',
+   ],
+   ```
 
 ## Usage
 
-### Basic Implementation
+### Routes
 
-Add the following to your routes file (`routes/web.php`):
+The package registers the following routes:
 
-```php
-use Makiomar\WooOrderDashboard\WooOrderDashboard;
+- `GET /woo-dashboard` - Main dashboard
+- `GET /woo-dashboard/orders` - Orders list with filters
+- `GET /woo-dashboard/orders/{id}` - Single order view
 
-Route::prefix('woo-dashboard')->group(function () {
-    Route::get('/', [WooOrderDashboard::class, 'index'])->name('woo.dashboard');
-    Route::get('/orders', [WooOrderDashboard::class, 'orders'])->name('woo.orders');
-    Route::get('/orders/{id}', [WooOrderDashboard::class, 'show'])->name('woo.orders.show');
-});
+### Views
+
+The package provides the following views:
+
+- `vendor/woo-order-dashboard/dashboard/index.blade.php` - Main dashboard
+- `vendor/woo-order-dashboard/orders/index.blade.php` - Orders list
+- `vendor/woo-order-dashboard/orders/show.blade.php` - Single order view
+
+### Customization
+
+1. **Views**:
+   - Publish the views to customize them
+   - Extend the layout in `resources/views/vendor/woo-order-dashboard/layouts/app.blade.php`
+
+2. **Styling**:
+   - The package includes basic styles in `public/vendor/woo-order-dashboard/css/app.css`
+   - Override styles in your application's CSS
+
+3. **JavaScript**:
+   - Basic functionality in `public/vendor/woo-order-dashboard/js/app.js`
+   - Extend or override as needed
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Database Connection Errors**:
+   - Verify database credentials
+   - Check network connectivity
+   - Ensure proper permissions
+   - Verify SSL configuration if using
+
+2. **Performance Issues**:
+   - Enable caching
+   - Check database indexes
+   - Monitor query performance
+   - Adjust pagination settings
+
+3. **Missing Data**:
+   - Verify WooCommerce version compatibility
+   - Check database prefix configuration
+   - Ensure proper table structure
+
+### Debugging
+
+Enable debug mode in your `.env`:
+```env
+APP_DEBUG=true
 ```
 
-### Accessing the Dashboard
-
-Visit `/woo-dashboard` in your browser to access the order management interface.
-
-### Filtering Orders
-
-The dashboard supports various filtering methods:
-
-1. By Order ID:
-```php
-/woo-dashboard/orders?order_id=123
-```
-
-2. By Date Range:
-```php
-/woo-dashboard/orders?start_date=2024-01-01&end_date=2024-03-20
-```
-
-3. By Status:
-```php
-/woo-dashboard/orders?status=processing
-```
-
-4. By Meta Keys:
-```php
-/woo-dashboard/orders?meta_key=billing_phone&meta_value=1234567890
-```
-
-## Extending Meta Keys
-
-To add new meta keys for filtering:
-
-1. Edit the `config/woo-order-dashboard.php` file
-2. Add your new meta key to the `meta_keys` array:
-
-```php
-'meta_keys' => [
-    'billing_phone',
-    '_wcpdf_invoice_number',
-    'odoo_order_number',
-    'your_new_meta_key',
-],
-```
-
-## API Endpoints
-
-The package provides the following API endpoints:
-
-- `GET /api/woo/orders` - List all orders
-- `GET /api/woo/orders/{id}` - Get specific order
-- `GET /api/woo/orders/filter` - Filter orders
-- `GET /api/woo/orders/meta-keys` - List available meta keys
-
-## Security
-
-- All API requests are authenticated using WooCommerce API credentials
-- CSRF protection is enabled for all web routes
-- Rate limiting is implemented for API endpoints
-
-## Caching
-
-The package implements caching for better performance:
-
-- Order lists are cached for 5 minutes by default
-- Individual order details are cached for 10 minutes
-- Cache duration can be configured in the config file
-
-## Contributing
-
-Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
-
-## License
-
-The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
+Check Laravel logs in `storage/logs/laravel.log` for detailed error messages.
 
 ## Support
 
-For support, please open an issue in the GitHub repository or contact support@makiomar.com.
+For issues and feature requests, please use the [GitHub issue tracker](https://github.com/makiomar/woo-order-dashboard/issues).
 
-## Changelog
+## License
 
-Please see [CHANGELOG.md](CHANGELOG.md) for more information on what has changed recently. 
+This package is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Create a new Pull Request 

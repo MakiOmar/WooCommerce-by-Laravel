@@ -49,7 +49,38 @@ php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashbo
 
 ### Database Connection
 
-The package uses a separate database connection for WooCommerce. Add the following to your `.env` file:
+The package uses a separate database connection for WooCommerce. You need to manually add the WooCommerce database connection to your `config/database.php` file:
+
+1. Open `config/database.php`
+2. Add the following connection to the `connections` array:
+
+```php
+'connections' => [
+    // ... your existing connections ...
+
+    'woocommerce' => [
+        'driver' => 'mysql',
+        'url' => env('WOO_DATABASE_URL'),
+        'host' => env('WOO_DB_HOST', '127.0.0.1'),
+        'port' => env('WOO_DB_PORT', '3306'),
+        'database' => env('WOO_DB_DATABASE', 'forge'),
+        'username' => env('WOO_DB_USERNAME', 'forge'),
+        'password' => env('WOO_DB_PASSWORD', ''),
+        'unix_socket' => env('WOO_DB_SOCKET', ''),
+        'charset' => 'utf8mb4',
+        'collation' => 'utf8mb4_unicode_ci',
+        'prefix' => env('WOO_DB_PREFIX', 'wp_'),
+        'prefix_indexes' => true,
+        'strict' => true,
+        'engine' => null,
+        'options' => extension_loaded('pdo_mysql') ? array_filter([
+            PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+        ]) : [],
+    ],
+],
+```
+
+3. Add the following to your `.env` file:
 
 ```env
 # WooCommerce Database Configuration
@@ -60,6 +91,8 @@ WOO_DB_USERNAME=your_woocommerce_db_user
 WOO_DB_PASSWORD=your_woocommerce_db_password
 WOO_DB_PREFIX=wp_
 ```
+
+Note: The `database.php` configuration is not published by the package because it's a core Laravel configuration file. You need to add the WooCommerce connection manually to ensure proper separation of database connections.
 
 ### Security Considerations for Live Sites
 
@@ -128,6 +161,78 @@ When connecting to a live WooCommerce site, follow these security best practices
    ],
    ```
 
+### Pagination
+
+The package uses Laravel's built-in pagination system. Here's how to configure and customize it:
+
+1. **Configuration**
+   In `config/woo-order-dashboard.php`:
+   ```php
+   'pagination' => [
+       'per_page' => 15,        // Number of orders per page
+       'page_name' => 'page',   // Query parameter name for pagination
+   ],
+   ```
+
+2. **Usage in Views**
+   The orders list view includes pagination links:
+   ```php
+   {{ $orders['data']->links() }}
+   ```
+
+3. **Customizing Pagination**
+   To customize the pagination appearance:
+
+   a. Publish Laravel's pagination views:
+   ```bash
+   php artisan vendor:publish --tag=laravel-pagination
+   ```
+
+   b. Edit the views in `resources/views/vendor/pagination/`:
+   - `default.blade.php` - Default pagination view
+   - `bootstrap-4.blade.php` - Bootstrap 4 pagination view
+   - `bootstrap-5.blade.php` - Bootstrap 5 pagination view
+   - `tailwind.blade.php` - Tailwind CSS pagination view
+   - `simple-bootstrap-4.blade.php` - Simple Bootstrap 4 pagination
+   - `simple-bootstrap-5.blade.php` - Simple Bootstrap 5 pagination
+   - `simple-tailwind.blade.php` - Simple Tailwind CSS pagination
+
+4. **Pagination Features**
+   - Maintains query parameters when navigating
+   - Shows total number of pages
+   - Displays current page
+   - Provides first/last page links
+   - Includes previous/next page links
+
+5. **Customizing Per Page**
+   You can change the number of items per page in the URL:
+   ```
+   /woo-dashboard/orders?per_page=20
+   ```
+
+6. **Pagination Styling**
+   The package includes basic pagination styles in `public/vendor/woo-order-dashboard/css/app.css`. You can override these styles in your application's CSS.
+
+7. **Pagination in API Responses**
+   When using the package's API endpoints, pagination information is included in the response headers:
+   ```
+   X-WP-Total: 100
+   X-WP-TotalPages: 7
+   ```
+
+8. **Troubleshooting Pagination**
+   If pagination links are not working:
+   - Clear the configuration cache:
+     ```bash
+     php artisan config:clear
+     ```
+   - Verify the pagination configuration in `config/woo-order-dashboard.php`
+   - Check that the view is using the correct pagination method:
+     ```php
+     {{ $orders['data']->links() }}
+     ```
+   - Ensure the WooCommerceService is returning a LengthAwarePaginator instance
+
 ## Usage
 
 ### Routes
@@ -169,6 +274,15 @@ The package provides the following views:
    - Check network connectivity
    - Ensure proper permissions
    - Verify SSL configuration if using
+
+   If you see the error "Unsupported driver [http]", check that:
+   - The `driver` is set to `mysql` in your database configuration
+   - Your `.env` file has the correct database connection settings
+   - You've cleared the configuration cache:
+     ```bash
+     php artisan config:clear
+     php artisan cache:clear
+     ```
 
 2. **Performance Issues**:
    - Enable caching

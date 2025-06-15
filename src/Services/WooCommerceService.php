@@ -23,13 +23,7 @@ class WooCommerceService
                     'p.ID as id',
                     'p.post_date as date_created',
                     'p.post_status as status',
-                    'p.post_type',
-                    'pm.meta_value as order_data'
                 ])
-                ->join('postmeta as pm', function ($join) {
-                    $join->on('p.ID', '=', 'pm.post_id')
-                        ->where('pm.meta_key', '=', '_order_data');
-                })
                 ->where('p.post_type', 'shop_order');
 
             // Apply filters

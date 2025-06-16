@@ -35,7 +35,7 @@
                     <dd class="col-sm-8">{{ count($order['line_items']) }}</dd>
 
                     <dt class="col-sm-4">Total Amount:</dt>
-                    <dd class="col-sm-8">{{ $order['currency_symbol'] }}{{ number_format($order['total'], 2) }}</dd>
+                    <dd class="col-sm-8">{{ $order['currency'] }} {{ number_format($order['total'], 2) }}</dd>
                 </dl>
             </div>
         </div>

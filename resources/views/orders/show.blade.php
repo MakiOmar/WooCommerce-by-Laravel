@@ -6,7 +6,7 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h3 class="card-title">Order #{{ $order['number'] }}</h3>
+                    <h3 class="card-title">Order #{{ $order['id'] }}</h3>
                     <div>
                         <a href="{{ route('woo.orders') }}" class="btn btn-secondary">
                             <i class="fas fa-arrow-left"></i> Back to Orders
@@ -19,12 +19,12 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    @include('partials.order-info')
-                    @include('partials.order-customer-info')
-                    @include('partials.order-addresses')
-                    @include('partials.order-items')
-                    @include('partials.order-meta')
-                    @include('partials.order-notes')
+                    @include('partials.order-info', ['order' => $order])
+                    @include('partials.order-customer-info', ['order' => $order])
+                    @include('partials.order-addresses', ['order' => $order])
+                    @include('partials.order-items', ['order' => $order])
+                    @include('partials.order-meta', ['order' => $order])
+                    @include('partials.order-notes', ['order' => $order])
                 </div>
             </div>
         </div>

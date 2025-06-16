@@ -6,6 +6,14 @@
         <div class="card-body p-4">
             <h1 class="h4 font-weight-bold text-primary mb-4">WooCommerce Order Dashboard</h1>
 
+            <!-- Debug Info -->
+            @if(config('app.debug'))
+                <div class="alert alert-info mb-4">
+                    <h5>Debug Information:</h5>
+                    <pre>{{ print_r($orders, true) }}</pre>
+                </div>
+            @endif
+
             <!-- Filters Section -->
             <form action="{{ route('woo.orders') }}" method="GET" class="mb-4">
                 <div class="row">
@@ -35,10 +43,11 @@
                         <label for="status" class="font-weight-600 text-muted small">Status</label>
                         <select name="status" id="status" class="form-control form-control-sm rounded-lg border-light">
                             <option value="">All Statuses</option>
-                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                            <option value="processing" {{ request('status') == 'processing' ? 'selected' : '' }}>Processing</option>
-                            <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
-                            <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                            @foreach(config('woo-order-dashboard.order_statuses', []) as $status)
+                                <option value="{{ $status }}" {{ request('status') == $status ? 'selected' : '' }}>
+                                    {{ ucfirst($status) }}
+                                </option>
+                            @endforeach
                         </select>
                     </div>
 
@@ -61,14 +70,15 @@
                     </div>
                 </div>
 
-                <!-- Buttons -->
-                <div class="form-group mt-3">
-                    <button type="submit" class="btn btn-primary btn-sm px-4 rounded-pill shadow-sm">
-                        <i class="fas fa-filter mr-1"></i> Apply Filters
-                    </button>
-                    <a href="{{ route('woo.orders') }}" class="btn btn-outline-secondary btn-sm px-4 rounded-pill ml-2">
-                        <i class="fas fa-redo mr-1"></i> Reset
-                    </a>
+                <div class="row">
+                    <div class="col-12 text-right">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-filter mr-1"></i> Apply Filters
+                        </button>
+                        <a href="{{ route('woo.orders') }}" class="btn btn-light">
+                            <i class="fas fa-times mr-1"></i> Clear Filters
+                        </a>
+                    </div>
                 </div>
             </form>
 
@@ -86,8 +96,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @if (is_array($orders))
-                            @foreach($orders['data'] as $order)
+                        @forelse($orders['data'] ?? [] as $order)
                             <tr class="border-bottom border-light">
                                 <td class="align-middle font-weight-bold">#{{ $order['id'] }}</td>
                                 <td class="align-middle">{{ \Carbon\Carbon::parse($order['date_created'])->format(config('woo-order-dashboard.date_format.display')) }}</td>
@@ -108,24 +117,23 @@
                                     </a>
                                 </td>
                             </tr>
-                            @endforeach
-                        @else
+                        @empty
                             <tr>
                                 <td colspan="6" class="text-center text-muted py-4">
                                     <i class="fas fa-inbox fa-2x mb-2"></i>
                                     <p class="mb-0">No orders found</p>
                                 </td>
                             </tr>
-                        @endif
+                        @endforelse
                     </tbody>
                 </table>
             </div>
 
             <!-- Pagination -->
-            @if(isset($orders['headers']['X-WP-TotalPages']))
-            <div class="mt-4 d-flex justify-content-center">
-                {{ $orders['data']->links('vendor.pagination.bootstrap-4') }}
-            </div>
+            @if(isset($orders['data']) && $orders['data']->hasPages())
+                <div class="mt-4 d-flex justify-content-center">
+                    {{ $orders['data']->links('vendor.pagination.bootstrap-4') }}
+                </div>
             @endif
         </div>
     </div>

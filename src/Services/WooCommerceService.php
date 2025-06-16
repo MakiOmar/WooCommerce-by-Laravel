@@ -80,20 +80,32 @@ class WooCommerceService
             // Get paginated results
             $orders = $query->orderByDesc('p.post_date')
                 ->forPage($page, $perPage)
-                ->get()
-                ->map(function($order) {
-                    return [
-                        'id' => $order->id,
-                        'status' => $this->cleanStatus($order->post_status),
-                        'date_created' => $order->post_date,
-                        'total' => $order->order_total ?? 0,
-                        'billing' => [
-                            'first_name' => $order->billing_first_name ?? '',
-                            'last_name' => $order->billing_last_name ?? '',
-                            'phone' => $order->billing_phone ?? ''
-                        ]
-                    ];
-                });
+                ->get();
+
+            // Debug the results
+            Log::info('WooCommerce Orders Query Results', [
+                'total' => $total,
+                'perPage' => $perPage,
+                'page' => $page,
+                'orders_count' => $orders->count(),
+                'first_order' => $orders->first(),
+                'query' => $query->toSql(),
+                'bindings' => $query->getBindings()
+            ]);
+
+            $orders = $orders->map(function($order) {
+                return [
+                    'id' => $order->id,
+                    'status' => $this->cleanStatus($order->post_status),
+                    'date_created' => $order->post_date,
+                    'total' => $order->order_total ?? 0,
+                    'billing' => [
+                        'first_name' => $order->billing_first_name ?? '',
+                        'last_name' => $order->billing_last_name ?? '',
+                        'phone' => $order->billing_phone ?? ''
+                    ]
+                ];
+            });
 
             // Create paginator
             $paginator = new LengthAwarePaginator(

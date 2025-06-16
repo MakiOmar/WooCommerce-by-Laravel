@@ -4,6 +4,7 @@ namespace Makiomar\WooOrderDashboard;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Blade;
 
 class WooOrderDashboardServiceProvider extends ServiceProvider
 {
@@ -19,6 +20,9 @@ class WooOrderDashboardServiceProvider extends ServiceProvider
         $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'woo-order-dashboard');
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+
+        Blade::component('order.section', 'order-section');
+        Blade::component('order.detail', 'order-detail');
 
         // Publish config file
         $this->publishes([

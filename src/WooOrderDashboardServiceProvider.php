@@ -16,7 +16,6 @@ class WooOrderDashboardServiceProvider extends ServiceProvider
      */
     protected $app;
 
-
     /**
      * Register services.
      */

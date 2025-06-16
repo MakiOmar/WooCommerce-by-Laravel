@@ -104,20 +104,14 @@ class WooCommerceService
                 ['path' => request()->url(), 'query' => request()->query()]
             );
 
-            return [
-                'data' => $paginator,
-                'pagination' => [
-                    'total' => $total,
-                    'pages' => ceil($total / $perPage),
-                ]
-            ];
+            return $paginator;
         } catch (\Exception $e) {
             Log::error('WooCommerce Orders Query Failed', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return ['data' => collect(), 'pagination' => []];
+            return new LengthAwarePaginator(collect(), 0, $perPage, 1);
         }
     }
 

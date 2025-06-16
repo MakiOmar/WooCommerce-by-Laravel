@@ -17,20 +17,17 @@ return [
     | Route Configuration
     |--------------------------------------------------------------------------
     |
-    | Here you can configure the routes for the WooCommerce Order Dashboard.
+    | Configure the routes for the WooCommerce Order Dashboard.
     |
     */
-    'routes' => [
-        'prefix' => 'woo-dashboard',
-        'middleware' => ['web', 'auth'],
-    ],
+    'route_prefix' => env('WOO_ORDER_DASHBOARD_ROUTE_PREFIX', ''),
 
     /*
     |--------------------------------------------------------------------------
     | Pagination Configuration
     |--------------------------------------------------------------------------
     |
-    | Here you can configure the pagination settings for the orders list.
+    | Configure the pagination settings for the orders list.
     |
     */
     'pagination' => [

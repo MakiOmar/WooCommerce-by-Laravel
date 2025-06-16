@@ -129,6 +129,8 @@ class WooCommerceService
                 'trace' => $e->getTraceAsString(),
             ]);
 
+            $perPage = config('woo-order-dashboard.pagination.per_page', 15);
+
             return [
                 'data' => new LengthAwarePaginator(collect(), 0, $perPage, 1),
                 'headers' => [

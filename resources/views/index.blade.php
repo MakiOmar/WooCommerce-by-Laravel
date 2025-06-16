@@ -1,135 +1,133 @@
 @extends('layouts.admin')
 
 @section('content')
-<div class="container mx-auto px-4 py-8">
-    <div class="bg-white rounded-lg shadow-lg p-6">
-        <h1 class="text-2xl font-bold mb-6">WooCommerce Order Dashboard</h1>
+<div class="container py-4">
+    <div class="card border-0 shadow-lg">
+        <div class="card-body p-4">
+            <h1 class="h4 font-weight-bold text-primary mb-4">WooCommerce Order Dashboard</h1>
 
-        <!-- Filters Section -->
-        <div class="mb-8">
-            <form action="{{ route('woo.orders') }}" method="GET" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <!-- Order ID Filter -->
-                <div>
-                    <label for="order_id" class="block text-sm font-medium text-gray-700">Order ID</label>
-                    <input type="number" name="order_id" id="order_id" value="{{ request('order_id') }}"
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+            <!-- Filters Section -->
+            <form action="{{ route('woo.orders') }}" method="GET" class="mb-4">
+                <div class="row">
+                    <!-- Order ID -->
+                    <div class="form-group col-md-3">
+                        <label for="order_id" class="font-weight-600 text-muted small">Order ID</label>
+                        <input type="number" name="order_id" id="order_id" value="{{ request('order_id') }}" 
+                               class="form-control form-control-sm rounded-lg border-light">
+                    </div>
+
+                    <!-- Start Date -->
+                    <div class="form-group col-md-3">
+                        <label for="start_date" class="font-weight-600 text-muted small">Start Date</label>
+                        <input type="date" name="start_date" id="start_date" value="{{ request('start_date') }}" 
+                               class="form-control form-control-sm rounded-lg border-light">
+                    </div>
+
+                    <!-- End Date -->
+                    <div class="form-group col-md-3">
+                        <label for="end_date" class="font-weight-600 text-muted small">End Date</label>
+                        <input type="date" name="end_date" id="end_date" value="{{ request('end_date') }}" 
+                               class="form-control form-control-sm rounded-lg border-light">
+                    </div>
+
+                    <!-- Status -->
+                    <div class="form-group col-md-3">
+                        <label for="status" class="font-weight-600 text-muted small">Status</label>
+                        <select name="status" id="status" class="form-control form-control-sm rounded-lg border-light">
+                            <option value="">All Statuses</option>
+                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                            <option value="processing" {{ request('status') == 'processing' ? 'selected' : '' }}>Processing</option>
+                            <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
+                            <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
+                        </select>
+                    </div>
+
+                    <!-- Meta Key -->
+                    <div class="form-group col-md-3">
+                        <label for="meta_key" class="font-weight-600 text-muted small">Meta Key</label>
+                        <select name="meta_key" id="meta_key" class="form-control form-control-sm rounded-lg border-light">
+                            <option value="">Select Meta Key</option>
+                            <option value="billing_phone" {{ request('meta_key') == 'billing_phone' ? 'selected' : '' }}>Billing Phone</option>
+                            <option value="_wcpdf_invoice_number" {{ request('meta_key') == '_wcpdf_invoice_number' ? 'selected' : '' }}>Invoice Number</option>
+                            <option value="odoo_order_number" {{ request('meta_key') == 'odoo_order_number' ? 'selected' : '' }}>Odoo Order Number</option>
+                        </select>
+                    </div>
+
+                    <!-- Meta Value -->
+                    <div class="form-group col-md-3">
+                        <label for="meta_value" class="font-weight-600 text-muted small">Meta Value</label>
+                        <input type="text" name="meta_value" id="meta_value" value="{{ request('meta_value') }}" 
+                               class="form-control form-control-sm rounded-lg border-light">
+                    </div>
                 </div>
 
-                <!-- Date Range Filter -->
-                <div>
-                    <label for="start_date" class="block text-sm font-medium text-gray-700">Start Date</label>
-                    <input type="date" name="start_date" id="start_date" value="{{ request('start_date') }}"
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                </div>
-
-                <div>
-                    <label for="end_date" class="block text-sm font-medium text-gray-700">End Date</label>
-                    <input type="date" name="end_date" id="end_date" value="{{ request('end_date') }}"
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                </div>
-
-                <!-- Status Filter -->
-                <div>
-                    <label for="status" class="block text-sm font-medium text-gray-700">Status</label>
-                    <select name="status" id="status"
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                        <option value="">All Statuses</option>
-                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                        <option value="processing" {{ request('status') == 'processing' ? 'selected' : '' }}>Processing</option>
-                        <option value="completed" {{ request('status') == 'completed' ? 'selected' : '' }}>Completed</option>
-                        <option value="cancelled" {{ request('status') == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                    </select>
-                </div>
-
-                <!-- Meta Key Filter -->
-                <div>
-                    <label for="meta_key" class="block text-sm font-medium text-gray-700">Meta Key</label>
-                    <select name="meta_key" id="meta_key"
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                        <option value="">Select Meta Key</option>
-                        <option value="billing_phone" {{ request('meta_key') == 'billing_phone' ? 'selected' : '' }}>Billing Phone</option>
-                        <option value="_wcpdf_invoice_number" {{ request('meta_key') == '_wcpdf_invoice_number' ? 'selected' : '' }}>Invoice Number</option>
-                        <option value="odoo_order_number" {{ request('meta_key') == 'odoo_order_number' ? 'selected' : '' }}>Odoo Order Number</option>
-                    </select>
-                </div>
-
-                <!-- Meta Value Filter -->
-                <div>
-                    <label for="meta_value" class="block text-sm font-medium text-gray-700">Meta Value</label>
-                    <input type="text" name="meta_value" id="meta_value" value="{{ request('meta_value') }}"
-                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                </div>
-
-                <!-- Submit Button -->
-                <div class="md:col-span-2 lg:col-span-4">
-                    <button type="submit"
-                        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        Apply Filters
+                <!-- Buttons -->
+                <div class="form-group mt-3">
+                    <button type="submit" class="btn btn-primary btn-sm px-4 rounded-pill shadow-sm">
+                        <i class="fas fa-filter mr-1"></i> Apply Filters
                     </button>
-                    <a href="{{ route('woo.orders') }}"
-                        class="ml-3 inline-flex justify-center py-2 px-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                        Reset Filters
+                    <a href="{{ route('woo.orders') }}" class="btn btn-outline-secondary btn-sm px-4 rounded-pill ml-2">
+                        <i class="fas fa-redo mr-1"></i> Reset
                     </a>
                 </div>
             </form>
-        </div>
 
-        <!-- Orders Table -->
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Order ID</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Customer</th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    @if ( is_array( $orders ) )
-                        @foreach($orders['data'] as $order)
+            <!-- Orders Table -->
+            <div class="table-responsive rounded-lg overflow-hidden border border-light">
+                <table class="table table-hover mb-0">
+                    <thead class="bg-light">
                         <tr>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">#{{ $order['id'] }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ \Carbon\Carbon::parse($order['date_created'])->format(config('woo-order-dashboard.date_format.display')) }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                                    {{ $order['status'] == 'completed' ? 'bg-green-100 text-green-800' : 
-                                    ($order['status'] == 'processing' ? 'bg-blue-100 text-blue-800' : 
-                                    ($order['status'] == 'cancelled' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800')) }}">
-                                    {{ ucfirst($order['status']) }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{{ $order['total'] }}</td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {{ $order['billing']['first_name'] }} {{ $order['billing']['last_name'] }}
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <a href="{{ route('woo.orders.show', $order['id']) }}"
-                                    class="text-indigo-600 hover:text-indigo-900">View Details</a>
-                            </td>
+                            <th class="border-0 font-weight-600 text-muted small">Order ID</th>
+                            <th class="border-0 font-weight-600 text-muted small">Date</th>
+                            <th class="border-0 font-weight-600 text-muted small">Status</th>
+                            <th class="border-0 font-weight-600 text-muted small">Total</th>
+                            <th class="border-0 font-weight-600 text-muted small">Customer</th>
+                            <th class="border-0 font-weight-600 text-muted small">Actions</th>
                         </tr>
-                        @endforeach
-                    @else
-                        <tr>
-                            <td colspan="6" class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
-                                No orders found
-                            </td>
-                        </tr>
-                    @endif
-                </tbody>
-            </table>
-        </div>
+                    </thead>
+                    <tbody>
+                        @if (is_array($orders))
+                            @foreach($orders['data'] as $order)
+                            <tr class="border-bottom border-light">
+                                <td class="align-middle font-weight-bold">#{{ $order['id'] }}</td>
+                                <td class="align-middle">{{ \Carbon\Carbon::parse($order['date_created'])->format(config('woo-order-dashboard.date_format.display')) }}</td>
+                                <td class="align-middle">
+                                    <span class="badge badge-pill py-1 px-3 
+                                        {{ $order['status'] == 'completed' ? 'badge-success bg-success-soft' : 
+                                            ($order['status'] == 'processing' ? 'badge-primary bg-primary-soft' :
+                                            ($order['status'] == 'cancelled' ? 'badge-danger bg-danger-soft' : 'badge-secondary bg-secondary-soft')) }}">
+                                        {{ ucfirst($order['status']) }}
+                                    </span>
+                                </td>
+                                <td class="align-middle font-weight-bold text-dark">${{ number_format($order['total'], 2) }}</td>
+                                <td class="align-middle">{{ $order['billing']['first_name'] }} {{ $order['billing']['last_name'] }}</td>
+                                <td class="align-middle">
+                                    <a href="{{ route('woo.orders.show', $order['id']) }}" 
+                                       class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                        <i class="fas fa-eye mr-1"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            @endforeach
+                        @else
+                            <tr>
+                                <td colspan="6" class="text-center text-muted py-4">
+                                    <i class="fas fa-inbox fa-2x mb-2"></i>
+                                    <p class="mb-0">No orders found</p>
+                                </td>
+                            </tr>
+                        @endif
+                    </tbody>
+                </table>
+            </div>
 
-        <!-- Pagination -->
-        @if(isset($orders['headers']['X-WP-TotalPages']))
-        <div class="mt-4">
-            {{ $orders['data']->links() }}
+            <!-- Pagination -->
+            @if(isset($orders['headers']['X-WP-TotalPages']))
+            <div class="mt-4 d-flex justify-content-center">
+                {{ $orders['data']->links('vendor.pagination.bootstrap-4') }}
+            </div>
+            @endif
         </div>
-        @endif
     </div>
 </div>
-@endsection 
+@endsection

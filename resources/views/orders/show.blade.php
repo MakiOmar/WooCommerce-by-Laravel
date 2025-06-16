@@ -33,38 +33,5 @@
 @endsection
 
 @push('styles')
-<style>
-    @media print {
-        .btn, .card-header .btn {
-            display: none !important;
-        }
-        .card {
-            border: none !important;
-        }
-        .card-header {
-            background: none !important;
-            border-bottom: 1px solid #ddd !important;
-        }
-    }
-    .timeline {
-        position: relative;
-        padding: 20px 0;
-    }
-    .timeline-item {
-        position: relative;
-        padding: 20px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        margin-bottom: 20px;
-    }
-    .timeline-header {
-        margin-bottom: 10px;
-    }
-    .timeline-body {
-        margin-bottom: 10px;
-    }
-    .timeline-footer {
-        margin-top: 10px;
-    }
-</style>
+<link href="{{ asset('css/woo-order-dashboard.css') }}" rel="stylesheet">
 @endpush 

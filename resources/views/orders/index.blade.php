@@ -177,6 +177,10 @@
 </div>
 @endsection
 
+@push('styles')
+<link href="{{ asset('css/woo-order-dashboard.css') }}" rel="stylesheet">
+@endpush
+
 @push('scripts')
 <script>
     $(document).ready(function() {

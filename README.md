@@ -237,40 +237,20 @@ The package uses Laravel's built-in pagination system. Here's how to configure a
 
 If you have an existing admin system with its own authentication and routes, you can integrate this package as follows:
 
-1. In your `app/Providers/RouteServiceProvider.php`, add the following to your `boot` method:
+1. Add the routes to your admin routes file (e.g., `routes/admin.php`):
 
 ```php
-public function boot()
-{
-    // ... your existing code ...
+use Makiomar\WooOrderDashboard\Http\Controllers\WooOrderDashboardController;
 
-    // Register WooCommerce Order Dashboard routes
-    $this->app->make(\Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider::class)
-        ->registerAdminRoutes();
-}
+Route::group(['middleware' => 'auth:admin'], function() {
+    // WooCommerce Order Dashboard Routes
+    Route::get('/woo-orders', [WooOrderDashboardController::class, 'index'])->name('woo.dashboard');
+    Route::get('/orders', [WooOrderDashboardController::class, 'orders'])->name('woo.orders');
+    Route::get('/orders/{id}', [WooOrderDashboardController::class, 'show'])->name('woo.orders.show');
+});
 ```
 
-2. Configure the route prefix (optional):
-
-You can configure the route prefix in two ways:
-
-a. Using the config file (`config/woo-order-dashboard.php`):
-```php
-'route_prefix' => 'your-prefix', // e.g., 'admin/woo' or leave empty for no prefix
-```
-
-b. Using environment variable in `.env`:
-```env
-WOO_ORDER_DASHBOARD_ROUTE_PREFIX=your-prefix
-```
-
-c. Or pass it directly when registering routes:
-```php
-$this->app->make(\Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider::class)
-    ->registerAdminRoutes('your-prefix');
-```
-
-3. Make sure your admin layout (`layouts.admin`) includes the necessary assets:
+2. Make sure your admin layout (`layouts.admin`) includes the necessary assets:
 
 ```php
 <!DOCTYPE html>
@@ -279,7 +259,7 @@ $this->app->make(\Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider::c
     <!-- ... your existing head content ... -->
     
     <!-- WooCommerce Order Dashboard Assets -->
-    <link href="{{ asset('css/woo-order-dashboard.css') }}" rel="stylesheet">
+    <link href="{{ asset('vendor/woo-order-dashboard/css/app.css') }}" rel="stylesheet">
     @stack('styles')
 </head>
 <body>
@@ -291,7 +271,11 @@ $this->app->make(\Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider::c
 </html>
 ```
 
-4. The package will now use your existing admin authentication middleware (`auth:admin`).
+3. Publish the assets:
+
+```bash
+php artisan vendor:publish --tag=assets
+```
 
 ## Usage
 

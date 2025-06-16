@@ -1,10 +1,10 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use Makiomar\WooOrderDashboard\Http\Controllers\WooOrderDashboardController;
+use App\Http\Controllers\WooOrderDashboardController;
 
-Route::middleware(config('woo-order-dashboard.routes.middleware'))
-    ->prefix(config('woo-order-dashboard.routes.prefix'))
+Route::middleware(config('woo-order-dashboard.routes.middleware', ['web', 'auth']))
+    ->prefix(config('woo-order-dashboard.routes.prefix', 'woo'))
     ->group(function () {
         Route::get('/', [WooOrderDashboardController::class, 'index'])->name('woo.dashboard');
         Route::get('/orders', [WooOrderDashboardController::class, 'orders'])->name('woo.orders');

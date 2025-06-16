@@ -36,7 +36,7 @@
                                     <label for="status" class="font-weight-bold">Status</label>
                                     <select class="form-control" id="status" name="status">
                                         <option value="">All Statuses</option>
-                                        @foreach(config('woo-order-dashboard.order_statuses') as $status)
+                                        @foreach(config('woo-order-dashboard.order_statuses', []) as $status)
                                             <option value="{{ $status }}" {{ request('status') == $status ? 'selected' : '' }}>
                                                 {{ ucfirst($status) }}
                                             </option>
@@ -51,7 +51,7 @@
                                     <label for="meta_key" class="font-weight-bold">Meta Key</label>
                                     <select class="form-control" id="meta_key" name="meta_key">
                                         <option value="">Select Meta Key</option>
-                                        @foreach(config('woo-order-dashboard.meta_keys') as $key => $label)
+                                        @foreach(config('woo-order-dashboard.meta_keys', []) as $key => $label)
                                             <option value="{{ $key }}" {{ request('meta_key') == $key ? 'selected' : '' }}>
                                                 {{ $label }}
                                             </option>
@@ -119,7 +119,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($orders['data'] as $order)
+                                @forelse($orders['data'] ?? [] as $order)
                                     <tr>
                                         <td class="align-middle">
                                             <span class="font-weight-bold">#{{ $order['id'] }}</span>
@@ -139,11 +139,11 @@
                                         <td class="align-middle">
                                             <div class="d-flex flex-column">
                                                 <span class="font-weight-bold">
-                                                    {{ $order['billing']['first_name'] }} {{ $order['billing']['last_name'] }}
+                                                    {{ $order['billing']['first_name'] ?? '' }} {{ $order['billing']['last_name'] ?? '' }}
                                                 </span>
                                                 <small class="text-muted">
                                                     <i class="far fa-envelope mr-1"></i>
-                                                    {{ $order['billing']['email'] }}
+                                                    {{ $order['billing']['email'] ?? 'N/A' }}
                                                 </small>
                                             </div>
                                         </td>
@@ -167,9 +167,11 @@
                         </table>
                     </div>
 
-                    <div class="card-footer bg-light">
-                        {{ $orders['data']->links() }}
-                    </div>
+                    @if(isset($orders['data']) && $orders['data']->hasPages())
+                        <div class="card-footer bg-light">
+                            {{ $orders['data']->links() }}
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

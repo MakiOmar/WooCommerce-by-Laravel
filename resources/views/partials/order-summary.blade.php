@@ -9,9 +9,6 @@
                     <dt class="col-sm-4">Order ID:</dt>
                     <dd class="col-sm-8">{{ $order['id'] }}</dd>
 
-                    <dt class="col-sm-4">Order Number:</dt>
-                    <dd class="col-sm-8">{{ $order['number'] }}</dd>
-
                     <dt class="col-sm-4">Date Created:</dt>
                     <dd class="col-sm-8">{{ \Carbon\Carbon::parse($order['date_created'])->format('M d, Y H:i') }}</dd>
 

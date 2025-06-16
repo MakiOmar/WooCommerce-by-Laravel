@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\WooOrderDashboardController;
+use Makiomar\WooOrderDashboard\Http\Controllers\WooOrderDashboardController;
 
 Route::middleware(config('woo-order-dashboard.routes.middleware', ['web', 'auth']))
     ->prefix(config('woo-order-dashboard.routes.prefix', 'woo'))

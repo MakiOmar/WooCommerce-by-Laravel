@@ -16,10 +16,36 @@ class WooCommerceService
     public function getOrders(array $filters = [])
     {
         try {
+            // Main query with joins for essential meta fields
             $query = DB::connection('woocommerce')->table('posts as p')
-                ->select(['p.ID as id', 'p.post_date', 'p.post_status'])
+                ->leftJoin('postmeta as pm1', function($join) {
+                    $join->on('p.ID', '=', 'pm1.post_id')
+                         ->where('pm1.meta_key', '_billing_first_name');
+                })
+                ->leftJoin('postmeta as pm2', function($join) {
+                    $join->on('p.ID', '=', 'pm2.post_id')
+                         ->where('pm2.meta_key', '_billing_last_name');
+                })
+                ->leftJoin('postmeta as pm3', function($join) {
+                    $join->on('p.ID', '=', 'pm3.post_id')
+                         ->where('pm3.meta_key', '_billing_phone');
+                })
+                ->leftJoin('postmeta as pm4', function($join) {
+                    $join->on('p.ID', '=', 'pm4.post_id')
+                         ->where('pm4.meta_key', '_order_total');
+                })
+                ->select([
+                    'p.ID as id', 
+                    'p.post_date', 
+                    'p.post_status',
+                    'pm1.meta_value as billing_first_name',
+                    'pm2.meta_value as billing_last_name',
+                    'pm3.meta_value as billing_phone',
+                    'pm4.meta_value as order_total'
+                ])
                 ->where('p.post_type', 'shop_order');
 
+            // Apply filters
             if (!empty($filters['order_id'])) {
                 $query->where('p.ID', $filters['order_id']);
             }
@@ -46,15 +72,30 @@ class WooCommerceService
                 });
             }
 
+            // Get total count before pagination
             $total = $query->count();
             $perPage = $filters['per_page'] ?? config('woo-order-dashboard.pagination.per_page');
             $page = $filters['page'] ?? 1;
 
+            // Get paginated results
             $orders = $query->orderByDesc('p.post_date')
                 ->forPage($page, $perPage)
                 ->get()
-                ->map(fn($order) => $this->formatOrderSummary($order));
+                ->map(function($order) {
+                    return [
+                        'id' => $order->id,
+                        'status' => $this->cleanStatus($order->post_status),
+                        'date_created' => $order->post_date,
+                        'total' => $order->order_total ?? 0,
+                        'billing' => [
+                            'first_name' => $order->billing_first_name ?? '',
+                            'last_name' => $order->billing_last_name ?? '',
+                            'phone' => $order->billing_phone ?? ''
+                        ]
+                    ];
+                });
 
+            // Create paginator
             $paginator = new LengthAwarePaginator(
                 $orders,
                 $total,
@@ -83,41 +124,61 @@ class WooCommerceService
     public function getOrder($id)
     {
         try {
-            $order = DB::connection('woocommerce')->table('posts')
-                ->where('ID', $id)
-                ->where('post_type', 'shop_order')
-                ->first();
+            // Get order with all meta in one query
+            $orderData = DB::connection('woocommerce')
+                ->table('posts')
+                ->leftJoin('postmeta', 'posts.ID', '=', 'postmeta.post_id')
+                ->where('posts.ID', $id)
+                ->where('posts.post_type', 'shop_order')
+                ->get()
+                ->reduce(function($carry, $item) {
+                    if (!isset($carry['order'])) {
+                        $carry['order'] = [
+                            'ID' => $item->ID,
+                            'post_date' => $item->post_date,
+                            'post_status' => $item->post_status
+                        ];
+                    }
+                    if ($item->meta_key) {
+                        $carry['meta'][$item->meta_key] = $item->meta_value;
+                    }
+                    return $carry;
+                }, ['order' => null, 'meta' => []]);
 
-            if (!$order) {
+            if (!$orderData['order']) {
                 return null;
             }
 
-            $meta = DB::connection('woocommerce')->table('postmeta')
-                ->where('post_id', $order->ID)
-                ->pluck('meta_value', 'meta_key');
+            $order = $orderData['order'];
+            $meta = collect($orderData['meta'] ?? []);
 
-            $itemMetas = DB::connection('woocommerce')
-                ->table('woocommerce_order_itemmeta')
-                ->get()
-                ->groupBy('order_item_id');
-
+            // Get line items with their meta in one query
             $lineItems = DB::connection('woocommerce')
                 ->table('woocommerce_order_items as oi')
-                ->select(['oi.order_item_id', 'oi.order_item_name'])
-                ->where('oi.order_id', $order->ID)
+                ->leftJoin('woocommerce_order_itemmeta as oim', 'oi.order_item_id', '=', 'oim.order_item_id')
+                ->select([
+                    'oi.order_item_id',
+                    'oi.order_item_name',
+                    'oim.meta_key',
+                    'oim.meta_value'
+                ])
+                ->where('oi.order_id', $order['ID'])
                 ->where('oi.order_item_type', 'line_item')
                 ->get()
-                ->map(function ($item) use ($itemMetas) {
-                    $meta = $itemMetas[$item->order_item_id]->pluck('meta_value', 'meta_key') ?? collect();
+                ->groupBy('order_item_id')
+                ->map(function ($items) {
+                    $firstItem = $items->first();
+                    $metas = $items->whereNotNull('meta_key')
+                              ->pluck('meta_value', 'meta_key');
 
                     return [
-                        'id' => $item->order_item_id,
-                        'name' => $item->order_item_name,
-                        'sku' => $meta['_sku'] ?? '',
-                        'quantity' => $meta['_qty'] ?? 1,
-                        'price' => $meta['_line_total'] ?? 0,
-                        'total' => $meta['_line_total'] ?? 0,
-                        'meta_data' => $meta->map(function ($value, $key) {
+                        'id' => $firstItem->order_item_id,
+                        'name' => $firstItem->order_item_name,
+                        'sku' => $metas['_sku'] ?? '',
+                        'quantity' => $metas['_qty'] ?? 1,
+                        'price' => $metas['_line_total'] ?? 0,
+                        'total' => $metas['_line_total'] ?? 0,
+                        'meta_data' => $metas->map(function ($value, $key) {
                             return [
                                 'display_key' => $key,
                                 'display_value' => $value
@@ -126,11 +187,18 @@ class WooCommerceService
                     ];
                 });
 
+            // Get order notes
             $notes = DB::connection('woocommerce')
                 ->table('comments as c')
                 ->leftJoin('commentmeta as cm', 'c.comment_ID', '=', 'cm.comment_id')
-                ->select(['c.comment_ID', 'c.comment_content', 'c.comment_date', 'c.comment_author', 'cm.meta_value as is_customer_note'])
-                ->where('c.comment_post_ID', $order->ID)
+                ->select([
+                    'c.comment_ID',
+                    'c.comment_content',
+                    'c.comment_date',
+                    'c.comment_author',
+                    'cm.meta_value as is_customer_note'
+                ])
+                ->where('c.comment_post_ID', $order['ID'])
                 ->where('c.comment_type', 'order_note')
                 ->get()
                 ->map(function ($note) {
@@ -144,9 +212,9 @@ class WooCommerceService
                 });
 
             return [
-                'id' => $order->ID,
-                'status' => $this->cleanStatus($order->post_status),
-                'date_created' => $order->post_date,
+                'id' => $order['ID'],
+                'status' => $this->cleanStatus($order['post_status']),
+                'date_created' => $order['post_date'],
                 'currency' => $meta['_order_currency'] ?? 'USD',
                 'total' => $meta['_order_total'] ?? 0,
                 'subtotal' => $meta['_order_subtotal'] ?? 0,
@@ -182,7 +250,7 @@ class WooCommerceService
                 'payment_method_title' => $meta['_payment_method_title'] ?? '',
                 'transaction_id' => $meta['_transaction_id'] ?? null,
                 'shipping_method' => $meta['_shipping_method'] ?? '',
-                'line_items' => $lineItems,
+                'line_items' => $lineItems->values(),
                 'order_notes' => $notes,
                 'meta_data' => $meta->map(function ($value, $key) {
                     return ['display_key' => $key, 'display_value' => $value];
@@ -195,29 +263,5 @@ class WooCommerceService
             ]);
             return null;
         }
-    }
-
-    protected function formatOrderSummary($order)
-    {
-        $meta = DB::connection('woocommerce')->table('postmeta')
-            ->where('post_id', $order->id)
-            ->whereIn('meta_key', [
-                '_billing_first_name',
-                '_billing_last_name',
-                '_billing_phone',
-                '_order_total'
-            ])->pluck('meta_value', 'meta_key');
-
-        return [
-            'id' => $order->id,
-            'status' => $this->cleanStatus($order->post_status),
-            'date_created' => $order->post_date,
-            'total' => $meta['_order_total'] ?? 0,
-            'billing' => [
-                'first_name' => $meta['_billing_first_name'] ?? '',
-                'last_name' => $meta['_billing_last_name'] ?? '',
-                'phone' => $meta['_billing_phone'] ?? ''
-            ]
-        ];
     }
 }

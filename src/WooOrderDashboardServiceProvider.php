@@ -9,12 +9,6 @@ use Makiomar\WooOrderDashboard\Http\Controllers\WooOrderDashboardController;
 
 class WooOrderDashboardServiceProvider extends ServiceProvider
 {
-    /**
-     * The application instance.
-     *
-     * @var \Illuminate\Contracts\Foundation\Application
-     */
-    protected $app;
 
     /**
      * Register services.

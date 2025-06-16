@@ -10,6 +10,24 @@ use Makiomar\WooOrderDashboard\Http\Controllers\WooOrderDashboardController;
 class WooOrderDashboardServiceProvider extends ServiceProvider
 {
     /**
+     * The application instance.
+     *
+     * @var \Illuminate\Contracts\Foundation\Application
+     */
+    protected $app;
+
+    /**
+     * Create a new service provider instance.
+     *
+     * @param  \Illuminate\Contracts\Foundation\Application  $app
+     * @return void
+     */
+    public function __construct($app)
+    {
+        parent::__construct($app);
+    }
+
+    /**
      * Register services.
      */
     public function register(): void

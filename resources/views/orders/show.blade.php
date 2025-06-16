@@ -19,7 +19,8 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    @include('partials.order-summary')
+                    @include('partials.order-info')
+                    @include('partials.order-customer-info')
                     @include('partials.order-addresses')
                     @include('partials.order-items')
                     @include('partials.order-meta')
@@ -66,4 +67,4 @@
         margin-top: 10px;
     }
 </style>
-@endpush
+@endpush 

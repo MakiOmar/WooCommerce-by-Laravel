@@ -5,17 +5,24 @@ namespace Makiomar\WooOrderDashboard;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Blade;
+use Makiomar\WooOrderDashboard\Http\Controllers\WooOrderDashboardController;
 
 class WooOrderDashboardServiceProvider extends ServiceProvider
 {
-    public function register()
+    /**
+     * Register services.
+     */
+    public function register(): void
     {
         $this->mergeConfigFrom(
             __DIR__.'/../config/woo-order-dashboard.php', 'woo-order-dashboard'
         );
     }
 
-    public function boot()
+    /**
+     * Bootstrap services.
+     */
+    public function boot(): void
     {
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'woo-order-dashboard');
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
@@ -29,7 +36,7 @@ class WooOrderDashboardServiceProvider extends ServiceProvider
         ], 'views');
 
         $this->publishes([
-            __DIR__.'/../resources/assets' => public_path('vendor/woo-order-dashboard'),
+            __DIR__.'/../public/css' => public_path('css'),
         ], 'assets');
 
         // Don't register routes by default
@@ -68,10 +75,14 @@ class WooOrderDashboardServiceProvider extends ServiceProvider
 
     protected function loadAssets()
     {
-        // Register CSS
-        $this->app['view']->share('wooOrderDashboardStyles', asset('vendor/woo-order-dashboard/css/app.css'));
+        // Load CSS
+        $this->publishes([
+            __DIR__.'/../resources/assets/css' => public_path('css'),
+        ], 'assets');
 
-        // Register JavaScript
-        $this->app['view']->share('wooOrderDashboardScripts', asset('vendor/woo-order-dashboard/js/app.js'));
+        // Load JS
+        $this->publishes([
+            __DIR__.'/../resources/assets/js' => public_path('js'),
+        ], 'assets');
     }
 } 

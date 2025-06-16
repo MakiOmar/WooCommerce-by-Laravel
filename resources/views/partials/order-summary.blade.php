@@ -1,25 +1,44 @@
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-    <x-order.section title="Customer Information">
-        <x-order.detail label="Name" :value="$order['billing']['first_name'] . ' ' . $order['billing']['last_name']" />
-        <x-order.detail label="Email" :value="$order['billing']['email']" />
-        <x-order.detail label="Phone" :value="$order['billing']['phone']" />
-        @if($order['customer_id'])
-            <x-order.detail label="Customer ID" :value="$order['customer_id']" />
-        @endif
-    </x-order.section>
+<div class="card mb-4">
+    <div class="card-header">
+        <h5 class="mb-0">Order Summary</h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Order ID:</dt>
+                    <dd class="col-sm-8">{{ $order['id'] }}</dd>
 
-    <x-order.section title="Order Information">
-        <x-order.detail label="Order Number" :value="$order['id']" />
-        <x-order.detail label="Date" :value="\Carbon\Carbon::parse($order['date_created'])->format(config('woo-order-dashboard.date_format.display'))" />
-        <x-order.detail label="Payment Method" :value="$order['payment_method_title']" />
-        <x-order.detail label="Transaction ID" :value="$order['transaction_id'] ?? 'N/A'" />
-        <x-order.detail label="Currency" :value="$order['currency']" />
-    </x-order.section>
+                    <dt class="col-sm-4">Order Number:</dt>
+                    <dd class="col-sm-8">{{ $order['number'] }}</dd>
 
-    <x-order.section title="Shipping Information">
-        <x-order.detail label="Method" :value="$order['shipping_method'] ?? 'N/A'" />
-        <x-order.detail label="Cost" :value="$order['shipping_total']" />
-        <x-order.detail label="Tax" :value="$order['shipping_tax']" />
-    </x-order.section>
+                    <dt class="col-sm-4">Date Created:</dt>
+                    <dd class="col-sm-8">{{ \Carbon\Carbon::parse($order['date_created'])->format('M d, Y H:i') }}</dd>
+
+                    <dt class="col-sm-4">Status:</dt>
+                    <dd class="col-sm-8">
+                        <span class="badge badge-{{ $order['status'] === 'completed' ? 'success' : 'primary' }}">
+                            {{ ucfirst($order['status']) }}
+                        </span>
+                    </dd>
+                </dl>
+            </div>
+            <div class="col-md-6">
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Payment Method:</dt>
+                    <dd class="col-sm-8">{{ $order['payment_method_title'] }}</dd>
+
+                    <dt class="col-sm-4">Shipping Method:</dt>
+                    <dd class="col-sm-8">{{ $order['shipping_method'] }}</dd>
+
+                    <dt class="col-sm-4">Total Items:</dt>
+                    <dd class="col-sm-8">{{ count($order['line_items']) }}</dd>
+
+                    <dt class="col-sm-4">Total Amount:</dt>
+                    <dd class="col-sm-8">{{ $order['currency_symbol'] }}{{ number_format($order['total'], 2) }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
 </div>
 

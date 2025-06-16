@@ -1,13 +1,24 @@
-@if(isset($order['order_notes']) && count($order['order_notes']) > 0)
-    <div class="mb-8">
-        <h2 class="text-lg font-semibold mb-4">Order Notes</h2>
-        <div class="space-y-4">
-            @foreach($order['order_notes'] as $note)
-                <div class="p-3 bg-gray-100 rounded">
-                    <p class="text-sm text-gray-800">{{ $note['note'] }}</p>
-                    <p class="text-xs text-gray-500 mt-1">By {{ $note['added_by'] }} on {{ \Carbon\Carbon::parse($note['date_created'])->format(config('woo-order-dashboard.date_format.display')) }}</p>
-                </div>
-            @endforeach
+@if(!empty($order['order_notes']))
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Order Notes</h5>
+        </div>
+        <div class="card-body">
+            <div class="timeline">
+                @foreach($order['order_notes'] as $note)
+                    <div class="timeline-item">
+                        <div class="timeline-badge {{ $note['is_customer_note'] ? 'bg-info' : 'bg-primary' }}">
+                            <i class="fas {{ $note['is_customer_note'] ? 'fa-user' : 'fa-store' }}"></i>
+                        </div>
+                        <div class="timeline-content">
+                            <p class="mb-1">{{ $note['note'] }}</p>
+                            <small class="text-muted">
+                                {{ $note['author'] }} - {{ \Carbon\Carbon::parse($note['date_created'])->format('M d, Y H:i') }}
+                            </small>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
         </div>
     </div>
 @endif

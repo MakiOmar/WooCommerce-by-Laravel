@@ -13,7 +13,7 @@
                         <div class="timeline-content">
                             <p class="mb-1">{{ $note['note'] }}</p>
                             <small class="text-muted">
-                                {{ $note['author'] }} - {{ \Carbon\Carbon::parse($note['date_created'])->format('M d, Y H:i') }}
+                                {{ $note['added_by'] }} - {{ \Carbon\Carbon::parse($note['date_created'])->format('M d, Y H:i') }}
                             </small>
                         </div>
                     </div>

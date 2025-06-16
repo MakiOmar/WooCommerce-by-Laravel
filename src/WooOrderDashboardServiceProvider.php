@@ -43,10 +43,6 @@ class WooOrderDashboardServiceProvider extends ServiceProvider
             __DIR__.'/../resources/views' => resource_path('views/vendor/woo-order-dashboard'),
         ], 'views');
 
-        $this->publishes([
-            __DIR__.'/../public/css' => public_path('css'),
-        ], 'assets');
-
         // Don't register routes by default
         // $this->loadRoutesFrom(__DIR__.'/routes/web.php');
 

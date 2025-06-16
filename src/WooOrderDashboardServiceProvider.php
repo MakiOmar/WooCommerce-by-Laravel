@@ -84,12 +84,12 @@ class WooOrderDashboardServiceProvider extends ServiceProvider
     {
         // Load CSS
         $this->publishes([
-            __DIR__.'/../resources/assets/css' => public_path('css'),
+            __DIR__.'/../resources/assets/css' => public_path('vendor/woo-order-dashboard/css'),
         ], 'assets');
 
         // Load JS
         $this->publishes([
-            __DIR__.'/../resources/assets/js' => public_path('js'),
+            __DIR__.'/../resources/assets/js' => public_path('vendor/woo-order-dashboard/js'),
         ], 'assets');
     }
 } 

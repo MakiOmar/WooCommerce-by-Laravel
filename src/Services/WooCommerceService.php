@@ -104,14 +104,26 @@ class WooCommerceService
                 ['path' => request()->url(), 'query' => request()->query()]
             );
 
-            return $paginator;
+            return [
+                'data' => $paginator,
+                'headers' => [
+                    'X-WP-Total' => $total,
+                    'X-WP-TotalPages' => ceil($total / $perPage)
+                ]
+            ];
         } catch (\Exception $e) {
             Log::error('WooCommerce Orders Query Failed', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return new LengthAwarePaginator(collect(), 0, $perPage, 1);
+            return [
+                'data' => new LengthAwarePaginator(collect(), 0, $perPage, 1),
+                'headers' => [
+                    'X-WP-Total' => 0,
+                    'X-WP-TotalPages' => 0
+                ]
+            ];
         }
     }
 

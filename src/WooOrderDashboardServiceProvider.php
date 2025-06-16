@@ -16,16 +16,6 @@ class WooOrderDashboardServiceProvider extends ServiceProvider
      */
     protected $app;
 
-    /**
-     * Create a new service provider instance.
-     *
-     * @param  \Illuminate\Contracts\Foundation\Application  $app
-     * @return void
-     */
-    public function __construct($app)
-    {
-        parent::__construct($app);
-    }
 
     /**
      * Register services.
@@ -67,8 +57,7 @@ class WooOrderDashboardServiceProvider extends ServiceProvider
         $this->loadAssets();
 
         // Register WooCommerce Order Dashboard routes
-        $this->app->make(\Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider::class)
-            ->registerAdminRoutes();
+        $this->registerAdminRoutes();
     }
 
     /**

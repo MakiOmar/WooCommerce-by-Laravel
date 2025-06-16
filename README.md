@@ -233,84 +233,99 @@ The package uses Laravel's built-in pagination system. Here's how to configure a
      ```
    - Ensure the WooCommerceService is returning a LengthAwarePaginator instance
 
+## Integration with Existing Admin System
+
+If you have an existing admin system with its own authentication and routes, you can integrate this package as follows:
+
+1. In your `app/Providers/RouteServiceProvider.php`, add the following to your `boot` method:
+
+```php
+public function boot()
+{
+    // ... your existing code ...
+
+    // Register WooCommerce Order Dashboard routes
+    $this->app->make(\Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider::class)
+        ->registerAdminRoutes();
+}
+```
+
+2. Configure the route prefix (optional):
+
+You can configure the route prefix in two ways:
+
+a. Using the config file (`config/woo-order-dashboard.php`):
+```php
+'route_prefix' => 'your-prefix', // e.g., 'admin/woo' or leave empty for no prefix
+```
+
+b. Using environment variable in `.env`:
+```env
+WOO_ORDER_DASHBOARD_ROUTE_PREFIX=your-prefix
+```
+
+c. Or pass it directly when registering routes:
+```php
+$this->app->make(\Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider::class)
+    ->registerAdminRoutes('your-prefix');
+```
+
+3. Make sure your admin layout (`layouts.admin`) includes the necessary assets:
+
+```php
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- ... your existing head content ... -->
+    
+    <!-- WooCommerce Order Dashboard Assets -->
+    <link href="{{ asset('css/woo-order-dashboard.css') }}" rel="stylesheet">
+    @stack('styles')
+</head>
+<body>
+    <!-- ... your existing body content ... -->
+    
+    <!-- WooCommerce Order Dashboard Scripts -->
+    @stack('scripts')
+</body>
+</html>
+```
+
+4. The package will now use your existing admin authentication middleware (`auth:admin`).
+
 ## Usage
 
-### Routes
+The package provides the following routes:
 
-The package registers the following routes:
+- `woo.dashboard`: Main dashboard view
+- `woo.orders`: Orders list with filtering
+- `woo.orders.show`: Individual order view
 
-- `GET /woo-dashboard` - Main dashboard
-- `GET /woo-dashboard/orders` - Orders list with filters
-- `GET /woo-dashboard/orders/{id}` - Single order view
+## Customization
 
 ### Views
 
-The package provides the following views:
+Publish the views to customize them:
 
-- `vendor/woo-order-dashboard/dashboard/index.blade.php` - Main dashboard
-- `vendor/woo-order-dashboard/orders/index.blade.php` - Orders list
-- `vendor/woo-order-dashboard/orders/show.blade.php` - Single order view
-
-### Customization
-
-1. **Views**:
-   - Publish the views to customize them
-   - Extend the layout in `resources/views/vendor/woo-order-dashboard/layouts/app.blade.php`
-
-2. **Styling**:
-   - The package includes basic styles in `public/vendor/woo-order-dashboard/css/app.css`
-   - Override styles in your application's CSS
-
-3. **JavaScript**:
-   - Basic functionality in `public/vendor/woo-order-dashboard/js/app.js`
-   - Extend or override as needed
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Database Connection Errors**:
-   - Verify database credentials
-   - Check network connectivity
-   - Ensure proper permissions
-   - Verify SSL configuration if using
-
-   If you see the error "Unsupported driver [http]", check that:
-   - The `driver` is set to `mysql` in your database configuration
-   - Your `.env` file has the correct database connection settings
-   - You've cleared the configuration cache:
-     ```bash
-     php artisan config:clear
-     php artisan cache:clear
-     ```
-
-2. **Performance Issues**:
-   - Enable caching
-   - Check database indexes
-   - Monitor query performance
-   - Adjust pagination settings
-
-3. **Missing Data**:
-   - Verify WooCommerce version compatibility
-   - Check database prefix configuration
-   - Ensure proper table structure
-
-### Debugging
-
-Enable debug mode in your `.env`:
-```env
-APP_DEBUG=true
+```bash
+php artisan vendor:publish --tag=views
 ```
 
-Check Laravel logs in `storage/logs/laravel.log` for detailed error messages.
+### Assets
 
-## Support
+Publish the assets:
 
-For issues and feature requests, please use the [GitHub issue tracker](https://github.com/makiomar/woo-order-dashboard/issues).
+```bash
+php artisan vendor:publish --tag=assets
+```
+
+## Configuration Options
+
+See `config/woo-order-dashboard.php` for all available configuration options.
 
 ## License
 
-This package is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+This package is open-sourced software licensed under the [MIT license](LICENSE.md).
 
 ## Contributing
 

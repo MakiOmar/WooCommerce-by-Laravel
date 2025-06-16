@@ -19,12 +19,12 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    @include('partials.order-info', ['order' => $order])
-                    @include('partials.order-customer-info', ['order' => $order])
-                    @include('partials.order-addresses', ['order' => $order])
-                    @include('partials.order-items', ['order' => $order])
-                    @include('partials.order-meta', ['order' => $order])
-                    @include('partials.order-notes', ['order' => $order])
+                    @include('woo-order-dashboard::partials.order-info', ['order' => $order])
+                    @include('woo-order-dashboard::partials.order-customer-info', ['order' => $order])
+                    @include('woo-order-dashboard::partials.order-addresses', ['order' => $order])
+                    @include('woo-order-dashboard::partials.order-items', ['order' => $order])
+                    @include('woo-order-dashboard::partials.order-meta', ['order' => $order])
+                    @include('woo-order-dashboard::partials.order-notes', ['order' => $order])
                 </div>
             </div>
         </div>

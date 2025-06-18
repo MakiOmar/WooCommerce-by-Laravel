@@ -1,0 +1,52 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+
+class OrdersController extends Controller
+{
+    public function create()
+    {
+        return view('orders.create');
+    }
+
+    public function productsSearch(Request $request)
+    {
+        $query = $request->input('q');
+        $products = app(\Makiomar\WooOrderDashboard\Services\WooCommerceService::class)->getProducts($query);
+        return response()->json($products);
+    }
+
+    public function customersSearch(Request $request)
+    {
+        $query = $request->input('q');
+        $customers = app(\Makiomar\WooOrderDashboard\Services\WooCommerceService::class)->getCustomers($query);
+        return response()->json($customers);
+    }
+
+    public function store(Request $request)
+    {
+        $data = $request->validate([
+            'order_items' => 'required|string',
+            'customer_id' => 'nullable|integer',
+            'customer_note' => 'nullable|string',
+            'private_note' => 'nullable|string',
+            'order_date' => 'nullable|date',
+            'order_hour' => 'nullable|string',
+            'order_minute' => 'nullable|string',
+            'order_status' => 'nullable|string',
+            'payment_method' => 'nullable|string',
+            'discount' => 'nullable|numeric',
+            'shipping' => 'nullable|numeric',
+            'taxes' => 'nullable|numeric',
+        ]);
+        $data['order_items'] = json_decode($data['order_items'], true);
+        $result = app(\Makiomar\WooOrderDashboard\Services\WooCommerceService::class)->createOrder($data);
+        if ($result['success']) {
+            return redirect()->route('woo.orders')->with('success', 'Order created successfully. Order ID: ' . $result['order_id']);
+        } else {
+            return back()->with('error', $result['message'] ?? 'Order creation failed.');
+        }
+    }
+} 

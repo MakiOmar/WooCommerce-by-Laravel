@@ -284,4 +284,171 @@ class WooCommerceService
             return null;
         }
     }
+
+    public function getProducts($search = null)
+    {
+        $query = DB::connection('woocommerce')->table('posts as p')
+            ->leftJoin('postmeta as sku', function($join) {
+                $join->on('p.ID', '=', 'sku.post_id')
+                     ->where('sku.meta_key', '_sku');
+            })
+            ->leftJoin('postmeta as price', function($join) {
+                $join->on('p.ID', '=', 'price.post_id')
+                     ->where('price.meta_key', '_price');
+            })
+            ->select([
+                'p.ID as id',
+                'p.post_title as name',
+                'sku.meta_value as sku',
+                'price.meta_value as price'
+            ])
+            ->where('p.post_type', 'product')
+            ->where('p.post_status', 'publish');
+
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('p.post_title', 'like', "%$search%")
+                  ->orWhere('sku.meta_value', 'like', "%$search%")
+                  ->orWhere('p.ID', $search);
+            });
+        }
+
+        $products = $query->limit(20)->get();
+
+        return $products->map(function($product) {
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'sku' => $product->sku,
+                'price' => $product->price,
+            ];
+        });
+    }
+
+    public function getCustomers($search = null)
+    {
+        $query = DB::connection('woocommerce')->table('users as u')
+            ->leftJoin('usermeta as fn', function($join) {
+                $join->on('u.ID', '=', 'fn.user_id')->where('fn.meta_key', 'first_name');
+            })
+            ->leftJoin('usermeta as ln', function($join) {
+                $join->on('u.ID', '=', 'ln.user_id')->where('ln.meta_key', 'last_name');
+            })
+            ->select([
+                'u.ID as id',
+                'u.user_email as email',
+                'fn.meta_value as first_name',
+                'ln.meta_value as last_name'
+            ]);
+        if ($search) {
+            $query->where(function($q) use ($search) {
+                $q->where('u.user_email', 'like', "%$search%")
+                  ->orWhere('fn.meta_value', 'like', "%$search%")
+                  ->orWhere('ln.meta_value', 'like', "%$search%")
+                  ->orWhere('u.ID', $search);
+            });
+        }
+        $customers = $query->limit(20)->get();
+        return $customers->map(function($c) {
+            return [
+                'id' => $c->id,
+                'name' => trim(($c->first_name ?? '').' '.($c->last_name ?? '')),
+                'email' => $c->email,
+            ];
+        });
+    }
+
+    public function createOrder($data)
+    {
+        $db = DB::connection('woocommerce');
+        $prefix = config('woo-order-dashboard.db_prefix', 'wp_');
+        try {
+            $db->beginTransaction();
+
+            // 1. Customer creation if needed
+            $customerId = $data['customer_id'] ?? null;
+            if (!$customerId) {
+                // Create new user (customer)
+                $customerId = $db->table($prefix.'users')->insertGetId([
+                    'user_login' => 'phoneorder_'.uniqid(),
+                    'user_pass' => bcrypt(str_random(12)),
+                    'user_email' => '',
+                    'user_registered' => now(),
+                    'user_status' => 0,
+                    'display_name' => 'Phone Order',
+                ]);
+                // Optionally add usermeta for name, etc.
+            }
+
+            // 2. Insert order (shop_order) in posts
+            $orderId = $db->table($prefix.'posts')->insertGetId([
+                'post_author' => $customerId,
+                'post_date' => now(),
+                'post_date_gmt' => now('UTC'),
+                'post_content' => $data['customer_note'] ?? '',
+                'post_title' => 'Order &ndash; '.now()->format('F j, Y @ H:i'),
+                'post_status' => 'wc-'.($data['order_status'] ?? 'pending'),
+                'comment_status' => 'open',
+                'ping_status' => 'closed',
+                'post_name' => 'order-'.now()->timestamp,
+                'post_type' => 'shop_order',
+                'post_modified' => now(),
+                'post_modified_gmt' => now('UTC'),
+                'guid' => '',
+            ]);
+
+            // 3. Add order meta (postmeta)
+            $meta = [
+                ['post_id' => $orderId, 'meta_key' => '_customer_user', 'meta_value' => $customerId],
+                ['post_id' => $orderId, 'meta_key' => '_order_total', 'meta_value' => $data['discount'] + $data['shipping'] + $data['taxes']],
+                ['post_id' => $orderId, 'meta_key' => '_order_discount', 'meta_value' => $data['discount']],
+                ['post_id' => $orderId, 'meta_key' => '_order_shipping', 'meta_value' => $data['shipping']],
+                ['post_id' => $orderId, 'meta_key' => '_order_tax', 'meta_value' => $data['taxes']],
+                ['post_id' => $orderId, 'meta_key' => '_payment_method', 'meta_value' => $data['payment_method']],
+                ['post_id' => $orderId, 'meta_key' => '_created_via', 'meta_value' => 'phone-order-dashboard'],
+            ];
+            $db->table($prefix.'postmeta')->insert($meta);
+
+            // 4. Add order items
+            foreach ($data['order_items'] as $item) {
+                $orderItemId = $db->table($prefix.'woocommerce_order_items')->insertGetId([
+                    'order_item_name' => $item['name'],
+                    'order_item_type' => 'line_item',
+                    'order_id' => $orderId,
+                ]);
+                $db->table($prefix.'woocommerce_order_itemmeta')->insert([
+                    ['order_item_id' => $orderItemId, 'meta_key' => '_product_id', 'meta_value' => $item['id']],
+                    ['order_item_id' => $orderItemId, 'meta_key' => '_qty', 'meta_value' => $item['qty']],
+                    ['order_item_id' => $orderItemId, 'meta_key' => '_line_total', 'meta_value' => $item['price'] * $item['qty']],
+                ]);
+            }
+
+            // 5. Add order notes (comments)
+            if (!empty($data['private_note'])) {
+                $db->table($prefix.'comments')->insert([
+                    'comment_post_ID' => $orderId,
+                    'comment_author' => 'admin',
+                    'comment_content' => $data['private_note'],
+                    'comment_type' => 'order_note',
+                    'comment_approved' => 1,
+                    'comment_date' => now(),
+                    'comment_date_gmt' => now('UTC'),
+                ]);
+            }
+
+            $db->commit();
+            return [
+                'success' => true,
+                'order_id' => $orderId,
+                'message' => 'Order created successfully.'
+            ];
+        } catch (\Exception $e) {
+            $db->rollBack();
+            \Log::error('Order creation failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
+            return [
+                'success' => false,
+                'message' => 'Order creation failed: '.$e->getMessage()
+            ];
+        }
+    }
 }

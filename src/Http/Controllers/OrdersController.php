@@ -3,12 +3,13 @@
 namespace Makiomar\WooOrderDashboard\Http\Controllers;
 
 use Illuminate\Http\Request;
+use App\Http\Controllers\Controller;
 
 class OrdersController extends Controller
 {
     public function create()
     {
-        return view('orders.create');
+        return view('woo-order-dashboard::orders.create');
     }
 
     public function productsSearch(Request $request)

@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
 @section('content')
 <form id="order-create-form" method="POST" action="{{ route('orders.store') }}">
@@ -65,9 +65,6 @@
                         <div class="form-check mb-2">
                             <input class="form-check-input" type="checkbox" id="shipToDifferentAddress" name="ship_to_different_address">
                             <label class="form-check-label" for="shipToDifferentAddress">Ship to a different address?</label>
-                        </div>
-                        <div class="mb-2">
-                            <small>Need extra features?<a href="#">Buy Pro version</a></small>
                         </div>
                     </div>
                 </div>
@@ -136,7 +133,7 @@
 </form>
 @endsection
 
-@push('scripts')
+@push('js')
 <script>
 $(function() {
     var $input = $('input[placeholder="Find products..."]');
@@ -170,7 +167,8 @@ $(function() {
                 $dropdown.append('<div class="list-group-item">No products found</div>');
             } else {
                 products.forEach(function(p) {
-                    $dropdown.append('<button type="button" class="list-group-item list-group-item-action" data-id="'+p.id+'" data-name="'+p.name+'" data-price="'+p.price+'">'+p.name+' <small class="text-muted">('+p.sku+')</small> <span class="float-right">'+(p.price || 0)+'</span></button>');
+                    var skuOrId = p.sku ? p.sku : p.id;
+                    $dropdown.append('<button type="button" class="list-group-item list-group-item-action" data-id="'+p.id+'" data-name="'+p.name+'" data-price="'+p.price+'">'+p.name+' <small class="text-muted">('+skuOrId+')</small> <span class="float-right">'+(p.price || 0)+'</span></button>');
                 });
             }
             $input.after($dropdown);

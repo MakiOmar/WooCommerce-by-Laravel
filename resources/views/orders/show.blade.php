@@ -21,7 +21,6 @@
                 <div class="card-body">
                     @include('woo-order-dashboard::partials.order-info', ['order' => $order])
                     @include('woo-order-dashboard::partials.order-customer-info', ['order' => $order])
-                    @include('woo-order-dashboard::partials.order-addresses', ['order' => $order])
                     @include('woo-order-dashboard::partials.order-items', ['order' => $order])
                     @include('woo-order-dashboard::partials.order-meta', ['order' => $order])
                     @include('woo-order-dashboard::partials.order-notes', ['order' => $order])

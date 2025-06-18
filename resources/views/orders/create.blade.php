@@ -180,14 +180,20 @@ $(function() {
         var name = $(this).data('name');
         var price = $(this).data('price') || 0;
         var id = $(this).data('id');
-        var row = '<tr data-id="'+id+'">'
-            +'<td>'+name+'</td>'
-            +'<td class="order-price">'+price+'</td>'
-            +'<td><input type="number" class="form-control form-control-sm order-qty" value="1" min="1" style="width:70px;"></td>'
-            +'<td class="order-total">'+price+'</td>'
-            +'<td><button type="button" class="btn btn-sm btn-danger remove-item">&times;</button></td>'
-            +'</tr>';
-        $prodTable.append(row);
+        var $existingRow = $prodTable.find('tr[data-id="'+id+'"]');
+        if ($existingRow.length) {
+            var $qtyInput = $existingRow.find('.order-qty');
+            $qtyInput.val(parseInt($qtyInput.val() || 1) + 1).trigger('input');
+        } else {
+            var row = '<tr data-id="'+id+'">'
+                +'<td>'+name+'</td>'
+                +'<td class="order-price">'+price+'</td>'
+                +'<td><input type="number" class="form-control form-control-sm order-qty" value="1" min="1" style="width:70px;"></td>'
+                +'<td class="order-total">'+price+'</td>'
+                +'<td><button type="button" class="btn btn-sm btn-danger remove-item">&times;</button></td>'
+                +'</tr>';
+            $prodTable.append(row);
+        }
         if ($prodDropdown) $prodDropdown.remove();
         $prodInput.val('');
         recalcSummary();

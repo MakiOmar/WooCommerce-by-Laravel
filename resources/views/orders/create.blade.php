@@ -133,16 +133,17 @@
 </form>
 @endsection
 
-@push('js')
+@push('scripts')
 <script>
 $(function() {
-    var $input = $('input[placeholder="Find products..."]');
-    var $table = $('table tbody');
-    var $dropdown;
+    // Product search dropdown
+    var $prodInput = $('input[placeholder="Find products..."]');
+    var $prodTable = $('table tbody');
+    var $prodDropdown;
 
     function recalcSummary() {
         var subtotal = 0;
-        $table.find('tr').each(function() {
+        $prodTable.find('tr').each(function() {
             var qty = parseInt($(this).find('.order-qty').val() || 1);
             var price = parseFloat($(this).find('.order-price').text() || 0);
             var total = qty * price;
@@ -157,25 +158,25 @@ $(function() {
         $('.order-total').text(total.toFixed(2));
     }
 
-    $input.on('input', function() {
+    $prodInput.on('input', function() {
         var q = $(this).val();
-        if (q.length < 2) { if ($dropdown) $dropdown.remove(); return; }
+        if (q.length < 2) { if ($prodDropdown) $prodDropdown.remove(); return; }
         $.getJSON("{{ route('orders.products.search') }}", {q: q}, function(products) {
-            if ($dropdown) $dropdown.remove();
-            $dropdown = $('<div class="list-group position-absolute w-100" style="z-index:1000;"></div>');
+            if ($prodDropdown) $prodDropdown.remove();
+            $prodDropdown = $('<div class="list-group position-absolute w-100" style="z-index:1000;"></div>');
             if (products.length === 0) {
-                $dropdown.append('<div class="list-group-item">No products found</div>');
+                $prodDropdown.append('<div class="list-group-item">No products found</div>');
             } else {
                 products.forEach(function(p) {
                     var skuOrId = p.sku ? p.sku : p.id;
-                    $dropdown.append('<button type="button" class="list-group-item list-group-item-action" data-id="'+p.id+'" data-name="'+p.name+'" data-price="'+p.price+'">'+p.name+' <small class="text-muted">('+skuOrId+')</small> <span class="float-right">'+(p.price || 0)+'</span></button>');
+                    $prodDropdown.append('<button type="button" class="list-group-item list-group-item-action prod-item" data-id="'+p.id+'" data-name="'+p.name+'" data-price="'+p.price+'">'+p.name+' <small class="text-muted">('+skuOrId+')</small> <span class="float-right">'+(p.price || 0)+'</span></button>');
                 });
             }
-            $input.after($dropdown);
+            $prodInput.after($prodDropdown);
         });
     });
 
-    $(document).on('click', '.list-group-item-action', function() {
+    $(document).on('click', '.prod-item', function() {
         var name = $(this).data('name');
         var price = $(this).data('price') || 0;
         var id = $(this).data('id');
@@ -186,30 +187,28 @@ $(function() {
             +'<td class="order-total">'+price+'</td>'
             +'<td><button type="button" class="btn btn-sm btn-danger remove-item">&times;</button></td>'
             +'</tr>';
-        $table.append(row);
-        if ($dropdown) $dropdown.remove();
-        $input.val('');
+        $prodTable.append(row);
+        if ($prodDropdown) $prodDropdown.remove();
+        $prodInput.val('');
         recalcSummary();
     });
 
-    $table.on('input', '.order-qty', function() {
+    $prodTable.on('input', '.order-qty', function() {
         recalcSummary();
     });
 
-    $table.on('click', '.remove-item', function() {
+    $prodTable.on('click', '.remove-item', function() {
         $(this).closest('tr').remove();
         recalcSummary();
     });
 
     $(document).on('click', function(e) {
         if (!$(e.target).closest('.list-group, [placeholder="Find products..."]').length) {
-            if ($dropdown) $dropdown.remove();
+            if ($prodDropdown) $prodDropdown.remove();
         }
     });
 
-    $('.order-discount, .order-shipping, .order-taxes').on('input', recalcSummary);
-
-    // Customer autocomplete
+    // Customer autocomplete dropdown
     var $custInput = $('#customer-search');
     var $custDropdown;
     var $custDetails = $('#customer-details');
@@ -223,13 +222,13 @@ $(function() {
                 $custDropdown.append('<div class="list-group-item">No customers found. <a href="#" class="text-primary add-new-customer">Create new</a></div>');
             } else {
                 customers.forEach(function(c) {
-                    $custDropdown.append('<button type="button" class="list-group-item list-group-item-action" data-id="'+c.id+'" data-name="'+c.name+'" data-email="'+c.email+'">'+c.name+' <small class="text-muted">('+c.email+')</small></button>');
+                    $custDropdown.append('<button type="button" class="list-group-item list-group-item-action cust-item" data-id="'+c.id+'" data-name="'+c.name+'" data-email="'+c.email+'">'+c.name+' <small class="text-muted">('+c.email+')</small></button>');
                 });
             }
             $custInput.after($custDropdown);
         });
     });
-    $(document).on('click', '.list-group-item-action', function() {
+    $(document).on('click', '.cust-item', function() {
         var name = $(this).data('name');
         var email = $(this).data('email');
         var id = $(this).data('id');
@@ -248,10 +247,12 @@ $(function() {
         }
     });
 
+    $('.order-discount, .order-shipping, .order-taxes').on('input', recalcSummary);
+
     // On form submit, serialize order items and customer id
     $('#order-create-form').on('submit', function(e) {
         var items = [];
-        $table.find('tr').each(function() {
+        $prodTable.find('tr').each(function() {
             items.push({
                 id: $(this).data('id'),
                 name: $(this).find('td').eq(0).text(),
@@ -261,7 +262,7 @@ $(function() {
         });
         $('#order_items').val(JSON.stringify(items));
         // Set customer id if selected
-        var custId = $custDropdown && $custDropdown.find('.list-group-item-action.active').data('id');
+        var custId = $custDropdown && $custDropdown.find('.cust-item.active').data('id');
         if (custId) $('#customer_id').val(custId);
     });
 });

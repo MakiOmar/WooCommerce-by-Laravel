@@ -21,18 +21,18 @@
                                 <button class="btn btn-primary ml-2" type="button">Products history</button>
                             </div>
                         </div>
-                        <table class="table table-bordered mb-3">
+                        <table class="table" id="products-table">
                             <thead>
                                 <tr>
-                                    <th>Item</th>
-                                    <th>Cost</th>
-                                    <th>Qty</th>
+                                    <th>Product</th>
+                                    <th>Price</th>
+                                    <th>Quantity</th>
                                     <th>Total</th>
                                     <th></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <!-- Order items will be dynamically added here -->
+                                <!-- Products will be added here dynamically -->
                             </tbody>
                         </table>
                         <input type="hidden" name="order_items" id="order_items">
@@ -107,22 +107,28 @@
                             <span>ج.م <span class="order-subtotal">0.00</span></span>
                         </div>
                         <div><a href="#" class="add-coupon">Add coupon</a></div>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span>Discount</span>
-                            <input type="number" class="form-control form-control-sm order-discount ml-2" value="0" min="0" style="width:100px;display:inline-block;" name="discount">
+                        <div class="form-group row mb-2">
+                            <label class="col-sm-2 col-form-label">Discount</label>
+                            <div class="col-sm-4">
+                                <input type="number" class="form-control order-discount" value="0" min="0" step="0.01">
+                            </div>
                         </div>
-                        <div class="d-flex justify-content-between align-items-center mt-2">
-                            <span>Shipping</span>
-                            <input type="number" class="form-control form-control-sm order-shipping ml-2" value="0" min="0" style="width:100px;display:inline-block;" name="shipping">
+                        <div class="form-group row mb-2">
+                            <label class="col-sm-2 col-form-label">Shipping</label>
+                            <div class="col-sm-4">
+                                <input type="number" class="form-control order-shipping" value="0" min="0" step="0.01">
+                            </div>
                         </div>
-                        <div class="d-flex justify-content-between align-items-center mt-2">
-                            <span>Taxes:</span>
-                            <input type="number" class="form-control form-control-sm order-taxes ml-2" value="0" min="0" style="width:100px;display:inline-block;" name="taxes">
+                        <div class="form-group row mb-2">
+                            <label class="col-sm-2 col-form-label">Taxes</label>
+                            <div class="col-sm-4">
+                                <input type="number" class="form-control order-taxes" value="0" min="0" step="0.01">
+                            </div>
                         </div>
                         <hr>
                         <div class="d-flex justify-content-between font-weight-bold">
                             <span>Order Total</span>
-                            <span>ج.م <span class="order-total">0.00</span></span>
+                            <span>ج.م <span class="order-grand-total">0.00</span></span>
                         </div>
                     </div>
                 </div>
@@ -147,15 +153,20 @@ $(function() {
             var qty = parseInt($(this).find('.order-qty').val() || 1);
             var price = parseFloat($(this).find('.order-price').text() || 0);
             var total = qty * price;
-            $(this).find('.order-total').text(total.toFixed(2));
+            $(this).find('.line-item-total').text(total.toFixed(2));
             subtotal += total;
         });
         var discount = parseFloat($('.order-discount').val() || 0);
         var shipping = parseFloat($('.order-shipping').val() || 0);
         var taxes = parseFloat($('.order-taxes').val() || 0);
         var total = subtotal - discount + shipping + taxes;
-        $('.order-subtotal').text(subtotal.toFixed(2));
-        $('.order-total').text(total.toFixed(2));
+        $('.order-subtotal').text(formatCurrency(subtotal));
+        $('.order-grand-total').text(formatCurrency(total));
+    }
+
+    // Helper function to format currency consistently
+    function formatCurrency(amount) {
+        return parseFloat(amount).toFixed(2);
     }
 
     $prodInput.on('input', function() {
@@ -189,7 +200,7 @@ $(function() {
                 +'<td>'+name+'</td>'
                 +'<td class="order-price">'+price+'</td>'
                 +'<td><input type="number" class="form-control form-control-sm order-qty" value="1" min="1" style="width:70px;"></td>'
-                +'<td class="order-total">'+price+'</td>'
+                +'<td class="line-item-total">'+price+'</td>'
                 +'<td><button type="button" class="btn btn-sm btn-danger remove-item">&times;</button></td>'
                 +'</tr>';
             $prodTable.append(row);

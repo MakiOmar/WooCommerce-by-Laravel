@@ -102,44 +102,70 @@
                 </div>
                 <div class="card">
                     <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <span>Subtotal</span>
-                            <span>ج.م <span class="order-subtotal">0.00</span></span>
-                        </div>
-                        <div><a href="#" class="add-coupon">Add coupon</a></div>
-                        <div class="form-group row mb-2">
-                            <label class="col-sm-2 col-form-label">Discount</label>
-                            <div class="col-sm-4">
-                                <input type="number" class="form-control order-discount" value="0" min="0" step="0.01">
+                        <!-- Order Summary Section -->
+                        <div class="card mt-4">
+                            <div class="card-header bg-light">
+                                <h5 class="card-title mb-0">Order Summary</h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- Subtotal Row -->
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <span class="text-muted">Subtotal</span>
+                                    <span class="font-weight-bold">ج.م <span class="order-subtotal">0.00</span></span>
+                                </div>
+
+                                <!-- Discount Row -->
+                                <div class="row mb-3">
+                                    <div class="col-6">
+                                        <label class="form-label text-muted">Discount</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">ج.م</span>
+                                            <input type="number" class="form-control order-discount" value="0" min="0" step="0.01">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Shipping Row -->
+                                <div class="row mb-3">
+                                    <div class="col-6">
+                                        <label class="form-label text-muted">Shipping</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">ج.م</span>
+                                            <input type="number" class="form-control order-shipping" value="0" min="0" step="0.01">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Tax Row -->
+                                <div class="row mb-3">
+                                    <div class="col-6">
+                                        <label class="form-label text-muted">Tax</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">ج.م</span>
+                                            <input type="number" class="form-control order-taxes" value="0" min="0" step="0.01">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <hr>
+
+                                <!-- Total Row -->
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">Total</h5>
+                                    <h5 class="mb-0">ج.م <span class="order-grand-total">0.00</span></h5>
+                                </div>
                             </div>
                         </div>
-                        <div class="form-group row mb-2">
-                            <label class="col-sm-2 col-form-label">Shipping</label>
-                            <div class="col-sm-4">
-                                <input type="number" class="form-control order-shipping" value="0" min="0" step="0.01">
-                            </div>
-                        </div>
-                        <div class="form-group row mb-2">
-                            <label class="col-sm-2 col-form-label">Taxes</label>
-                            <div class="col-sm-4">
-                                <input type="number" class="form-control order-taxes" value="0" min="0" step="0.01">
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="d-flex justify-content-between font-weight-bold">
-                            <span>Order Total</span>
-                            <span>ج.م <span class="order-grand-total">0.00</span></span>
-                        </div>
+                        <button type="submit" class="btn btn-success btn-block mt-3">Submit Order</button>
                     </div>
                 </div>
-                <button type="submit" class="btn btn-success btn-block mt-3">Submit Order</button>
             </div>
         </div>
     </div>
 </form>
 @endsection
 
-@push('scripts')
+@push('js')
 <script>
 $(function() {
     // Product search dropdown
@@ -149,22 +175,29 @@ $(function() {
 
     function recalcSummary() {
         var subtotal = 0;
-        $prodTable.find('tr').each(function() {
-            var qty = parseInt($(this).find('.order-qty').val() || 1);
-            var price = parseFloat($(this).find('.order-price').text() || 0);
-            var total = qty * price;
-            $(this).find('.line-item-total').text(total.toFixed(2));
-            subtotal += total;
+        
+        // Calculate subtotal from line items
+        $('#products-table tbody tr').each(function() {
+            var qty = parseInt($(this).find('.order-qty').val()) || 1;
+            var price = parseFloat($(this).find('.order-price').text()) || 0;
+            var lineTotal = qty * price;
+            $(this).find('.line-item-total').text(formatCurrency(lineTotal));
+            subtotal += lineTotal;
         });
-        var discount = parseFloat($('.order-discount').val() || 0);
-        var shipping = parseFloat($('.order-shipping').val() || 0);
-        var taxes = parseFloat($('.order-taxes').val() || 0);
-        var total = subtotal - discount + shipping + taxes;
+
+        // Get additional costs
+        var discount = parseFloat($('.order-discount').val()) || 0;
+        var shipping = parseFloat($('.order-shipping').val()) || 0;
+        var taxes = parseFloat($('.order-taxes').val()) || 0;
+
+        // Calculate final total
+        var grandTotal = subtotal - discount + shipping + taxes;
+
+        // Update display
         $('.order-subtotal').text(formatCurrency(subtotal));
-        $('.order-grand-total').text(formatCurrency(total));
+        $('.order-grand-total').text(formatCurrency(grandTotal));
     }
 
-    // Helper function to format currency consistently
     function formatCurrency(amount) {
         return parseFloat(amount).toFixed(2);
     }
@@ -264,7 +297,12 @@ $(function() {
         }
     });
 
-    $('.order-discount, .order-shipping, .order-taxes').on('input', recalcSummary);
+    // Bind events to recalculate on any change
+    $(document).on('change keyup', '.order-qty, .order-discount, .order-shipping, .order-taxes', recalcSummary);
+    $(document).on('click', '.remove-item', function() {
+        $(this).closest('tr').remove();
+        recalcSummary();
+    });
 
     // On form submit, serialize order items and customer id
     $('#order-create-form').on('submit', function(e) {

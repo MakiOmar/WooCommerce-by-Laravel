@@ -6,6 +6,7 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Route;
 
 class WooOrderDashboardServiceProvider extends ServiceProvider
 {
@@ -40,8 +41,8 @@ class WooOrderDashboardServiceProvider extends ServiceProvider
         // Load only required migrations
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations/required');
 
-        // Register routes
-        $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+        // Register routes if enabled
+        $this->registerRoutes();
 
         // Register views
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'woo-order-dashboard');
@@ -64,6 +65,37 @@ class WooOrderDashboardServiceProvider extends ServiceProvider
 
         // Configure performance optimizations
         $this->configurePerformanceOptimizations();
+    }
+
+    /**
+     * Register routes if enabled in configuration
+     *
+     * @return void
+     */
+    protected function registerRoutes()
+    {
+        // Check if routes are enabled
+        if (!config('woo-order-dashboard.routes.enabled', false)) {
+            return;
+        }
+
+        // Get route configuration
+        $prefix = config('woo-order-dashboard.routes.prefix', 'woo-dashboard');
+        $middleware = config('woo-order-dashboard.routes.middleware', 'web');
+        $namePrefix = config('woo-order-dashboard.routes.name_prefix', 'woo.');
+
+        Route::group([
+            'prefix' => $prefix,
+            'middleware' => $middleware,
+            'as' => $namePrefix,
+        ], function () {
+            $this->loadRoutesFrom(__DIR__.'/../routes/web.php');
+        });
+
+        // Publish routes file for customization
+        $this->publishes([
+            __DIR__.'/../routes/web.php' => base_path('routes/woo-dashboard.php'),
+        ], 'routes');
     }
 
     protected function loadAssets()

@@ -16,10 +16,22 @@ return [
     | Route Configuration
     |--------------------------------------------------------------------------
     |
-    | Configure the routes for the WooCommerce Order Dashboard.
+    | Configure routing settings for the dashboard.
     |
     */
-    'route_prefix' => env('WOO_ORDER_DASHBOARD_ROUTE_PREFIX', ''),
+    'routes' => [
+        // Enable/disable route registration
+        'enabled' => env('WOO_ROUTES_ENABLED', false),
+
+        // Route prefix for all dashboard routes
+        'prefix' => env('WOO_ROUTE_PREFIX', 'woo-dashboard'),
+
+        // Middleware to apply to all dashboard routes
+        'middleware' => env('WOO_ROUTE_MIDDLEWARE', 'web'),
+
+        // Name prefix for route names
+        'name_prefix' => env('WOO_ROUTE_NAME_PREFIX', 'woo.'),
+    ],
 
     /*
     |--------------------------------------------------------------------------

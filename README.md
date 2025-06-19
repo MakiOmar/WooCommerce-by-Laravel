@@ -12,6 +12,7 @@ A powerful Laravel package that provides a clean and efficient dashboard for man
 - 📱 Responsive and modern UI
 - 🔒 Safe integration with WooCommerce (no database modifications by default)
 - 📦 Optional database optimizations for new installations
+- 🛣️ Flexible routing with optional route registration
 
 ## Requirements
 
@@ -38,6 +39,47 @@ php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashbo
 
 ```env
 WOO_DB_PREFIX=wp_  # Your WordPress table prefix
+```
+
+## Route Configuration
+
+By default, the package's routes are disabled to give you full control over routing. To enable and configure the routes:
+
+1. Enable routes in your `.env`:
+```env
+WOO_ROUTES_ENABLED=true
+```
+
+2. Configure route settings (optional):
+```env
+WOO_ROUTE_PREFIX=woo-dashboard
+WOO_ROUTE_MIDDLEWARE=web
+WOO_ROUTE_NAME_PREFIX=woo.
+```
+
+3. Publish and customize routes (optional):
+```bash
+php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="routes"
+```
+
+This will create `routes/woo-dashboard.php` which you can customize.
+
+4. Available Routes (when enabled):
+```
+GET /woo-dashboard/orders          - List orders
+GET /woo-dashboard/orders/{id}     - View order details
+GET /woo-dashboard/statistics      - View dashboard statistics
+```
+
+You can also register routes manually in your application's route file:
+
+```php
+use Makiomar\WooOrderDashboard\Http\Controllers\WooOrderDashboardController;
+
+Route::group(['middleware' => ['web', 'auth']], function () {
+    Route::get('/my-custom-path/orders', [WooOrderDashboardController::class, 'index'])->name('custom.orders.index');
+    Route::get('/my-custom-path/orders/{id}', [WooOrderDashboardController::class, 'show'])->name('custom.orders.show');
+});
 ```
 
 ## Optional Database Optimizations

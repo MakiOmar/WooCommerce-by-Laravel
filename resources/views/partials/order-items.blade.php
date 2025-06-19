@@ -1,5 +1,4 @@
 @include('woo-order-dashboard::partials.order-summary')
-@include('woo-order-dashboard::partials.order-addresses')
 
 <div class="card mb-4">
     <div class="card-header">

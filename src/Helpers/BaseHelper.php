@@ -24,11 +24,30 @@ abstract class BaseHelper
     /**
      * Get the database prefix
      *
+     * @param string $tableName
      * @return string
      */
-    protected static function getPrefix()
+    protected static function getPrefix($tableName = '')
     {
-        return config('woo-order-dashboard.db_prefix', 'wp_');
+        $prefix = config('woo-order-dashboard.db_prefix', 'wp_');
+        
+        // If the database name already includes the prefix, don't add it again
+        if (str_contains(config('database.connections.woocommerce.database'), $prefix)) {
+            return '';
+        }
+        
+        return $prefix;
+    }
+
+    /**
+     * Get the full table name with prefix
+     *
+     * @param string $tableName
+     * @return string
+     */
+    protected static function getTableName($tableName)
+    {
+        return static::getPrefix() . $tableName;
     }
 
     /**

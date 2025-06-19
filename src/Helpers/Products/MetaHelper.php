@@ -16,7 +16,7 @@ class MetaHelper extends BaseHelper
     {
         return self::remember("woo_product_meta_{$productId}", 3600, function () use ($productId) {
             $meta = self::getConnection()
-                ->table(self::getPrefix() . 'postmeta')
+                ->table(self::getTableName('postmeta'))
                 ->where('post_id', $productId)
                 ->get()
                 ->pluck('meta_value', 'meta_key')
@@ -44,7 +44,7 @@ class MetaHelper extends BaseHelper
             ];
 
             $meta = self::getConnection()
-                ->table(self::getPrefix() . 'postmeta')
+                ->table(self::getTableName('postmeta'))
                 ->where('post_id', $productId)
                 ->whereIn('meta_key', $priceFields)
                 ->get()
@@ -81,7 +81,7 @@ class MetaHelper extends BaseHelper
             ];
 
             $meta = self::getConnection()
-                ->table(self::getPrefix() . 'postmeta')
+                ->table(self::getTableName('postmeta'))
                 ->where('post_id', $productId)
                 ->whereIn('meta_key', $stockFields)
                 ->get()
@@ -115,7 +115,7 @@ class MetaHelper extends BaseHelper
             ];
 
             $meta = self::getConnection()
-                ->table(self::getPrefix() . 'postmeta')
+                ->table(self::getTableName('postmeta'))
                 ->where('post_id', $productId)
                 ->whereIn('meta_key', $fields)
                 ->get()
@@ -141,7 +141,7 @@ class MetaHelper extends BaseHelper
     {
         return self::remember("woo_product_gallery_{$productId}", 3600, function () use ($productId) {
             $gallery = self::getConnection()
-                ->table(self::getPrefix() . 'postmeta')
+                ->table(self::getTableName('postmeta'))
                 ->where('post_id', $productId)
                 ->where('meta_key', '_product_image_gallery')
                 ->value('meta_value');
@@ -160,7 +160,7 @@ class MetaHelper extends BaseHelper
     {
         return self::remember("woo_product_attributes_{$productId}", 3600, function () use ($productId) {
             $attributes = self::getConnection()
-                ->table(self::getPrefix() . 'postmeta')
+                ->table(self::getTableName('postmeta'))
                 ->where('post_id', $productId)
                 ->where('meta_key', '_product_attributes')
                 ->value('meta_value');

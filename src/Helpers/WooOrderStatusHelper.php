@@ -5,7 +5,7 @@ namespace Makiomar\WooOrderDashboard\Helpers;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 
-class WooOrderStatusHelper
+class WooOrderStatusHelper extends BaseHelper
 {
     /**
      * Get all WooCommerce order statuses
@@ -14,11 +14,9 @@ class WooOrderStatusHelper
      */
     public static function getAllStatuses()
     {
-        return Cache::remember('woo_order_statuses', 3600, function () {
-            $prefix = config('woo-order-dashboard.db_prefix', 'wp_');
-            
-            $statuses = DB::connection('woocommerce')
-                ->table($prefix . 'posts')
+        return self::remember('woo_order_statuses', 3600, function () {
+            $statuses = self::getConnection()
+                ->table(self::getTableName('posts'))
                 ->select('post_name', 'post_title')
                 ->where('post_type', 'wc_order_status')
                 ->orderBy('menu_order', 'ASC')

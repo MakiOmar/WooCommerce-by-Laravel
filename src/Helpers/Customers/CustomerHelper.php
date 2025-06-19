@@ -16,8 +16,8 @@ class CustomerHelper extends BaseHelper
     {
         return self::remember("woo_customer_{$customerId}", 3600, function () use ($customerId) {
             $customer = self::getConnection()
-                ->table(self::getPrefix() . 'users as u')
-                ->leftJoin(self::getPrefix() . 'usermeta as um', 'u.ID', '=', 'um.user_id')
+                ->table(self::getTableName('users') . ' as u')
+                ->leftJoin(self::getTableName('usermeta') . ' as um', 'u.ID', '=', 'um.user_id')
                 ->where('u.ID', $customerId)
                 ->select('u.*', 'um.meta_key', 'um.meta_value')
                 ->get();

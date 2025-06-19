@@ -1,23 +1,24 @@
-# WooCommerce Order Dashboard
+# WooCommerce Order Dashboard for Laravel
 
-A Laravel package for managing and displaying WooCommerce orders with advanced filtering and data visualization capabilities.
+A powerful Laravel package that provides a clean and efficient dashboard for managing WooCommerce orders. This package is designed to work seamlessly with your existing WooCommerce installation while providing enhanced performance and functionality.
 
 ## Features
 
-- Comprehensive order management dashboard
-- Advanced filtering by date, status, and custom meta fields
-- Detailed order view with all WooCommerce data
-- Responsive design with modern UI
-- Direct database integration with WooCommerce
-- Secure connection handling for live sites
-- Caching support for better performance
+- 🚀 High-performance order management
+- 📊 Real-time order statistics and analytics
+- 🔍 Advanced order filtering and search
+- 🎯 Smart caching system with multiple driver support
+- 🛠️ Comprehensive helper classes for WooCommerce data
+- 📱 Responsive and modern UI
+- 🔒 Safe integration with WooCommerce (no database modifications by default)
+- 📦 Optional database optimizations for new installations
 
 ## Requirements
 
-- PHP >= 8.1
-- Laravel >= 10.0
-- WooCommerce >= 6.0
-- MySQL >= 5.7
+- PHP 7.4 or higher
+- Laravel 8.0 or higher
+- WordPress with WooCommerce installed
+- MySQL 5.7+ or MariaDB 10.2+
 
 ## Installation
 
@@ -27,294 +28,235 @@ A Laravel package for managing and displaying WooCommerce orders with advanced f
 composer require makiomar/woo-order-dashboard
 ```
 
-2. Publish the configuration file:
+2. Publish the configuration:
 
 ```bash
-php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="woo-order-dashboard-config"
+php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider"
 ```
 
-3. Publish the views:
+3. Configure your database connection in `.env`:
 
+```env
+WOO_DB_PREFIX=wp_  # Your WordPress table prefix
+```
+
+## Optional Database Optimizations
+
+The package includes optional database optimizations that can be used for new WooCommerce installations. These are disabled by default to ensure compatibility with existing installations.
+
+To use the optional database optimizations:
+
+1. Publish the optional migrations:
 ```bash
-php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="woo-order-dashboard-views"
+php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="optional-migrations"
 ```
 
-4. Publish the assets:
+2. Review the migrations in `database/migrations/optional`:
+   - These migrations add performance-optimizing indexes
+   - They are safe for new installations
+   - Use with caution on existing installations
 
+3. To apply the optional migrations:
 ```bash
-php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="woo-order-dashboard-assets"
+php artisan migrate --path=database/migrations/optional
 ```
+
+Note: Always backup your database before applying any migrations to an existing WooCommerce installation.
 
 ## Configuration
 
-### Database Connection
+### Basic Configuration
 
-The package uses a separate database connection for WooCommerce. You need to manually add the WooCommerce database connection to your `config/database.php` file:
-
-1. Open `config/database.php`
-2. Add the following connection to the `connections` array:
+The package supports extensive configuration through environment variables or the `config/woo-order-dashboard.php` file:
 
 ```php
-'connections' => [
-    // ... your existing connections ...
-
-    'woocommerce' => [
-        'driver' => 'mysql',
-        'url' => env('WOO_DATABASE_URL'),
-        'host' => env('WOO_DB_HOST', '127.0.0.1'),
-        'port' => env('WOO_DB_PORT', '3306'),
-        'database' => env('WOO_DB_DATABASE', 'forge'),
-        'username' => env('WOO_DB_USERNAME', 'forge'),
-        'password' => env('WOO_DB_PASSWORD', ''),
-        'unix_socket' => env('WOO_DB_SOCKET', ''),
-        'charset' => 'utf8mb4',
-        'collation' => 'utf8mb4_unicode_ci',
-        'prefix' => env('WOO_DB_PREFIX', 'wp_'),
-        'prefix_indexes' => true,
-        'strict' => true,
-        'engine' => null,
-        'options' => extension_loaded('pdo_mysql') ? array_filter([
-            PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-        ]) : [],
+return [
+    'db_prefix' => env('WOO_DB_PREFIX', 'wp_'),
+    
+    'cache' => [
+        'enabled' => env('WOO_CACHE_ENABLED', true),
+        'driver' => env('WOO_CACHE_DRIVER', 'file'),
+        'prefix' => env('WOO_CACHE_PREFIX', 'woo_'),
+        'tags_enabled' => env('WOO_CACHE_TAGS_ENABLED', true),
     ],
-],
+    // ... more configuration options
+];
 ```
 
-3. Add the following to your `.env` file:
+### Cache Configuration
+
+The package supports multiple cache drivers with automatic fallbacks:
 
 ```env
-# WooCommerce Database Configuration
-WOO_DB_HOST=your_woocommerce_db_host
-WOO_DB_PORT=3306
-WOO_DB_DATABASE=your_woocommerce_db_name
-WOO_DB_USERNAME=your_woocommerce_db_user
-WOO_DB_PASSWORD=your_woocommerce_db_password
-WOO_DB_PREFIX=wp_
+# Cache Settings
+WOO_CACHE_ENABLED=true
+WOO_CACHE_DRIVER=file  # Options: file, redis, memcached, array
+WOO_CACHE_PREFIX=woo_
+WOO_CACHE_TAGS_ENABLED=false  # Set to true if using Redis/Memcached
+
+# Cache TTL Settings (in seconds)
+WOO_CACHE_TTL_SHORT=300    # 5 minutes
+WOO_CACHE_TTL_MEDIUM=1800  # 30 minutes
+WOO_CACHE_TTL_LONG=3600    # 1 hour
+WOO_CACHE_TTL_EXTENDED=86400  # 24 hours
 ```
 
-Note: The `database.php` configuration is not published by the package because it's a core Laravel configuration file. You need to add the WooCommerce connection manually to ensure proper separation of database connections.
+### Performance Settings
 
-### Security Considerations for Live Sites
+Configure performance-related settings:
 
-When connecting to a live WooCommerce site, follow these security best practices:
+```env
+# Chunk size for processing large datasets
+WOO_CHUNK_SIZE=100
 
-1. **Database User Permissions**:
-   - Create a dedicated database user for the Laravel application
-   - Grant only necessary permissions:
-     ```sql
-     GRANT SELECT ON your_woocommerce_db.* TO 'laravel_user'@'%';
-     ```
-   - Never use the WordPress admin database user
+# Query timeout and retry settings
+WOO_QUERY_TIMEOUT=5
+WOO_MAX_RETRY_ATTEMPTS=3
 
-2. **Connection Security**:
-   - Use SSL/TLS for database connections
-   - Add SSL configuration to your `.env`:
-     ```env
-     WOO_DB_SSL=true
-     WOO_DB_SSL_CA=/path/to/ca-certificate.pem
-     ```
-
-3. **Network Security**:
-   - If possible, use a VPN or private network
-   - Configure firewall rules to allow only specific IPs
-   - Use SSH tunneling for remote connections:
-     ```bash
-     ssh -L 3307:localhost:3306 user@woocommerce-server
-     ```
-   Then update your `.env`:
-     ```env
-     WOO_DB_HOST=127.0.0.1
-     WOO_DB_PORT=3307
-     ```
-
-4. **Environment Variables**:
-   - Never commit `.env` files to version control
-   - Use different credentials for development and production
-   - Regularly rotate database passwords
-
-### Performance Optimization
-
-1. **Caching**:
-   Enable caching in `config/woo-order-dashboard.php`:
-   ```php
-   'cache' => [
-       'enabled' => true,
-       'ttl' => 300, // 5 minutes
-   ],
-   ```
-
-2. **Query Optimization**:
-   - The package uses efficient queries with proper indexing
-   - Consider adding these indexes to your WooCommerce database:
-     ```sql
-     ALTER TABLE wp_posts ADD INDEX type_status_date (post_type, post_status, post_date);
-     ALTER TABLE wp_postmeta ADD INDEX post_id_key (post_id, meta_key);
-     ALTER TABLE wp_woocommerce_order_items ADD INDEX order_id_type (order_id, order_item_type);
-     ```
-
-3. **Pagination**:
-   Configure pagination settings in `config/woo-order-dashboard.php`:
-   ```php
-   'pagination' => [
-       'per_page' => 15,
-       'page_name' => 'page',
-   ],
-   ```
-
-### Pagination
-
-The package uses Laravel's built-in pagination system. Here's how to configure and customize it:
-
-1. **Configuration**
-   In `config/woo-order-dashboard.php`:
-   ```php
-   'pagination' => [
-       'per_page' => 15,        // Number of orders per page
-       'page_name' => 'page',   // Query parameter name for pagination
-   ],
-   ```
-
-2. **Usage in Views**
-   The orders list view includes pagination links:
-   ```php
-   {{ $orders['data']->links() }}
-   ```
-
-3. **Customizing Pagination**
-   To customize the pagination appearance:
-
-   a. Publish Laravel's pagination views:
-   ```bash
-   php artisan vendor:publish --tag=laravel-pagination
-   ```
-
-   b. Edit the views in `resources/views/vendor/pagination/`:
-   - `default.blade.php` - Default pagination view
-   - `bootstrap-4.blade.php` - Bootstrap 4 pagination view
-   - `bootstrap-5.blade.php` - Bootstrap 5 pagination view
-   - `tailwind.blade.php` - Tailwind CSS pagination view
-   - `simple-bootstrap-4.blade.php` - Simple Bootstrap 4 pagination
-   - `simple-bootstrap-5.blade.php` - Simple Bootstrap 5 pagination
-   - `simple-tailwind.blade.php` - Simple Tailwind CSS pagination
-
-4. **Pagination Features**
-   - Maintains query parameters when navigating
-   - Shows total number of pages
-   - Displays current page
-   - Provides first/last page links
-   - Includes previous/next page links
-
-5. **Customizing Per Page**
-   You can change the number of items per page in the URL:
-   ```
-   /woo-dashboard/orders?per_page=20
-   ```
-
-6. **Pagination Styling**
-   The package includes basic pagination styles in `public/vendor/woo-order-dashboard/css/app.css`. You can override these styles in your application's CSS.
-
-7. **Pagination in API Responses**
-   When using the package's API endpoints, pagination information is included in the response headers:
-   ```
-   X-WP-Total: 100
-   X-WP-TotalPages: 7
-   ```
-
-8. **Troubleshooting Pagination**
-   If pagination links are not working:
-   - Clear the configuration cache:
-     ```bash
-     php artisan config:clear
-     ```
-   - Verify the pagination configuration in `config/woo-order-dashboard.php`
-   - Check that the view is using the correct pagination method:
-     ```php
-     {{ $orders['data']->links() }}
-     ```
-   - Ensure the WooCommerceService is returning a LengthAwarePaginator instance
-
-## Integration with Existing Admin System
-
-If you have an existing admin system with its own authentication and routes, you can integrate this package as follows:
-
-1. Add the routes to your admin routes file (e.g., `routes/admin.php`):
-
-```php
-use Makiomar\WooOrderDashboard\Http\Controllers\WooOrderDashboardController;
-
-Route::group(['middleware' => 'auth:admin'], function() {
-    // WooCommerce Order Dashboard Routes
-    Route::get('/woo-orders', [WooOrderDashboardController::class, 'index'])->name('woo.dashboard');
-    Route::get('/orders', [WooOrderDashboardController::class, 'orders'])->name('woo.orders');
-    Route::get('/orders/{id}', [WooOrderDashboardController::class, 'show'])->name('woo.orders.show');
-});
-```
-
-2. Make sure your admin layout (`layouts.admin`) includes the necessary assets:
-
-```php
-<!DOCTYPE html>
-<html>
-<head>
-    <!-- ... your existing head content ... -->
-    
-    <!-- WooCommerce Order Dashboard Assets -->
-    <link href="{{ asset('vendor/woo-order-dashboard/css/app.css') }}" rel="stylesheet">
-    @stack('styles')
-</head>
-<body>
-    <!-- ... your existing body content ... -->
-    
-    <!-- WooCommerce Order Dashboard Scripts -->
-    @stack('scripts')
-</body>
-</html>
-```
-
-3. Publish the assets:
-
-```bash
-php artisan vendor:publish --tag=assets
+# Monitoring
+WOO_QUERY_LOG_ENABLED=false
+WOO_SLOW_QUERY_THRESHOLD=1000
 ```
 
 ## Usage
 
-The package provides the following routes:
+### Order Management
 
-- `woo.dashboard`: Main dashboard view
-- `woo.orders`: Orders list with filtering
-- `woo.orders.show`: Individual order view
+```php
+use Makiomar\WooOrderDashboard\Helpers\Orders\OrderHelper;
 
-## Customization
+// Get orders with filters
+$orders = OrderHelper::getOrders([
+    'status' => ['processing', 'completed'],
+    'date_from' => '2024-01-01',
+    'date_to' => '2024-12-31'
+]);
 
-### Views
+// Get order details
+$orderItems = OrderHelper::getOrderItems($orderId);
+$orderMeta = OrderHelper::getOrderMeta($orderId);
 
-Publish the views to customize them:
-
-```bash
-php artisan vendor:publish --tag=views
+// Get order statistics
+$stats = OrderHelper::getOrderStats('2024-01-01', '2024-12-31');
 ```
 
-### Assets
+### Helper Classes
 
-Publish the assets:
+The package provides several helper classes for different aspects of WooCommerce:
 
-```bash
-php artisan vendor:publish --tag=assets
+```php
+use Makiomar\WooOrderDashboard\Helpers\Orders\OrderHelper;
+use Makiomar\WooOrderDashboard\Helpers\Products\ProductHelper;
+use Makiomar\WooOrderDashboard\Helpers\Customers\CustomerHelper;
+
+// Order operations
+$orders = OrderHelper::getOrders($filters);
+
+// Product operations
+$products = ProductHelper::getProducts($filters);
+
+// Customer operations
+$customers = CustomerHelper::getCustomers($filters);
 ```
 
-## Configuration Options
+### Performance Optimization
 
-See `config/woo-order-dashboard.php` for all available configuration options.
+The package includes built-in performance optimizations:
 
-## License
+1. **Smart Caching**:
+   - Automatic cache key generation
+   - Support for multiple cache drivers
+   - Intelligent cache invalidation
+   - Configurable TTL for different types of data
 
-This package is open-sourced software licensed under the [MIT license](LICENSE.md).
+2. **Query Optimization**:
+   - Efficient use of existing WooCommerce indexes
+   - Chunked processing for large datasets
+   - Query retry mechanism for better reliability
+
+3. **Memory Management**:
+   - Automatic chunk processing for large datasets
+   - Memory-efficient collection handling
+   - Configurable chunk sizes
+
+## Views and Assets
+
+The package includes pre-built views and assets:
+
+- Order listing view
+- Order detail view
+- Dashboard statistics
+- Filtering components
+- Modern, responsive UI
+
+To customize the views, publish them:
+
+```bash
+php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="views"
+```
+
+## Best Practices
+
+1. **Cache Configuration**:
+   - Use Redis or Memcached in production for best performance
+   - File cache works well for smaller sites
+   - Configure TTL values based on your needs
+
+2. **Performance Tuning**:
+   - Adjust chunk sizes based on your server capacity
+   - Monitor slow queries and adjust thresholds
+   - Use appropriate cache TTL values
+
+3. **Error Handling**:
+   - Monitor logs for cache and query errors
+   - Configure proper retry attempts for queries
+   - Set appropriate timeouts
+
+## Troubleshooting
+
+### Cache Issues
+
+If experiencing cache-related issues:
+
+1. Check if caching is enabled:
+```env
+WOO_CACHE_ENABLED=true
+```
+
+2. Try different cache drivers:
+```env
+WOO_CACHE_DRIVER=file  # or redis, memcached
+```
+
+3. Clear the cache:
+```bash
+php artisan cache:clear
+```
+
+### Performance Issues
+
+If experiencing performance issues:
+
+1. Adjust chunk sizes:
+```env
+WOO_CHUNK_SIZE=50  # Decrease if memory issues
+```
+
+2. Monitor slow queries:
+```env
+WOO_QUERY_LOG_ENABLED=true
+WOO_SLOW_QUERY_THRESHOLD=1000
+```
+
+3. Check cache configuration:
+```env
+WOO_CACHE_TTL_MEDIUM=1800  # Adjust based on needs
+```
 
 ## Contributing
 
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a new Pull Request 
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## License
+
+This package is open-sourced software licensed under the MIT license. 

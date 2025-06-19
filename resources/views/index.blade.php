@@ -40,9 +40,9 @@
                                 <label for="status" class="font-weight-bold">Status</label>
                                 <select name="status" id="status" class="form-control">
                                     <option value="">All Statuses</option>
-                                    @foreach(config('woo-order-dashboard.order_statuses', []) as $status)
-                                        <option value="{{ $status }}" {{ request('status') == $status ? 'selected' : '' }}>
-                                            {{ ucfirst($status) }}
+                                    @foreach(app(\Makiomar\WooOrderDashboard\Helpers\Orders\StatusHelper::class)->getAllStatuses() as $statusKey => $statusLabel)
+                                        <option value="{{ $statusKey }}" {{ request('status') == $statusKey ? 'selected' : '' }}>
+                                            {{ $statusLabel }}
                                         </option>
                                     @endforeach
                                 </select>
@@ -85,8 +85,8 @@
                                             {{ \Carbon\Carbon::parse($order['date_created'])->format('M d, Y H:i') }}
                                         </td>
                                         <td class="align-middle">
-                                            <span class="badge badge-{{ config('woo-order-dashboard.status_colors.' . $order['status'], 'secondary') }}">
-                                                {{ ucfirst($order['status']) }}
+                                            <span class="badge badge-{{ config('woo-order-dashboard.status_colors.' . $order['status'], 'default') }}">
+                                                {{ app(\Makiomar\WooOrderDashboard\Helpers\Orders\StatusHelper::class)->getStatusLabel($order['status']) }}
                                             </span>
                                         </td>
                                         <td class="align-middle">

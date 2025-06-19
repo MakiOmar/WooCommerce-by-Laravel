@@ -43,17 +43,7 @@ class WooOrderDashboardController extends Controller
             return $this->wooService->getOrders($filters);
         });
 
-        // Debug the data being passed to the view
-        Log::info('WooCommerce Orders Controller', [
-            'filters' => $filters,
-            'orders_structure' => [
-                'has_data' => isset($orders['data']),
-                'data_type' => isset($orders['data']) ? get_class($orders['data']) : 'none',
-                'total_orders' => isset($orders['data']) ? $orders['data']->total() : 0,
-                'current_page' => isset($orders['data']) ? $orders['data']->currentPage() : 0,
-                'per_page' => isset($orders['data']) ? $orders['data']->perPage() : 0,
-            ]
-        ]);
+
 
         return view('woo-order-dashboard::index', compact('orders', 'filters'));
     }

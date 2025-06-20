@@ -10,10 +10,8 @@ class PaymentGatewayHelper extends BaseHelper
     public function getEnabledPaymentGateways()
     {
         return static::remember('payment_gateways', static::CACHE_MEDIUM, function () {
-            $tableName = $this->getTableName('options');
-            
             $enabledGateways = DB::connection($this->getConnectionName())
-                ->table($tableName)
+                ->table('options')
                 ->selectRaw("
                     REPLACE(option_name, 'woocommerce_', '') as gateway_id,
                     REPLACE(REPLACE(option_name, 'woocommerce_', ''), '_settings', '') as gateway_name,
@@ -48,23 +46,5 @@ class PaymentGatewayHelper extends BaseHelper
     protected function getConnectionName()
     {
         return config('woo-order-dashboard.database.connection', 'woocommerce');
-    }
-
-    /**
-     * Get table name with proper prefix handling
-     *
-     * @param string $table
-     * @return string
-     */
-    protected function getTableName($table)
-    {
-        $prefix = config('woo-order-dashboard.database.prefix', 'wp_');
-        
-        // Check if the table already has the prefix
-        if (strpos($table, $prefix) === 0) {
-            return $table;
-        }
-        
-        return $prefix . $table;
     }
 } 

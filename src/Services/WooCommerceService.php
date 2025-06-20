@@ -5,6 +5,7 @@ namespace Makiomar\WooOrderDashboard\Services;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 class WooCommerceService
 {
@@ -370,7 +371,7 @@ class WooCommerceService
                 // Create new user (customer)
                 $customerId = $db->table('users')->insertGetId([
                     'user_login' => 'phoneorder_'.uniqid(),
-                    'user_pass' => bcrypt(str_random(12)),
+                    'user_pass' => bcrypt(Str::random(12)),
                     'user_email' => '',
                     'user_registered' => now(),
                     'user_status' => 0,

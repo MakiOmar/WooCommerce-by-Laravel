@@ -16,9 +16,9 @@ class CategoryHelper extends BaseHelper
     {
         return self::remember('woo_product_categories_' . ($hierarchical ? 'tree' : 'flat'), 3600, function () use ($hierarchical) {
             $categories = self::getConnection()
-                ->table(self::getTableName('terms') . ' as t')
-                ->join(self::getTableName('term_taxonomy') . ' as tt', 't.term_id', '=', 'tt.term_id')
-                ->leftJoin(self::getTableName('termmeta') . ' as tm', 't.term_id', '=', 'tm.term_id')
+                ->table('terms as t')
+                ->join('term_taxonomy as tt', 't.term_id', '=', 'tt.term_id')
+                ->leftJoin('termmeta as tm', 't.term_id', '=', 'tm.term_id')
                 ->where('tt.taxonomy', 'product_cat')
                 ->select([
                     't.term_id as id',
@@ -59,9 +59,9 @@ class CategoryHelper extends BaseHelper
     {
         return self::remember("woo_product_category_{$categoryId}", 3600, function () use ($categoryId) {
             $category = self::getConnection()
-                ->table(self::getTableName('terms') . ' as t')
-                ->join(self::getTableName('term_taxonomy') . ' as tt', 't.term_id', '=', 'tt.term_id')
-                ->leftJoin(self::getTableName('termmeta') . ' as tm', 't.term_id', '=', 'tm.term_id')
+                ->table('terms as t')
+                ->join('term_taxonomy as tt', 't.term_id', '=', 'tt.term_id')
+                ->leftJoin('termmeta as tm', 't.term_id', '=', 'tm.term_id')
                 ->where('tt.taxonomy', 'product_cat')
                 ->where('t.term_id', $categoryId)
                 ->select([
@@ -105,8 +105,8 @@ class CategoryHelper extends BaseHelper
         
         return self::remember($key, 1800, function () use ($categoryId, $limit, $offset) {
             $products = self::getConnection()
-                ->table(self::getTableName('term_relationships') . ' as tr')
-                ->join(self::getTableName('posts') . ' as p', 'tr.object_id', '=', 'p.ID')
+                ->table('term_relationships as tr')
+                ->join('posts as p', 'tr.object_id', '=', 'p.ID')
                 ->where('tr.term_taxonomy_id', $categoryId)
                 ->where('p.post_type', 'product')
                 ->where('p.post_status', 'publish')

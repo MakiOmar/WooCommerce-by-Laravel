@@ -22,35 +22,6 @@ abstract class BaseHelper
     protected const CHUNK_SIZE = 100;
 
     /**
-     * Get the database prefix
-     *
-     * @param string $tableName
-     * @return string
-     */
-    protected static function getPrefix($tableName = '')
-    {
-        $prefix = config('woo-order-dashboard.db_prefix', 'wp_');
-        
-        // If the database name already includes the prefix, don't add it again
-        if (str_contains(config('database.connections.woocommerce.database'), $prefix)) {
-            return '';
-        }
-        
-        return $prefix;
-    }
-
-    /**
-     * Get the full table name with prefix
-     *
-     * @param string $tableName
-     * @return string
-     */
-    protected static function getTableName($tableName)
-    {
-        return static::getPrefix() . $tableName;
-    }
-
-    /**
      * Get the database connection
      *
      * @return \Illuminate\Database\Connection

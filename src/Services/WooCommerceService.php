@@ -361,7 +361,6 @@ class WooCommerceService
     public function createOrder($data)
     {
         $db = DB::connection('woocommerce');
-        $prefix = config('woo-order-dashboard.db_prefix', 'wp_');
         try {
             $db->beginTransaction();
 
@@ -369,7 +368,7 @@ class WooCommerceService
             $customerId = $data['customer_id'] ?? null;
             if (!$customerId) {
                 // Create new user (customer)
-                $customerId = $db->table($prefix.'users')->insertGetId([
+                $customerId = $db->table('users')->insertGetId([
                     'user_login' => 'phoneorder_'.uniqid(),
                     'user_pass' => bcrypt(str_random(12)),
                     'user_email' => '',
@@ -381,7 +380,7 @@ class WooCommerceService
             }
 
             // 2. Insert order (shop_order) in posts
-            $orderId = $db->table($prefix.'posts')->insertGetId([
+            $orderId = $db->table('posts')->insertGetId([
                 'post_author' => $customerId,
                 'post_date' => now(),
                 'post_date_gmt' => now('UTC'),
@@ -407,16 +406,16 @@ class WooCommerceService
                 ['post_id' => $orderId, 'meta_key' => '_payment_method', 'meta_value' => $data['payment_method']],
                 ['post_id' => $orderId, 'meta_key' => '_created_via', 'meta_value' => 'phone-order-dashboard'],
             ];
-            $db->table($prefix.'postmeta')->insert($meta);
+            $db->table('postmeta')->insert($meta);
 
             // 4. Add order items
             foreach ($data['order_items'] as $item) {
-                $orderItemId = $db->table($prefix.'woocommerce_order_items')->insertGetId([
+                $orderItemId = $db->table('woocommerce_order_items')->insertGetId([
                     'order_item_name' => $item['name'],
                     'order_item_type' => 'line_item',
                     'order_id' => $orderId,
                 ]);
-                $db->table($prefix.'woocommerce_order_itemmeta')->insert([
+                $db->table('woocommerce_order_itemmeta')->insert([
                     ['order_item_id' => $orderItemId, 'meta_key' => '_product_id', 'meta_value' => $item['id']],
                     ['order_item_id' => $orderItemId, 'meta_key' => '_qty', 'meta_value' => $item['qty']],
                     ['order_item_id' => $orderItemId, 'meta_key' => '_line_total', 'meta_value' => $item['price'] * $item['qty']],
@@ -425,7 +424,7 @@ class WooCommerceService
 
             // 5. Add order notes (comments)
             if (!empty($data['private_note'])) {
-                $db->table($prefix.'comments')->insert([
+                $db->table('comments')->insert([
                     'comment_post_ID' => $orderId,
                     'comment_author' => 'admin',
                     'comment_content' => $data['private_note'],

@@ -16,8 +16,8 @@ class TaxonomyHelper extends BaseHelper
     {
         return self::remember("woo_terms_{$taxonomy}", 3600, function () use ($taxonomy) {
             $terms = self::getConnection()
-                ->table(self::getPrefix() . 'terms as t')
-                ->join(self::getPrefix() . 'term_taxonomy as tt', 't.term_id', '=', 'tt.term_id')
+                ->table('terms as t')
+                ->join('term_taxonomy as tt', 't.term_id', '=', 'tt.term_id')
                 ->where('tt.taxonomy', $taxonomy)
                 ->select('t.term_id', 't.name', 't.slug', 'tt.description', 'tt.parent', 'tt.count')
                 ->orderBy('t.name', 'ASC')
@@ -46,8 +46,8 @@ class TaxonomyHelper extends BaseHelper
     {
         return self::remember("woo_term_{$termId}", 3600, function () use ($termId) {
             $term = self::getConnection()
-                ->table(self::getPrefix() . 'terms as t')
-                ->join(self::getPrefix() . 'term_taxonomy as tt', 't.term_id', '=', 'tt.term_id')
+                ->table('terms as t')
+                ->join('term_taxonomy as tt', 't.term_id', '=', 'tt.term_id')
                 ->where('t.term_id', $termId)
                 ->select('t.term_id', 't.name', 't.slug', 'tt.taxonomy', 'tt.description', 'tt.parent', 'tt.count')
                 ->first();

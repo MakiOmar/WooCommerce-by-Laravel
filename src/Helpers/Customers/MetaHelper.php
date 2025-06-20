@@ -16,7 +16,7 @@ class MetaHelper extends BaseHelper
     {
         return self::remember("woo_customer_meta_{$customerId}", 3600, function () use ($customerId) {
             $meta = self::getConnection()
-                ->table(self::getPrefix() . 'usermeta')
+                ->table('usermeta')
                 ->where('user_id', $customerId)
                 ->get()
                 ->pluck('meta_value', 'meta_key')
@@ -50,7 +50,7 @@ class MetaHelper extends BaseHelper
             ];
 
             $meta = self::getConnection()
-                ->table(self::getPrefix() . 'usermeta')
+                ->table('usermeta')
                 ->where('user_id', $customerId)
                 ->whereIn('meta_key', $billingFields)
                 ->get()
@@ -95,7 +95,7 @@ class MetaHelper extends BaseHelper
             ];
 
             $meta = self::getConnection()
-                ->table(self::getPrefix() . 'usermeta')
+                ->table('usermeta')
                 ->where('user_id', $customerId)
                 ->whereIn('meta_key', $shippingFields)
                 ->get()
@@ -126,8 +126,8 @@ class MetaHelper extends BaseHelper
     {
         return self::remember("woo_customer_last_order_{$customerId}", 1800, function () use ($customerId) {
             $lastOrder = self::getConnection()
-                ->table(self::getPrefix() . 'posts as p')
-                ->join(self::getPrefix() . 'postmeta as pm', 'p.ID', '=', 'pm.post_id')
+                ->table('posts as p')
+                ->join('postmeta as pm', 'p.ID', '=', 'pm.post_id')
                 ->where('p.post_type', 'shop_order')
                 ->where('pm.meta_key', '_customer_user')
                 ->where('pm.meta_value', $customerId)
@@ -149,13 +149,13 @@ class MetaHelper extends BaseHelper
     {
         return self::remember("woo_customer_order_stats_{$customerId}", 3600, function () use ($customerId) {
             $stats = self::getConnection()
-                ->table(self::getPrefix() . 'posts as p')
-                ->join(self::getPrefix() . 'postmeta as pm_user', function($join) use ($customerId) {
+                ->table('posts as p')
+                ->join('postmeta as pm_user', function($join) use ($customerId) {
                     $join->on('p.ID', '=', 'pm_user.post_id')
                          ->where('pm_user.meta_key', '_customer_user')
                          ->where('pm_user.meta_value', $customerId);
                 })
-                ->join(self::getPrefix() . 'postmeta as pm_total', function($join) {
+                ->join('postmeta as pm_total', function($join) {
                     $join->on('p.ID', '=', 'pm_total.post_id')
                          ->where('pm_total.meta_key', '_order_total');
                 })

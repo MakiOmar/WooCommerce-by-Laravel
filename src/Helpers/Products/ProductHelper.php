@@ -16,8 +16,8 @@ class ProductHelper extends BaseHelper
     {
         return self::remember("woo_product_{$productId}", 3600, function () use ($productId) {
             $product = self::getConnection()
-                ->table(self::getTableName('posts') . ' as p')
-                ->leftJoin(self::getTableName('postmeta') . ' as pm', 'p.ID', '=', 'pm.post_id')
+                ->table('posts as p')
+                ->leftJoin('postmeta as pm', 'p.ID', '=', 'pm.post_id')
                 ->where('p.ID', $productId)
                 ->where('p.post_type', 'product')
                 ->select('p.*', 'pm.meta_key', 'pm.meta_value')

@@ -16,8 +16,8 @@ class CustomerHelper extends BaseHelper
     {
         return self::remember("woo_customer_{$customerId}", 3600, function () use ($customerId) {
             $customer = self::getConnection()
-                ->table(self::getTableName('users') . ' as u')
-                ->leftJoin(self::getTableName('usermeta') . ' as um', 'u.ID', '=', 'um.user_id')
+                ->table('users as u')
+                ->leftJoin('usermeta as um', 'u.ID', '=', 'um.user_id')
                 ->where('u.ID', $customerId)
                 ->select('u.*', 'um.meta_key', 'um.meta_value')
                 ->get();
@@ -40,12 +40,12 @@ class CustomerHelper extends BaseHelper
     public static function searchCustomers($search, $limit = 20)
     {
         $customers = self::getConnection()
-            ->table(self::getPrefix() . 'users as u')
-            ->leftJoin(self::getPrefix() . 'usermeta as fn', function($join) {
+            ->table('users as u')
+            ->leftJoin('usermeta as fn', function($join) {
                 $join->on('u.ID', '=', 'fn.user_id')
                      ->where('fn.meta_key', 'first_name');
             })
-            ->leftJoin(self::getPrefix() . 'usermeta as ln', function($join) {
+            ->leftJoin('usermeta as ln', function($join) {
                 $join->on('u.ID', '=', 'ln.user_id')
                      ->where('ln.meta_key', 'last_name');
             })

@@ -16,7 +16,7 @@ class WooOrderStatusHelper extends BaseHelper
     {
         return self::remember('woo_order_statuses', 3600, function () {
             $statuses = self::getConnection()
-                ->table(self::getTableName('posts'))
+                ->table('posts')
                 ->select('post_name', 'post_title')
                 ->where('post_type', 'wc_order_status')
                 ->orderBy('menu_order', 'ASC')

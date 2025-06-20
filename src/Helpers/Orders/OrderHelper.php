@@ -27,7 +27,7 @@ class OrderHelper extends BaseHelper
         
         return static::rememberWithTags([self::CACHE_TAG_ORDERS], $cacheKey, self::CACHE_MEDIUM, function () use ($filters) {
             $query = static::getConnection()
-                ->table(static::getTableName('posts'))
+                ->table('posts')
                 ->where('post_type', 'shop_order');
             
             // Apply filters using WooCommerce's existing indexes
@@ -67,7 +67,7 @@ class OrderHelper extends BaseHelper
             self::CACHE_MEDIUM,
             function () use ($orderId) {
                 $query = static::getConnection()
-                    ->table(static::getTableName('woocommerce_order_items'))
+                    ->table('woocommerce_order_items')
                     ->where('order_id', $orderId);
                 
                 return static::optimizeQuery($query)->get();
@@ -87,12 +87,12 @@ class OrderHelper extends BaseHelper
         static::executeWithRetry(function () use ($orderIds, $data) {
             static::processInChunks(
                 static::getConnection()
-                    ->table(static::getTableName('posts'))
+                    ->table('posts')
                     ->whereIn('ID', $orderIds),
                 function ($chunk) use ($data) {
                     foreach ($chunk as $order) {
                         static::getConnection()
-                            ->table(static::getTableName('posts'))
+                            ->table('posts')
                             ->where('ID', $order->ID)
                             ->update($data);
                     }
@@ -121,7 +121,7 @@ class OrderHelper extends BaseHelper
             self::CACHE_SHORT,
             function () use ($orderId, $key) {
                 $query = static::getConnection()
-                    ->table(static::getTableName('postmeta'))
+                    ->table('postmeta')
                     ->where('post_id', $orderId);
 
                 if ($key) {
@@ -146,7 +146,7 @@ class OrderHelper extends BaseHelper
         
         return static::rememberWithTags(self::CACHE_TAG_ORDERS, $cacheKey, self::CACHE_MEDIUM, function () use ($dateFrom, $dateTo) {
             $query = static::getConnection()
-                ->table(static::getTableName('posts'))
+                ->table('posts')
                 ->where('post_type', 'shop_order')
                 ->whereBetween('post_date', [$dateFrom, $dateTo]);
 
@@ -172,7 +172,7 @@ class OrderHelper extends BaseHelper
     public static function analyzeQueryPerformance(array $filters = [])
     {
         $query = static::getConnection()
-            ->table(static::getTableName('posts'))
+            ->table('posts')
             ->where('post_type', 'shop_order');
 
         if (!empty($filters)) {
@@ -194,7 +194,7 @@ class OrderHelper extends BaseHelper
     {
         return self::remember("woo_order_notes_{$orderId}", 3600, function () use ($orderId) {
             $notes = self::getConnection()
-                ->table(self::getTableName('comments'))
+                ->table('comments')
                 ->where('comment_post_ID', $orderId)
                 ->where('comment_type', 'order_note')
                 ->orderBy('comment_date', 'DESC')
@@ -225,8 +225,8 @@ class OrderHelper extends BaseHelper
         
         return self::remember($key, 3600, function () use ($period, $status) {
             $query = self::getConnection()
-                ->table(self::getTableName('posts') . ' as p')
-                ->leftJoin(self::getTableName('postmeta') . ' as pm', function($join) {
+                ->table('posts as p')
+                ->leftJoin('postmeta as pm', function($join) {
                     $join->on('p.ID', '=', 'pm.post_id')
                          ->where('pm.meta_key', '_order_total');
                 })
@@ -282,12 +282,12 @@ class OrderHelper extends BaseHelper
         
         return self::remember($key, 300, function () use ($limit, $status) {
             $query = self::getConnection()
-                ->table(self::getTableName('posts') . ' as p')
-                ->leftJoin(self::getTableName('postmeta') . ' as total', function($join) {
+                ->table('posts as p')
+                ->leftJoin('postmeta as total', function($join) {
                     $join->on('p.ID', '=', 'total.post_id')
                          ->where('total.meta_key', '_order_total');
                 })
-                ->leftJoin(self::getTableName('postmeta') . ' as billing_email', function($join) {
+                ->leftJoin('postmeta as billing_email', function($join) {
                     $join->on('p.ID', '=', 'billing_email.post_id')
                          ->where('billing_email.meta_key', '_billing_email');
                 })

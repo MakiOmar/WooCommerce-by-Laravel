@@ -94,7 +94,7 @@
                         <div class="form-group">
                             <label for="payment_method">{{ __('Payment Method') }}</label>
                             @php
-                                $paymentGatewayHelper = new \Woolaravel\WooOrderDashboard\Helpers\Gateways\PaymentGatewayHelper();
+                                $paymentGatewayHelper = new \Makiomar\WooOrderDashboard\Helpers\Gateways\PaymentGatewayHelper();
                                 $paymentGateways = $paymentGatewayHelper->getEnabledPaymentGateways();
                             @endphp
                             <select class="form-control" name="payment_method" id="payment_method">

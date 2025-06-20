@@ -1,9 +1,9 @@
 <?php
 
-namespace Woolaravel\WooOrderDashboard\Helpers\Gateways;
+namespace Makiomar\WooOrderDashboard\Helpers\Gateways;
 
 use Illuminate\Support\Facades\DB;
-use Woolaravel\WooOrderDashboard\Helpers\BaseHelper;
+use Makiomar\WooOrderDashboard\Helpers\BaseHelper;
 
 class PaymentGatewayHelper extends BaseHelper
 {

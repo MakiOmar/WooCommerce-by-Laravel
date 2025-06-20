@@ -91,11 +91,21 @@
                                 <!-- More statuses -->
                             </select>
                         </div>
-                        <div class="form-group mb-2">
-                            <label class="text-danger">Payment method *</label>
-                            <select class="form-control" name="payment_method">
-                                <option>No value</option>
-                                <!-- More payment methods -->
+                        <div class="form-group">
+                            <label for="payment_method">{{ __('Payment Method') }}</label>
+                            @php
+                                $paymentGatewayHelper = new \Woolaravel\WooOrderDashboard\Helpers\Gateways\PaymentGatewayHelper();
+                                $paymentGateways = $paymentGatewayHelper->getEnabledPaymentGateways();
+                            @endphp
+                            <select class="form-control" name="payment_method" id="payment_method">
+                                <option value="">{{ __('Select a payment method') }}</option>
+                                @if (!empty($paymentGateways))
+                                    @foreach ($paymentGateways as $gateway_id => $gateway)
+                                        <option value="{{ $gateway_id }}">{{ $gateway['title'] }}</option>
+                                    @endforeach
+                                @else
+                                    <option value="">{{ __('No payment methods available') }}</option>
+                                @endif
                             </select>
                         </div>
                     </div>

@@ -409,6 +409,13 @@ class WooCommerceService
         $db = DB::connection('woocommerce');
         $dateCreated = now();
 
+        // Handle custom order date if provided
+        if (!empty($data['order_date'])) {
+            $hour = $data['order_hour'] ?? '00';
+            $minute = $data['order_minute'] ?? '00';
+            $dateCreated = \Carbon\Carbon::parse($data['order_date'] . ' ' . $hour . ':' . $minute . ':00');
+        }
+
         try {
             $db->beginTransaction();
 
@@ -420,7 +427,7 @@ class WooCommerceService
                 'post_content' => '',
                 'post_title' => 'Order &ndash; ' . $dateCreated,
                 'post_excerpt' => $data['customer_note'] ?? '',
-                'post_status' => 'wc-processing',
+                'post_status' => 'wc-' . ($data['order_status'] ?? 'processing'),
                 'comment_status' => 'open',
                 'ping_status' => 'closed',
                 'post_password' => Str::random(13),
@@ -438,6 +445,17 @@ class WooCommerceService
                 'comment_count' => 0,
             ]);
 
+            // Calculate totals
+            $subtotal = 0;
+            foreach ($data['order_items'] as $item) {
+                $subtotal += $item['price'] * $item['qty'];
+            }
+            
+            $discount = $data['discount'] ?? 0;
+            $shipping = $data['shipping'] ?? 0;
+            $taxes = $data['taxes'] ?? 0;
+            $total = $subtotal - $discount + $shipping + $taxes;
+
             // 2. Insert order meta (add all required meta here)
             $orderMeta = [
                 ['post_id' => $orderId, 'meta_key' => '_order_key', 'meta_value' => Str::random(13)],
@@ -445,8 +463,8 @@ class WooCommerceService
                 ['post_id' => $orderId, 'meta_key' => '_customer_user', 'meta_value' => $data['customer_id'] ?? 0],
                 ['post_id' => $orderId, 'meta_key' => '_order_version', 'meta_value' => '3.0.0'],
                 ['post_id' => $orderId, 'meta_key' => '_prices_include_tax', 'meta_value' => 'no'],
-                ['post_id' => $orderId, 'meta_key' => '_payment_method', 'meta_value' => 'manual'],
-                ['post_id' => $orderId, 'meta_key' => '_payment_method_title', 'meta_value' => 'Manual'],
+                ['post_id' => $orderId, 'meta_key' => '_payment_method', 'meta_value' => $data['payment_method'] ?? 'manual'],
+                ['post_id' => $orderId, 'meta_key' => '_payment_method_title', 'meta_value' => $data['payment_method'] ?? 'Manual'],
                 ['post_id' => $orderId, 'meta_key' => '_created_via', 'meta_value' => 'admin'],
                 ['post_id' => $orderId, 'meta_key' => '_cart_hash', 'meta_value' => Str::random(32)],
                 ['post_id' => $orderId, 'meta_key' => '_order_stock_reduced', 'meta_value' => 'yes'],
@@ -454,14 +472,17 @@ class WooCommerceService
                 ['post_id' => $orderId, 'meta_key' => '_new_order_email_sent', 'meta_value' => 'yes'],
                 ['post_id' => $orderId, 'meta_key' => '_recorded_sales', 'meta_value' => 'yes'],
                 ['post_id' => $orderId, 'meta_key' => '_recorded_coupon_usage_counts', 'meta_value' => 'yes'],
+                ['post_id' => $orderId, 'meta_key' => '_order_total', 'meta_value' => $total],
+                ['post_id' => $orderId, 'meta_key' => '_order_tax', 'meta_value' => $taxes],
+                ['post_id' => $orderId, 'meta_key' => '_order_shipping', 'meta_value' => $shipping],
+                ['post_id' => $orderId, 'meta_key' => '_order_shipping_tax', 'meta_value' => 0],
+                ['post_id' => $orderId, 'meta_key' => '_cart_discount', 'meta_value' => $discount],
+                ['post_id' => $orderId, 'meta_key' => '_cart_discount_tax', 'meta_value' => 0],
             ];
             $db->table('postmeta')->insert($orderMeta);
 
             // 3. Insert order items and meta
-            $totalAmount = 0;
             foreach ($data['order_items'] as $item) {
-                $totalAmount += $item['price'] * $item['qty'];
-
                 $orderItemId = $db->table('woocommerce_order_items')->insertGetId([
                     'order_item_name' => $item['name'],
                     'order_item_type' => 'line_item',
@@ -507,15 +528,18 @@ class WooCommerceService
                 ]);
             }
 
-            // 4. Update order total meta
-            $db->table('postmeta')->insert([
-                ['post_id' => $orderId, 'meta_key' => '_order_total', 'meta_value' => $totalAmount],
-                ['post_id' => $orderId, 'meta_key' => '_order_tax', 'meta_value' => 0],
-                ['post_id' => $orderId, 'meta_key' => '_order_shipping', 'meta_value' => 0],
-                ['post_id' => $orderId, 'meta_key' => '_order_shipping_tax', 'meta_value' => 0],
-                ['post_id' => $orderId, 'meta_key' => '_cart_discount', 'meta_value' => 0],
-                ['post_id' => $orderId, 'meta_key' => '_cart_discount_tax', 'meta_value' => 0],
-            ]);
+            // 4. Add private note if provided
+            if (!empty($data['private_note'])) {
+                $db->table('comments')->insert([
+                    'comment_post_ID' => $orderId,
+                    'comment_author' => 'admin',
+                    'comment_content' => $data['private_note'],
+                    'comment_type' => 'order_note',
+                    'comment_approved' => 1,
+                    'comment_date' => $dateCreated,
+                    'comment_date_gmt' => $dateCreated,
+                ]);
+            }
 
             $db->commit();
             return $orderId;

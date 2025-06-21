@@ -32,7 +32,15 @@ class OrdersController extends Controller
             'order_items' => 'required|string',
             'customer_id' => 'nullable|integer',
             'customer_note' => 'nullable|string',
+            'private_note' => 'nullable|string',
+            'order_date' => 'nullable|date',
+            'order_hour' => 'nullable|string',
+            'order_minute' => 'nullable|string',
             'order_status' => 'nullable|string',
+            'payment_method' => 'nullable|string',
+            'discount' => 'nullable|numeric',
+            'shipping' => 'nullable|numeric',
+            'taxes' => 'nullable|numeric',
         ]);
         
         try {

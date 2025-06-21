@@ -529,6 +529,9 @@ class WooCommerceService
                 if (!empty($errors)) {
                     $message .= ". Errors: " . implode('; ', $errors);
                 }
+
+                // Clear the orders cache
+                static::clearCacheByTags('orders');
                 
                 return [
                     'success' => true,

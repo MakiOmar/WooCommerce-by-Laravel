@@ -442,6 +442,17 @@ class WooCommerceService
                     ['order_item_id' => $orderItemId, 'meta_key' => '_qty', 'meta_value' => $item['qty']],
                     ['order_item_id' => $orderItemId, 'meta_key' => '_line_total', 'meta_value' => $item['price'] * $item['qty']],
                 ]);
+
+                // Insert into product lookup table
+                $db->table('wc_order_product_lookup')->insert([
+                    'order_id' => $orderId,
+                    'product_id' => $item['id'],
+                    'customer_id' => $customerId,
+                    'date_created' => now(),
+                    'product_qty' => $item['qty'],
+                    'product_net_revenue' => $item['price'] * $item['qty'],
+                    'product_gross_revenue' => $item['price'] * $item['qty'],
+                ]);
             }
 
             // 5. Add order notes (comments)
@@ -456,6 +467,22 @@ class WooCommerceService
                     'comment_date_gmt' => now('UTC'),
                 ]);
             }
+
+            // 6. Insert into order stats table for visibility
+            $db->table('wc_order_stats')->insert([
+                'order_id' => $orderId,
+                'parent_id' => 0,
+                'date_created' => now(),
+                'date_created_gmt' => now('UTC'),
+                'num_items_sold' => count($data['order_items']),
+                'total_sales' => $finalTotal,
+                'tax_total' => $taxes,
+                'shipping_total' => $shipping,
+                'net_total' => $finalTotal - $taxes,
+                'status' => 'wc-' . ($data['order_status'] ?? 'pending'),
+                'customer_id' => $customerId,
+                'returning_customer' => false, // This can be enhanced later
+            ]);
 
             $db->commit();
 

@@ -1,344 +1,307 @@
-@extends('layouts.admin')
+@extends('layouts.app')
 
 @section('content')
-<form id="order-create-form" method="POST" action="{{ route('orders.store') }}">
-    @csrf
-    <div class="container">
-        <!-- Flash Messages -->
-        @include('woo-order-dashboard::partials.flash-messages')
-
-        <div class="row">
-            <div class="col-md-8">
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="card-title mb-0">Order details</h5>
-                            <div>
-                                <button class="btn btn-link" type="button">Create custom product</button>
-                            </div>
-                        </div>
-                        <div class="input-group mb-3">
-                            <input type="text" class="form-control" placeholder="Find products...">
-                            <div class="input-group-append">
-                                <button class="btn btn-primary" type="button">Advanced search</button>
-                                <button class="btn btn-primary ml-2" type="button">Products history</button>
-                            </div>
-                        </div>
-                        <table class="table" id="products-table">
-                            <thead>
-                                <tr>
-                                    <th>Product</th>
-                                    <th>Price</th>
-                                    <th>Quantity</th>
-                                    <th>Total</th>
-                                    <th></th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Products will be added here dynamically -->
-                            </tbody>
-                        </table>
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Create New Order</h4>
+                </div>
+                <div class="card-body">
+                    <form id="create-order-form" method="POST" action="{{ route('orders.store') }}">
+                        @csrf
                         <input type="hidden" name="order_items" id="order_items">
-                        <div class="form-group">
-                            <label>Customer provided note</label>
-                            <textarea class="form-control" rows="2" name="customer_note" placeholder="Add a note"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Private note</label>
-                            <textarea class="form-control" rows="2" name="private_note" placeholder="Add a note"></textarea>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <h6>Find or create a customer <button type="button" class="close" aria-label="Close"><span aria-hidden="true">&times;</span></button></h6>
-                        <div class="form-group mb-2">
-                            <a href="#">New customer</a>
-                            <input type="text" class="form-control" id="customer-search" placeholder="Guest" autocomplete="off">
-                        </div>
-                        <input type="hidden" name="customer_id" id="customer_id">
-                        <div id="customer-details" class="mt-2" style="display:none;"></div>
-                        <div class="form-group mb-2">
-                            <label>Billing Details</label>
-                            <span>Egypt</span>
-                            <a href="#" class="ml-2"><i class="fa fa-pencil"></i></a>
-                        </div>
-                        <div class="form-check mb-2">
-                            <input class="form-check-input" type="checkbox" id="shipToDifferentAddress" name="ship_to_different_address">
-                            <label class="form-check-label" for="shipToDifferentAddress">Ship to a different address?</label>
-                        </div>
-                    </div>
-                </div>
-                <div class="card mb-3">
-                    <div class="card-body">
-                        <div class="form-group mb-2">
-                            <label>Order date</label>
-                            <input type="date" class="form-control mb-1" name="order_date">
-                            <div class="d-flex">
-                                <select class="form-control mr-2" style="width: 70px;" name="order_hour">
-                                    <option>19</option>
-                                    <!-- More hours -->
-                                </select>
-                                <select class="form-control" style="width: 70px;" name="order_minute">
-                                    <option>25</option>
-                                    <!-- More minutes -->
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-group mb-2">
-                            <label>Order status</label>
-                            <select class="form-control" name="order_status">
-                                <option>بانتظار الدفع</option>
-                                <!-- More statuses -->
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="payment_method">{{ __('Payment Method') }}</label>
-                            @php
-                                $paymentGatewayHelper = new \Makiomar\WooOrderDashboard\Helpers\Gateways\PaymentGatewayHelper();
-                                $paymentGateways = $paymentGatewayHelper->getEnabledPaymentGateways();
-                            @endphp
-                            <select class="form-control" name="payment_method" id="payment_method">
-                                <option value="">{{ __('Select a payment method') }}</option>
-                                @if (!empty($paymentGateways))
-                                    @foreach ($paymentGateways as $gateway_id => $gateway)
-                                        <option value="{{ $gateway_id }}">{{ $gateway['title'] }}</option>
-                                    @endforeach
-                                @else
-                                    <option value="">{{ __('No payment methods available') }}</option>
-                                @endif
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="card">
-                    <div class="card-body">
-                        <!-- Order Summary Section -->
-                        <div class="card mt-4">
-                            <div class="card-header bg-light">
-                                <h5 class="card-title mb-0">Order Summary</h5>
-                            </div>
-                            <div class="card-body">
-                                <!-- Subtotal Row -->
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <span class="text-muted">Subtotal</span>
-                                    <span class="font-weight-bold">ج.م <span class="order-subtotal">0.00</span></span>
-                                </div>
+                        <input type="hidden" name="customer_id" id="customer_id" value="1">
 
-                                <!-- Discount Row -->
-                                <div class="row mb-3">
-                                    <div class="col-6">
-                                        <label class="form-label text-muted">Discount</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">ج.م</span>
-                                            <input type="number" class="form-control order-discount" name="discount" value="0" min="0" step="0.01">
-                                        </div>
+                        <div class="row">
+                            <div class="col-md-8">
+                                <!-- Product Search Section -->
+                                <div class="form-group">
+                                    <label for="product_search">Search Products</label>
+                                    <div class="position-relative">
+                                        <input type="text" id="product_search" class="form-control" placeholder="Search products by name or SKU...">
+                                        <div id="product_search_dropdown" class="list-group position-absolute w-100" style="z-index:1000; display:none; max-height: 300px; overflow-y: auto;"></div>
                                     </div>
                                 </div>
 
-                                <!-- Shipping Row -->
-                                <div class="row mb-3">
-                                    <div class="col-6">
-                                        <label class="form-label text-muted">Shipping</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">ج.م</span>
-                                            <input type="number" class="form-control order-shipping" name="shipping" value="0" min="0" step="0.01">
-                                        </div>
-                                    </div>
+                                <!-- Order Items Table -->
+                                <div class="table-responsive">
+                                    <table id="products-table" class="table table-bordered">
+                                        <thead class="thead-light">
+                                            <tr>
+                                                <th>Product</th>
+                                                <th width="100">Price</th>
+                                                <th width="80">Qty</th>
+                                                <th width="100">Total</th>
+                                                <th width="50"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Order items will be added here dynamically -->
+                                        </tbody>
+                                    </table>
                                 </div>
 
-                                <!-- Tax Row -->
-                                <div class="row mb-3">
-                                    <div class="col-6">
-                                        <label class="form-label text-muted">Tax</label>
-                                        <div class="input-group">
-                                            <span class="input-group-text">ج.م</span>
-                                            <input type="number" class="form-control order-taxes" name="taxes" value="0" min="0" step="0.01">
-                                        </div>
+                                <!-- Order Summary -->
+                                <div class="row mt-3">
+                                    <div class="col-md-6 offset-md-6">
+                                        <table class="table table-sm">
+                                            <tr>
+                                                <td><strong>Subtotal:</strong></td>
+                                                <td class="text-right">$<span id="subtotal_amount">0.00</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Tax:</strong></td>
+                                                <td class="text-right">$<span id="tax_amount">0.00</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Shipping:</strong></td>
+                                                <td class="text-right">$<span id="shipping_amount">0.00</span></td>
+                                            </tr>
+                                            <tr class="table-active">
+                                                <td><strong>Total:</strong></td>
+                                                <td class="text-right"><strong>$<span id="total_amount">0.00</span></strong></td>
+                                            </tr>
+                                        </table>
                                     </div>
                                 </div>
+                            </div>
 
-                                <hr>
+                            <div class="col-md-4">
+                                <!-- Customer Information -->
+                                <div class="form-group">
+                                    <label for="customer_search">Customer</label>
+                                    <input type="text" id="customer_search" class="form-control" placeholder="Search customers...">
+                                    <div id="customer_details" class="mt-2"></div>
+                                </div>
 
-                                <!-- Total Row -->
-                                <div class="d-flex justify-content-between align-items-center">
-                                    <h5 class="mb-0">Total</h5>
-                                    <h5 class="mb-0">ج.م <span class="order-grand-total">0.00</span></h5>
+                                <!-- Order Notes -->
+                                <div class="form-group">
+                                    <label for="customer_note">Order Notes</label>
+                                    <textarea id="customer_note" name="customer_note" class="form-control" rows="3" placeholder="Add any special instructions..."></textarea>
+                                </div>
+
+                                <!-- Order Status -->
+                                <div class="form-group">
+                                    <label for="order_status">Order Status</label>
+                                    <select id="order_status" name="order_status" class="form-control">
+                                        <option value="pending">Pending</option>
+                                        <option value="processing" selected>Processing</option>
+                                        <option value="completed">Completed</option>
+                                        <option value="on-hold">On Hold</option>
+                                    </select>
+                                </div>
+
+                                <!-- Submit Button -->
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-primary btn-block" id="submit-btn">
+                                        <i class="fas fa-save"></i> Create Order
+                                    </button>
                                 </div>
                             </div>
                         </div>
-                        <button type="submit" class="btn btn-success btn-block mt-3">Submit Order</button>
-                    </div>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
-</form>
-@endsection
+</div>
 
 @push('js')
 <script>
-$(function() {
-    // Product search dropdown
-    var $prodInput = $('input[placeholder="Find products..."]');
-    var $prodTable = $('table tbody');
-    var $prodDropdown;
+$(document).ready(function() {
+    var $prodSearch = $('#product_search');
+    var $prodDropdown = $('#product_search_dropdown');
+    var $prodTable = $('#products-table');
+    var $orderItemsInput = $('#order_items');
+    var $totalAmountSpan = $('#total_amount');
+    var $subtotalSpan = $('#subtotal_amount');
+    var $taxSpan = $('#tax_amount');
+    var $shippingSpan = $('#shipping_amount');
+    var $customerSearch = $('#customer_search');
+    var $customerDetails = $('#customer_details');
+    var $submitBtn = $('#submit-btn');
 
-    function recalcSummary() {
-        var subtotal = 0;
-        
-        // Calculate subtotal from line items
-        $('#products-table tbody tr').each(function() {
-            var qty = parseInt($(this).find('.order-qty').val()) || 1;
-            var price = parseFloat($(this).find('.order-price').text()) || 0;
-            var lineTotal = qty * price;
-            $(this).find('.line-item-total').text(formatCurrency(lineTotal));
-            subtotal += lineTotal;
-        });
-
-        // Get additional costs
-        var discount = parseFloat($('.order-discount').val()) || 0;
-        var shipping = parseFloat($('.order-shipping').val()) || 0;
-        var taxes = parseFloat($('.order-taxes').val()) || 0;
-
-        // Calculate final total
-        var grandTotal = subtotal - discount + shipping + taxes;
-
-        // Update display
-        $('.order-subtotal').text(formatCurrency(subtotal));
-        $('.order-grand-total').text(formatCurrency(grandTotal));
-    }
-
-    function formatCurrency(amount) {
-        return parseFloat(amount).toFixed(2);
-    }
-
-    $prodInput.on('input', function() {
+    // Product search
+    $prodSearch.on('keyup', function() {
         var q = $(this).val();
-        if (q.length < 2) { if ($prodDropdown) $prodDropdown.remove(); return; }
-        $.getJSON("{{ route('orders.products.search') }}", {q: q}, function(products) {
-            if ($prodDropdown) $prodDropdown.remove();
-            $prodDropdown = $('<div class="list-group position-absolute w-100" style="z-index:1000;"></div>');
-            if (products.length === 0) {
-                $prodDropdown.append('<div class="list-group-item">No products found</div>');
+        if (q.length < 2) {
+            $prodDropdown.hide();
+            return;
+        }
+        
+        $.getJSON("{{ route('orders.products.search') }}", {q: q}, function(data) {
+            $prodDropdown.empty().show();
+            if (data.length === 0) {
+                $prodDropdown.append('<div class="list-group-item text-muted">No products found</div>');
             } else {
-                products.forEach(function(p) {
-                    var skuOrId = p.sku ? p.sku : p.id;
-                    $prodDropdown.append('<button type="button" class="list-group-item list-group-item-action prod-item" data-id="'+p.id+'" data-name="'+p.name+'" data-price="'+p.price+'">'+p.name+' <small class="text-muted">('+skuOrId+')</small> <span class="float-right">'+(p.price || 0)+'</span></button>');
+                data.forEach(function(p) {
+                    var attrs = '';
+                    if (p.variation_id && p.attributes && Object.keys(p.attributes).length > 0) {
+                        attrs = '<br><small class="text-info">' + Object.entries(p.attributes).map(function([k, v]) {
+                            return k.replace('attribute_', '') + ': ' + v;
+                        }).join(', ') + '</small>';
+                    }
+                    
+                    var skuInfo = p.sku ? ' (SKU: ' + p.sku + ')' : '';
+                    $prodDropdown.append(
+                        '<button type="button" class="list-group-item list-group-item-action prod-item" ' +
+                        'data-product-id="'+p.product_id+'" data-variation-id="'+p.variation_id+'" ' +
+                        'data-name="'+p.name+'" data-price="'+p.price+'" data-attributes=\''+JSON.stringify(p.attributes || {})+'\'>' +
+                        '<div class="d-flex justify-content-between align-items-start">' +
+                        '<div><strong>'+p.name+'</strong>'+attrs+'<br><small class="text-muted">ID: '+p.product_id+(p.variation_id ? ' | Variation: '+p.variation_id : '')+skuInfo+'</small></div>' +
+                        '<div class="text-right"><strong>$'+(parseFloat(p.price) || 0).toFixed(2)+'</strong></div>' +
+                        '</div></button>'
+                    );
                 });
             }
-            $prodInput.after($prodDropdown);
         });
     });
 
-    $(document).on('click', '.prod-item', function() {
-        var name = $(this).data('name');
-        var price = $(this).data('price') || 0;
-        var id = $(this).data('id');
-        var $existingRow = $prodTable.find('tr[data-id="'+id+'"]');
-        if ($existingRow.length) {
-            var $qtyInput = $existingRow.find('.order-qty');
-            $qtyInput.val(parseInt($qtyInput.val() || 1) + 1).trigger('input');
-        } else {
-            var row = '<tr data-id="'+id+'">'
-                +'<td>'+name+'</td>'
-                +'<td class="order-price">'+price+'</td>'
-                +'<td><input type="number" class="form-control form-control-sm order-qty" value="1" min="1" style="width:70px;"></td>'
-                +'<td class="line-item-total">'+price+'</td>'
-                +'<td><button type="button" class="btn btn-sm btn-danger remove-item">&times;</button></td>'
-                +'</tr>';
-            $prodTable.append(row);
+    // Hide dropdown when clicking outside
+    $(document).on('click', function(e) {
+        if (!$prodSearch.is(e.target) && $prodSearch.has(e.target).length === 0 && !$prodDropdown.is(e.target) && $prodDropdown.has(e.target).length === 0) {
+            $prodDropdown.hide();
         }
-        if ($prodDropdown) $prodDropdown.remove();
-        $prodInput.val('');
-        recalcSummary();
     });
 
-    $prodTable.on('input', '.order-qty', function() {
-        recalcSummary();
+    // Add product to table
+    $('body').on('click', '.prod-item', function() {
+        var productId = $(this).data('product-id');
+        var variationId = $(this).data('variation-id');
+        var name = $(this).data('name');
+        var price = parseFloat($(this).data('price')) || 0;
+        var attributes = $(this).data('attributes') ? JSON.parse($(this).attr('data-attributes')) : {};
+
+        var rowId = variationId > 0 ? variationId : productId;
+        var $existingRow = $prodTable.find('tr[data-row-id="'+rowId+'"]');
+
+        if ($existingRow.length > 0) {
+            var $qtyInput = $existingRow.find('.order-qty');
+            var currentQty = parseInt($qtyInput.val());
+            $qtyInput.val(currentQty + 1).trigger('change');
+        } else {
+            var attrHtml = '';
+            if (Object.keys(attributes).length > 0) {
+                attrHtml = '<br><small class="text-info">' + Object.entries(attributes).map(function([k, v]) {
+                    return k.replace('attribute_', '') + ': ' + v;
+                }).join(', ') + '</small>';
+            }
+            
+            var row = '<tr data-row-id="'+rowId+'" data-product-id="'+productId+'" data-variation-id="'+variationId+'" data-attributes=\''+JSON.stringify(attributes)+'\'>' +
+                '<td><strong>'+name+'</strong>'+attrHtml+'</td>' +
+                '<td class="order-price text-right">$'+price.toFixed(2)+'</td>' +
+                '<td><input type="number" class="form-control form-control-sm order-qty" value="1" min="1" style="width: 60px;"></td>' +
+                '<td class="order-line-total text-right">$'+price.toFixed(2)+'</td>' +
+                '<td><button type="button" class="btn btn-danger btn-sm remove-item">&times;</button></td>' +
+                '</tr>';
+            $prodTable.find('tbody').append(row);
+        }
+        
+        updateTotals();
+        $prodSearch.val('');
+        $prodDropdown.hide();
     });
 
+    // Update totals when quantity changes
+    $prodTable.on('change keyup', '.order-qty', function() {
+        var $row = $(this).closest('tr');
+        var qty = parseInt($(this).val()) || 0;
+        var price = parseFloat($row.find('.order-price').text().replace('$', '')) || 0;
+        var lineTotal = qty * price;
+        $row.find('.order-line-total').text('$' + lineTotal.toFixed(2));
+        updateTotals();
+    });
+
+    // Remove item from table
     $prodTable.on('click', '.remove-item', function() {
         $(this).closest('tr').remove();
-        recalcSummary();
+        updateTotals();
     });
 
-    $(document).on('click', function(e) {
-        if (!$(e.target).closest('.list-group, [placeholder="Find products..."]').length) {
-            if ($prodDropdown) $prodDropdown.remove();
-        }
-    });
+    // Calculate and update all totals
+    function updateTotals() {
+        var subtotal = 0;
+        $prodTable.find('.order-line-total').each(function() {
+            subtotal += parseFloat($(this).text().replace('$', '')) || 0;
+        });
+        
+        var tax = subtotal * 0.1; // 10% tax - adjust as needed
+        var shipping = 0; // Add shipping calculation if needed
+        
+        $subtotalSpan.text(subtotal.toFixed(2));
+        $taxSpan.text(tax.toFixed(2));
+        $shippingSpan.text(shipping.toFixed(2));
+        $totalAmountSpan.text((subtotal + tax + shipping).toFixed(2));
+    }
 
-    // Customer autocomplete dropdown
-    var $custInput = $('#customer-search');
-    var $custDropdown;
-    var $custDetails = $('#customer-details');
-    $custInput.on('input', function() {
+    // Customer search
+    $customerSearch.on('keyup', function() {
         var q = $(this).val();
-        if (q.length < 2) { if ($custDropdown) $custDropdown.remove(); return; }
-        $.getJSON("{{ route('orders.customers.search') }}", {q: q}, function(customers) {
-            if ($custDropdown) $custDropdown.remove();
-            $custDropdown = $('<div class="list-group position-absolute w-100" style="z-index:1000;"></div>');
-            if (customers.length === 0) {
-                $custDropdown.append('<div class="list-group-item">No customers found. <a href="#" class="text-primary add-new-customer">Create new</a></div>');
-            } else {
-                customers.forEach(function(c) {
-                    $custDropdown.append('<button type="button" class="list-group-item list-group-item-action cust-item" data-id="'+c.id+'" data-name="'+c.name+'" data-email="'+c.email+'">'+c.name+' <small class="text-muted">('+c.email+')</small></button>');
-                });
+        if (q.length < 2) {
+            $customerDetails.empty();
+            return;
+        }
+        
+        $.getJSON("{{ route('orders.customers.search') }}", {q: q}, function(data) {
+            if (data.length > 0) {
+                var customer = data[0]; // Use first result
+                $customerSearch.val(customer.name);
+                $('#customer_id').val(customer.id);
+                $customerDetails.html('<div class="alert alert-info p-2"><strong>'+customer.name+'</strong><br><small>'+customer.email+'</small></div>');
             }
-            $custInput.after($custDropdown);
         });
     });
-    $(document).on('click', '.cust-item', function() {
-        var name = $(this).data('name');
-        var email = $(this).data('email');
-        var id = $(this).data('id');
-        $custInput.val(name);
-        $('#customer_id').val(id);
-        $custDetails.html('<div class="alert alert-info p-2">'+name+'<br><small>'+email+'</small></div>').show();
-        if ($custDropdown) $custDropdown.remove();
-    });
-    $(document).on('click', '.add-new-customer', function(e) {
+
+    // Form submission
+    $('#create-order-form').submit(function(e) {
         e.preventDefault();
-        $('#customer_id').val('');
-        $custDetails.html('<div class="alert alert-warning p-2">New customer will be created on order submit.</div>').show();
-        if ($custDropdown) $custDropdown.remove();
-    });
-    $(document).on('click', function(e) {
-        if (!$(e.target).closest('.list-group, #customer-search').length) {
-            if ($custDropdown) $custDropdown.remove();
-        }
-    });
-
-    // Bind events to recalculate on any change
-    $(document).on('change keyup', '.order-qty, .order-discount, .order-shipping, .order-taxes', recalcSummary);
-    $(document).on('click', '.remove-item', function() {
-        $(this).closest('tr').remove();
-        recalcSummary();
-    });
-
-    // On form submit, serialize order items and customer id
-    $('#order-create-form').on('submit', function(e) {
+        
         var items = [];
-        $prodTable.find('tr').each(function() {
+        $prodTable.find('tbody tr').each(function() {
             items.push({
-                id: $(this).data('id'),
-                name: $(this).find('td').eq(0).text(),
-                price: parseFloat($(this).find('.order-price').text()) || 0,
-                qty: parseInt($(this).find('.order-qty').val()) || 1
+                product_id: $(this).data('product-id'),
+                variation_id: $(this).data('variation-id'),
+                name: $(this).find('td').eq(0).text().trim(),
+                price: parseFloat($(this).find('.order-price').text().replace('$', '')) || 0,
+                qty: parseInt($(this).find('.order-qty').val()) || 1,
+                attributes: $(this).data('attributes') ? JSON.parse($(this).attr('data-attributes')) : {}
             });
         });
-        $('#order_items').val(JSON.stringify(items));
-        
-        // Validate that we have at least one item
+
         if (items.length === 0) {
-            e.preventDefault();
             alert('Please add at least one product to the order.');
             return false;
         }
+
+        $orderItemsInput.val(JSON.stringify(items));
+        $submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> Creating...');
+        
+        // Submit the form
+        this.submit();
     });
 });
 </script>
-@endpush 
+@endpush
+
+@push('css')
+<style>
+.prod-item:hover {
+    background-color: #f8f9fa;
+    cursor: pointer;
+}
+.prod-item:active {
+    background-color: #e9ecef;
+}
+#product_search_dropdown {
+    border: 1px solid #ddd;
+    border-top: none;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.order-qty {
+    text-align: center;
+}
+</style>
+@endpush
+@endsection

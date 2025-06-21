@@ -32,22 +32,16 @@ class OrdersController extends Controller
             'order_items' => 'required|string',
             'customer_id' => 'nullable|integer',
             'customer_note' => 'nullable|string',
-            'private_note' => 'nullable|string',
-            'order_date' => 'nullable|date',
-            'order_hour' => 'nullable|string',
-            'order_minute' => 'nullable|string',
             'order_status' => 'nullable|string',
-            'payment_method' => 'nullable|string',
-            'discount' => 'nullable|numeric',
-            'shipping' => 'nullable|numeric',
-            'taxes' => 'nullable|numeric',
         ]);
-        $data['order_items'] = json_decode($data['order_items'], true);
-        $result = app(\Makiomar\WooOrderDashboard\Services\WooCommerceService::class)->createOrder($data);
-        if ($result['success']) {
-            return redirect()->route('woo.orders')->with('success', 'Order created successfully. Order ID: ' . $result['order_id']);
-        } else {
-            return back()->with('error', $result['message'] ?? 'Order creation failed.');
+        
+        try {
+            $data['order_items'] = json_decode($data['order_items'], true);
+            $orderId = app(\Makiomar\WooOrderDashboard\Services\WooCommerceService::class)->createOrder($data);
+            
+            return redirect()->route('woo.orders')->with('success', 'Order created successfully. Order ID: ' . $orderId);
+        } catch (\Exception $e) {
+            return back()->with('error', 'Order creation failed: ' . $e->getMessage());
         }
     }
 

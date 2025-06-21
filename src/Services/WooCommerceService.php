@@ -287,44 +287,85 @@ class WooCommerceService
         }
     }
 
+    /**
+     * Get products and variations for order creation.
+     */
     public function getProducts($search = null)
     {
         $query = DB::connection('woocommerce')->table('posts as p')
-            ->leftJoin('postmeta as sku', function($join) {
-                $join->on('p.ID', '=', 'sku.post_id')
-                     ->where('sku.meta_key', '_sku');
-            })
-            ->leftJoin('postmeta as price', function($join) {
-                $join->on('p.ID', '=', 'price.post_id')
-                     ->where('price.meta_key', '_price');
-            })
-            ->select([
-                'p.ID as id',
-                'p.post_title as name',
-                'sku.meta_value as sku',
-                'price.meta_value as price'
-            ])
-            ->where('p.post_type', 'product')
+            ->leftJoin('posts as parent', 'p.post_parent', '=', 'parent.ID')
+            ->select(
+                'p.ID as post_id',
+                'p.post_title as post_name',
+                'p.post_parent',
+                'parent.post_title as parent_name',
+                'p.post_type'
+            )
+            ->whereIn('p.post_type', ['product', 'product_variation'])
             ->where('p.post_status', 'publish');
 
         if ($search) {
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('p.post_title', 'like', "%$search%")
-                  ->orWhere('sku.meta_value', 'like', "%$search%")
-                  ->orWhere('p.ID', $search);
+                  ->orWhereExists(function ($sub) use ($search) {
+                      $sub->select(DB::raw(1))
+                          ->from('postmeta')
+                          ->whereRaw('post_id = p.ID')
+                          ->where('meta_key', '_sku')
+                          ->where('meta_value', 'like', "%$search%");
+                  })
+                  ->orWhere(function($q2) use ($search) {
+                      $q2->where('p.post_type', 'product_variation')
+                         ->where('parent.post_title', 'like', "%$search%");
+                  });
             });
         }
 
-        $products = $query->limit(20)->get();
+        $results = $query->limit(20)->get();
 
-        return $products->map(function($product) {
+        if ($results->isEmpty()) {
+            return [];
+        }
+
+        $postIds = $results->pluck('post_id')->all();
+        $meta = DB::connection('woocommerce')->table('postmeta')
+            ->whereIn('post_id', $postIds)
+            ->whereIn('meta_key', ['_sku', '_price'])
+            ->get()
+            ->groupBy('post_id');
+
+        // Fetch variation attributes for variable products
+        $variationAttributes = [];
+        $variationIds = $results->where('post_type', 'product_variation')->pluck('post_id')->all();
+        if ($variationIds) {
+            $attrs = DB::connection('woocommerce')->table('postmeta')
+                ->whereIn('post_id', $variationIds)
+                ->where('meta_key', 'like', 'attribute_%')
+                ->get();
+            foreach ($attrs as $attr) {
+                $variationAttributes[$attr->post_id][$attr->meta_key] = $attr->meta_value;
+            }
+        }
+
+        return $results->map(function ($product) use ($meta, $variationAttributes) {
+            $productMeta = $meta->get($product->post_id, collect())->keyBy('meta_key');
+            $isVariation = $product->post_type === 'product_variation';
+
+            $name = $isVariation
+                ? ($product->parent_name . ' - ' . str_replace(' - ', ', ', $product->post_name))
+                : $product->post_name;
+
+            $attributes = $isVariation ? ($variationAttributes[$product->post_id] ?? []) : [];
+
             return [
-                'id' => $product->id,
-                'name' => $product->name,
-                'sku' => $product->sku,
-                'price' => $product->price,
+                'product_id' => $isVariation ? $product->post_parent : $product->post_id,
+                'variation_id' => $isVariation ? $product->post_id : 0,
+                'name' => $name,
+                'sku' => optional($productMeta->get('_sku'))->meta_value ?? '',
+                'price' => optional($productMeta->get('_price'))->meta_value ?? 0,
+                'attributes' => $attributes,
             ];
-        });
+        })->values()->all();
     }
 
     public function getCustomers($search = null)
@@ -360,148 +401,127 @@ class WooCommerceService
         });
     }
 
+    /**
+     * Create a WooCommerce order (simple and variable products).
+     */
     public function createOrder($data)
     {
         $db = DB::connection('woocommerce');
+        $dateCreated = now();
+
         try {
             $db->beginTransaction();
 
-            // 1. Customer creation if needed
-            $customerId = $data['customer_id'] ?? null;
-            if (!$customerId) {
-                // Create new user (customer)
-                $customerId = $db->table('users')->insertGetId([
-                    'user_login' => 'phoneorder_'.uniqid(),
-                    'user_pass' => bcrypt(Str::random(12)),
-                    'user_email' => '',
-                    'user_registered' => now(),
-                    'user_status' => 0,
-                    'display_name' => 'Phone Order',
-                ]);
-                // Optionally add usermeta for name, etc.
-            }
-
-            // 2. Insert order (shop_order) in posts
+            // 1. Insert order post
             $orderId = $db->table('posts')->insertGetId([
-                'post_author' => $customerId,
-                'post_date' => now(),
-                'post_date_gmt' => now('UTC'),
-                'post_content' => $data['customer_note'] ?? '',
-                'post_title' => 'Order &ndash; '.now()->format('F j, Y @ H:i'),
-                'post_excerpt' => '',
-                'post_status' => 'wc-'.($data['order_status'] ?? 'pending'),
+                'post_author' => 1,
+                'post_date' => $dateCreated,
+                'post_date_gmt' => $dateCreated,
+                'post_content' => '',
+                'post_title' => 'Order &ndash; ' . $dateCreated,
+                'post_excerpt' => $data['customer_note'] ?? '',
+                'post_status' => 'wc-processing',
                 'comment_status' => 'open',
                 'ping_status' => 'closed',
-                'post_password' => '',
-                'post_name' => 'order-'.now()->timestamp,
+                'post_password' => Str::random(13),
+                'post_name' => 'order-' . Str::random(10),
                 'to_ping' => '',
                 'pinged' => '',
-                'post_parent' => 0,
+                'post_modified' => $dateCreated,
+                'post_modified_gmt' => $dateCreated,
                 'post_content_filtered' => '',
+                'post_parent' => 0,
+                'guid' => '',
+                'menu_order' => 0,
                 'post_type' => 'shop_order',
                 'post_mime_type' => '',
                 'comment_count' => 0,
-                'post_modified' => now(),
-                'post_modified_gmt' => now('UTC'),
-                'guid' => '',
             ]);
 
-            // 3. Add order meta (postmeta)
-            // Calculate order total from items
-            $orderTotal = 0;
-            foreach ($data['order_items'] as $item) {
-                $orderTotal += ($item['price'] * $item['qty']);
-            }
-            
-            // Apply discount, add shipping and taxes
-            $discount = $data['discount'] ?? 0;
-            $shipping = $data['shipping'] ?? 0;
-            $taxes = $data['taxes'] ?? 0;
-            $finalTotal = $orderTotal - $discount + $shipping + $taxes;
-            
-            $meta = [
-                ['post_id' => $orderId, 'meta_key' => '_customer_user', 'meta_value' => $customerId],
-                ['post_id' => $orderId, 'meta_key' => '_order_total', 'meta_value' => $finalTotal],
-                ['post_id' => $orderId, 'meta_key' => '_order_discount', 'meta_value' => $discount],
-                ['post_id' => $orderId, 'meta_key' => '_order_shipping', 'meta_value' => $shipping],
-                ['post_id' => $orderId, 'meta_key' => '_order_tax', 'meta_value' => $taxes],
-                ['post_id' => $orderId, 'meta_key' => '_payment_method', 'meta_value' => $data['payment_method']],
-                ['post_id' => $orderId, 'meta_key' => '_created_via', 'meta_value' => 'phone-order-dashboard'],
+            // 2. Insert order meta (add all required meta here)
+            $orderMeta = [
+                ['post_id' => $orderId, 'meta_key' => '_order_key', 'meta_value' => Str::random(13)],
+                ['post_id' => $orderId, 'meta_key' => '_order_currency', 'meta_value' => 'USD'],
+                ['post_id' => $orderId, 'meta_key' => '_customer_user', 'meta_value' => $data['customer_id'] ?? 0],
+                ['post_id' => $orderId, 'meta_key' => '_order_version', 'meta_value' => '3.0.0'],
+                ['post_id' => $orderId, 'meta_key' => '_prices_include_tax', 'meta_value' => 'no'],
+                ['post_id' => $orderId, 'meta_key' => '_payment_method', 'meta_value' => 'manual'],
+                ['post_id' => $orderId, 'meta_key' => '_payment_method_title', 'meta_value' => 'Manual'],
+                ['post_id' => $orderId, 'meta_key' => '_created_via', 'meta_value' => 'admin'],
+                ['post_id' => $orderId, 'meta_key' => '_cart_hash', 'meta_value' => Str::random(32)],
+                ['post_id' => $orderId, 'meta_key' => '_order_stock_reduced', 'meta_value' => 'yes'],
+                ['post_id' => $orderId, 'meta_key' => '_download_permissions_granted', 'meta_value' => 'yes'],
+                ['post_id' => $orderId, 'meta_key' => '_new_order_email_sent', 'meta_value' => 'yes'],
+                ['post_id' => $orderId, 'meta_key' => '_recorded_sales', 'meta_value' => 'yes'],
+                ['post_id' => $orderId, 'meta_key' => '_recorded_coupon_usage_counts', 'meta_value' => 'yes'],
             ];
-            $db->table('postmeta')->insert($meta);
+            $db->table('postmeta')->insert($orderMeta);
 
-            // 4. Add order items
+            // 3. Insert order items and meta
+            $totalAmount = 0;
             foreach ($data['order_items'] as $item) {
+                $totalAmount += $item['price'] * $item['qty'];
+
                 $orderItemId = $db->table('woocommerce_order_items')->insertGetId([
                     'order_item_name' => $item['name'],
                     'order_item_type' => 'line_item',
                     'order_id' => $orderId,
                 ]);
-                $db->table('woocommerce_order_itemmeta')->insert([
-                    ['order_item_id' => $orderItemId, 'meta_key' => '_product_id', 'meta_value' => $item['id']],
-                    ['order_item_id' => $orderItemId, 'meta_key' => '_qty', 'meta_value' => $item['qty']],
-                    ['order_item_id' => $orderItemId, 'meta_key' => '_line_total', 'meta_value' => $item['price'] * $item['qty']],
-                ]);
 
-                // Insert into product lookup table
-                $db->table('wc_order_product_lookup')->insert([
+                $itemMeta = [
+                    ['order_item_id' => $orderItemId, 'meta_key' => '_product_id', 'meta_value' => $item['product_id']],
+                    ['order_item_id' => $orderItemId, 'meta_key' => '_variation_id', 'meta_value' => $item['variation_id'] ?? 0],
+                    ['order_item_id' => $orderItemId, 'meta_key' => '_qty', 'meta_value' => $item['qty']],
+                    ['order_item_id' => $orderItemId, 'meta_key' => '_tax_class', 'meta_value' => ''],
+                    ['order_item_id' => $orderItemId, 'meta_key' => '_line_subtotal', 'meta_value' => $item['price'] * $item['qty']],
+                    ['order_item_id' => $orderItemId, 'meta_key' => '_line_subtotal_tax', 'meta_value' => 0],
+                    ['order_item_id' => $orderItemId, 'meta_key' => '_line_total', 'meta_value' => $item['price'] * $item['qty']],
+                    ['order_item_id' => $orderItemId, 'meta_key' => '_line_tax', 'meta_value' => 0],
+                    ['order_item_id' => $orderItemId, 'meta_key' => '_line_tax_data', 'meta_value' => 'a:2:{s:5:"total";a:0:{}s:8:"subtotal";a:0:{}}'],
+                ];
+
+                // Add variation attributes as meta
+                if (!empty($item['attributes']) && is_array($item['attributes'])) {
+                    foreach ($item['attributes'] as $key => $value) {
+                        $itemMeta[] = [
+                            'order_item_id' => $orderItemId,
+                            'meta_key' => $key,
+                            'meta_value' => $value,
+                        ];
+                    }
+                }
+
+                $db->table('woocommerce_order_itemmeta')->insert($itemMeta);
+
+                // Insert into wc_order_product_lookup
+                $db->table($this->getTableName('wc_order_product_lookup'))->insert([
                     'order_id' => $orderId,
                     'order_item_id' => $orderItemId,
-                    'product_id' => $item['id'],
-                    'customer_id' => $customerId,
-                    'date_created' => now(),
+                    'product_id' => $item['product_id'],
+                    'variation_id' => $item['variation_id'] ?? 0,
+                    'customer_id' => $data['customer_id'] ?? 0,
+                    'date_created' => $dateCreated,
                     'product_qty' => $item['qty'],
                     'product_net_revenue' => $item['price'] * $item['qty'],
                     'product_gross_revenue' => $item['price'] * $item['qty'],
                 ]);
             }
 
-            // 5. Add order notes (comments)
-            if (!empty($data['private_note'])) {
-                $db->table('comments')->insert([
-                    'comment_post_ID' => $orderId,
-                    'comment_author' => 'admin',
-                    'comment_content' => $data['private_note'],
-                    'comment_type' => 'order_note',
-                    'comment_approved' => 1,
-                    'comment_date' => now(),
-                    'comment_date_gmt' => now('UTC'),
-                ]);
-            }
-
-            // 6. Insert into order stats table for visibility
-            $db->table('wc_order_stats')->insert([
-                'order_id' => $orderId,
-                'parent_id' => 0,
-                'date_created' => now(),
-                'date_created_gmt' => now('UTC'),
-                'num_items_sold' => count($data['order_items']),
-                'total_sales' => $finalTotal,
-                'tax_total' => $taxes,
-                'shipping_total' => $shipping,
-                'net_total' => $finalTotal - $taxes,
-                'status' => 'wc-' . ($data['order_status'] ?? 'pending'),
-                'customer_id' => $customerId,
-                'returning_customer' => false, // This can be enhanced later
+            // 4. Update order total meta
+            $db->table('postmeta')->insert([
+                ['post_id' => $orderId, 'meta_key' => '_order_total', 'meta_value' => $totalAmount],
+                ['post_id' => $orderId, 'meta_key' => '_order_tax', 'meta_value' => 0],
+                ['post_id' => $orderId, 'meta_key' => '_order_shipping', 'meta_value' => 0],
+                ['post_id' => $orderId, 'meta_key' => '_order_shipping_tax', 'meta_value' => 0],
+                ['post_id' => $orderId, 'meta_key' => '_cart_discount', 'meta_value' => 0],
+                ['post_id' => $orderId, 'meta_key' => '_cart_discount_tax', 'meta_value' => 0],
             ]);
 
             $db->commit();
-
-            // Clear the orders cache to reflect the new addition
-            (new CacheHelper())->clearByTags('orders');
-
-            return [
-                'success' => true,
-                'order_id' => $orderId,
-                'message' => 'Order created successfully.'
-            ];
+            return $orderId;
         } catch (\Exception $e) {
             $db->rollBack();
-            \Log::error('Order creation failed', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-            return [
-                'success' => false,
-                'message' => 'Order creation failed: '.$e->getMessage()
-            ];
+            throw $e;
         }
     }
 

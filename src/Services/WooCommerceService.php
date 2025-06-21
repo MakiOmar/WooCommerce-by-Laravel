@@ -6,6 +6,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+use Makiomar\WooOrderDashboard\Helpers\CacheHelper;
 
 class WooCommerceService
 {
@@ -531,7 +532,7 @@ class WooCommerceService
                 }
 
                 // Clear the orders cache
-                static::clearCacheByTags('orders');
+                (new CacheHelper())->clearByTags('orders');
                 
                 return [
                     'success' => true,

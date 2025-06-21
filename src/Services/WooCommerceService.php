@@ -310,9 +310,9 @@ class WooCommerceService
                   ->orWhereExists(function ($sub) use ($search) {
                       $sub->select(DB::raw(1))
                           ->from('postmeta')
-                          ->whereRaw('post_id = p.ID')
-                          ->where('meta_key', '_sku')
-                          ->where('meta_value', 'like', "%$search%");
+                          ->whereRaw('postmeta.post_id = p.ID')
+                          ->where('postmeta.meta_key', '_sku')
+                          ->where('postmeta.meta_value', 'like', "%$search%");
                   })
                   ->orWhere(function($q2) use ($search) {
                       $q2->where('p.post_type', 'product_variation')

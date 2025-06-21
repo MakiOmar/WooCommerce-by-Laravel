@@ -19,12 +19,12 @@
                                     <span id="selected-count">0</span> selected
                                 </span>
                                 <div class="dropdown">
-                                    <button class="btn btn-outline-danger dropdown-toggle" type="button" id="bulkActionDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <button class="btn btn-sm btn-outline-danger dropdown-toggle" type="button" id="bulkActionDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                         Bulk Actions
                                     </button>
-                                    <div class="dropdown-menu" aria-labelledby="bulkActionDropdown">
+                                    <div class="dropdown-menu dropdown-menu-right" aria-labelledby="bulkActionDropdown">
                                         <a class="dropdown-item text-danger" href="#" id="bulk-delete">
-                                            <i class="fas fa-trash mr-2"></i>Delete Selected
+                                            <i class="fas fa-trash-alt mr-2"></i>Delete Selected
                                         </a>
                                     </div>
                                 </div>
@@ -221,73 +221,49 @@
         // Bulk actions functionality
         var selectedOrders = [];
 
-        // Handle select all checkbox
+        function updateBulkActionsUI() {
+            var count = selectedOrders.length;
+            $('#selected-count').text(count);
+            
+            if (count > 0) {
+                $('.bulk-actions').fadeIn('fast');
+            } else {
+                $('.bulk-actions').fadeOut('fast');
+            }
+        }
+
         $('#select-all').on('change', function() {
             var isChecked = $(this).is(':checked');
-            $('.order-checkbox').prop('checked', isChecked);
-            
-            if (isChecked) {
-                selectedOrders = $('.order-checkbox').map(function() {
-                    return $(this).val();
-                }).get();
-            } else {
-                selectedOrders = [];
-            }
-            
-            updateBulkActions();
+            $('.order-checkbox').prop('checked', isChecked).trigger('change');
         });
 
-        // Handle individual order checkboxes
         $(document).on('change', '.order-checkbox', function() {
             var orderId = $(this).val();
             
             if ($(this).is(':checked')) {
-                if (selectedOrders.indexOf(orderId) === -1) {
+                if (!selectedOrders.includes(orderId)) {
                     selectedOrders.push(orderId);
                 }
             } else {
-                selectedOrders = selectedOrders.filter(function(id) {
-                    return id !== orderId;
-                });
+                selectedOrders = selectedOrders.filter(id => id !== orderId);
             }
             
-            // Update select all checkbox
             var totalCheckboxes = $('.order-checkbox').length;
             var checkedCheckboxes = $('.order-checkbox:checked').length;
             
-            if (checkedCheckboxes === 0) {
-                $('#select-all').prop('indeterminate', false).prop('checked', false);
-            } else if (checkedCheckboxes === totalCheckboxes) {
-                $('#select-all').prop('indeterminate', false).prop('checked', true);
-            } else {
-                $('#select-all').prop('indeterminate', true);
-            }
+            $('#select-all').prop('indeterminate', checkedCheckboxes > 0 && checkedCheckboxes < totalCheckboxes);
             
-            updateBulkActions();
+            updateBulkActionsUI();
         });
 
-        // Update bulk actions visibility and count
-        function updateBulkActions() {
-            var count = selectedOrders.length;
-            $('#selected-count').text(count);
-            $('#delete-count').text(count);
-            
-            if (count > 0) {
-                $('.bulk-actions').show();
-            } else {
-                $('.bulk-actions').hide();
-            }
-        }
-
-        // Handle bulk delete
         $('#bulk-delete').on('click', function(e) {
             e.preventDefault();
             if (selectedOrders.length > 0) {
+                $('#delete-count').text(selectedOrders.length);
                 $('#bulkDeleteModal').modal('show');
             }
         });
 
-        // Confirm bulk delete
         $('#confirm-bulk-delete').on('click', function() {
             var button = $(this);
             var originalText = button.html();
@@ -302,21 +278,7 @@
                     order_ids: selectedOrders
                 },
                 success: function(response) {
-                    if (response.success) {
-                        // Show success message
-                        $('<div class="alert alert-success alert-dismissible fade show" role="alert">' +
-                            '<i class="fas fa-check-circle"></i> ' + response.message +
-                            '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
-                            '<span aria-hidden="true">&times;</span></button></div>')
-                            .insertAfter('.container-fluid .row:first-child');
-                        
-                        // Reload the page to show updated data
-                        setTimeout(function() {
-                            location.reload();
-                        }, 1500);
-                    } else {
-                        alert('Error: ' + response.message);
-                    }
+                    location.reload();
                 },
                 error: function(xhr) {
                     var message = 'An error occurred while deleting orders.';
@@ -324,9 +286,9 @@
                         message = xhr.responseJSON.message;
                     }
                     alert('Error: ' + message);
+                    button.prop('disabled', false).html(originalText);
                 },
                 complete: function() {
-                    button.prop('disabled', false).html(originalText);
                     $('#bulkDeleteModal').modal('hide');
                 }
             });

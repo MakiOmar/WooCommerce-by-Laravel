@@ -202,9 +202,12 @@
 <link href="{{ asset('css/woo-order-dashboard.css') }}" rel="stylesheet">
 @endpush
 
-@push('scripts')
+@push('js')
 <script>
     $(document).ready(function() {
+        // Initialize Bootstrap dropdowns
+        $('[data-toggle="dropdown"]').dropdown();
+
         // Date range picker initialization
         $('#start_date, #end_date').on('change', function() {
             var startDate = $('#start_date').val();

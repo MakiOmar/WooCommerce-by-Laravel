@@ -55,7 +55,7 @@ class OrdersController extends Controller
     {
         $request->validate([
             'order_ids' => 'required|array',
-            'order_ids.*' => 'integer|exists:posts,ID'
+            'order_ids.*' => 'integer|exists:woocommerce.posts,ID'
         ]);
 
         $orderIds = $request->input('order_ids');

@@ -218,13 +218,13 @@ return [
     |
     */
     'status_colors' => [
-        'pending' => 'warning',
+        'pending'    => 'warning', // For "Pending payment"
         'processing' => 'primary',
-        'on-hold' => 'info',
-        'completed' => 'success',
-        'cancelled' => 'danger',
-        'refunded' => 'secondary',
-        'failed' => 'danger',
-        'default' => 'secondary', // Fallback color for any undefined status
+        'on-hold'    => 'info',    // For "On hold"
+        'completed'  => 'success',
+        'cancelled'  => 'danger',
+        'refunded'   => 'secondary',
+        'failed'     => 'danger',
+        'default'    => 'secondary', // Fallback color for any undefined status
     ],
 ]; 

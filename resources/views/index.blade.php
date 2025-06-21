@@ -207,6 +207,9 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
 <script>
     $(document).ready(function() {
+        // Ensure all checkboxes are unchecked on page load
+        $('.order-checkbox, #select-all').prop('checked', false);
+
         // Initialize Bootstrap dropdowns
         $('[data-toggle="dropdown"]').dropdown();
 

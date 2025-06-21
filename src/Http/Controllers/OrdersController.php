@@ -50,4 +50,27 @@ class OrdersController extends Controller
             return back()->with('error', $result['message'] ?? 'Order creation failed.');
         }
     }
+
+    public function bulkDelete(Request $request)
+    {
+        $request->validate([
+            'order_ids' => 'required|array',
+            'order_ids.*' => 'integer|exists:posts,ID'
+        ]);
+
+        $orderIds = $request->input('order_ids');
+        $result = app(\Makiomar\WooOrderDashboard\Services\WooCommerceService::class)->bulkDeleteOrders($orderIds);
+
+        if ($result['success']) {
+            return response()->json([
+                'success' => true,
+                'message' => $result['message']
+            ]);
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => $result['message']
+            ], 400);
+        }
+    }
 } 

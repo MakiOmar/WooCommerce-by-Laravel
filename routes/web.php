@@ -12,4 +12,5 @@ Route::group(['middleware' => 'auth:admin'], function() {
     Route::get('/orders/products/search', [OrdersController::class, 'productsSearch'])->name('orders.products.search');
     Route::get('/orders/customers/search', [OrdersController::class, 'customersSearch'])->name('orders.customers.search');
     Route::post('/orders', [OrdersController::class, 'store'])->name('orders.store');
+    Route::post('/orders/bulk-delete', [OrdersController::class, 'bulkDelete'])->name('woo.orders.bulk-delete');
 }); 

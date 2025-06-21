@@ -470,4 +470,91 @@ class WooCommerceService
             ];
         }
     }
+
+    public function bulkDeleteOrders(array $orderIds)
+    {
+        $db = DB::connection('woocommerce');
+        try {
+            $db->beginTransaction();
+
+            $deletedCount = 0;
+            $errors = [];
+
+            foreach ($orderIds as $orderId) {
+                try {
+                    // 1. Delete order items and their meta
+                    $orderItemIds = $db->table('woocommerce_order_items')
+                        ->where('order_id', $orderId)
+                        ->pluck('order_item_id');
+
+                    if ($orderItemIds->isNotEmpty()) {
+                        $db->table('woocommerce_order_itemmeta')
+                            ->whereIn('order_item_id', $orderItemIds)
+                            ->delete();
+                        
+                        $db->table('woocommerce_order_items')
+                            ->whereIn('order_item_id', $orderItemIds)
+                            ->delete();
+                    }
+
+                    // 2. Delete order notes (comments)
+                    $db->table('comments')
+                        ->where('comment_post_ID', $orderId)
+                        ->where('comment_type', 'order_note')
+                        ->delete();
+
+                    // 3. Delete order meta (postmeta)
+                    $db->table('postmeta')
+                        ->where('post_id', $orderId)
+                        ->delete();
+
+                    // 4. Delete the order post
+                    $deleted = $db->table('posts')
+                        ->where('ID', $orderId)
+                        ->where('post_type', 'shop_order')
+                        ->delete();
+
+                    if ($deleted > 0) {
+                        $deletedCount++;
+                    }
+                } catch (\Exception $e) {
+                    $errors[] = "Order #{$orderId}: " . $e->getMessage();
+                }
+            }
+
+            $db->commit();
+
+            if ($deletedCount > 0) {
+                $message = "Successfully deleted {$deletedCount} order(s)";
+                if (!empty($errors)) {
+                    $message .= ". Errors: " . implode('; ', $errors);
+                }
+                
+                return [
+                    'success' => true,
+                    'message' => $message,
+                    'deleted_count' => $deletedCount,
+                    'errors' => $errors
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'No orders were deleted. Errors: ' . implode('; ', $errors)
+                ];
+            }
+
+        } catch (\Exception $e) {
+            $db->rollBack();
+            \Log::error('Bulk order deletion failed', [
+                'order_ids' => $orderIds,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Bulk deletion failed: ' . $e->getMessage()
+            ];
+        }
+    }
 }

@@ -446,6 +446,7 @@ class WooCommerceService
                 // Insert into product lookup table
                 $db->table('wc_order_product_lookup')->insert([
                     'order_id' => $orderId,
+                    'order_item_id' => $orderItemId,
                     'product_id' => $item['id'],
                     'customer_id' => $customerId,
                     'date_created' => now(),

@@ -396,6 +396,7 @@ class WooCommerceService
                 'post_name' => 'order-'.now()->timestamp,
                 'to_ping' => '',
                 'pinged' => '',
+                'post_parent' => 0,
                 'post_content_filtered' => '',
                 'post_type' => 'shop_order',
                 'post_mime_type' => '',

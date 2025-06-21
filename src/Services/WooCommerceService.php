@@ -387,23 +387,42 @@ class WooCommerceService
                 'post_date_gmt' => now('UTC'),
                 'post_content' => $data['customer_note'] ?? '',
                 'post_title' => 'Order &ndash; '.now()->format('F j, Y @ H:i'),
+                'post_excerpt' => '',
                 'post_status' => 'wc-'.($data['order_status'] ?? 'pending'),
                 'comment_status' => 'open',
                 'ping_status' => 'closed',
+                'post_password' => '',
                 'post_name' => 'order-'.now()->timestamp,
+                'to_ping' => '',
+                'pinged' => '',
+                'post_content_filtered' => '',
                 'post_type' => 'shop_order',
+                'post_mime_type' => '',
+                'comment_count' => 0,
                 'post_modified' => now(),
                 'post_modified_gmt' => now('UTC'),
                 'guid' => '',
             ]);
 
             // 3. Add order meta (postmeta)
+            // Calculate order total from items
+            $orderTotal = 0;
+            foreach ($data['order_items'] as $item) {
+                $orderTotal += ($item['price'] * $item['qty']);
+            }
+            
+            // Apply discount, add shipping and taxes
+            $discount = $data['discount'] ?? 0;
+            $shipping = $data['shipping'] ?? 0;
+            $taxes = $data['taxes'] ?? 0;
+            $finalTotal = $orderTotal - $discount + $shipping + $taxes;
+            
             $meta = [
                 ['post_id' => $orderId, 'meta_key' => '_customer_user', 'meta_value' => $customerId],
-                ['post_id' => $orderId, 'meta_key' => '_order_total', 'meta_value' => $data['discount'] + $data['shipping'] + $data['taxes']],
-                ['post_id' => $orderId, 'meta_key' => '_order_discount', 'meta_value' => $data['discount']],
-                ['post_id' => $orderId, 'meta_key' => '_order_shipping', 'meta_value' => $data['shipping']],
-                ['post_id' => $orderId, 'meta_key' => '_order_tax', 'meta_value' => $data['taxes']],
+                ['post_id' => $orderId, 'meta_key' => '_order_total', 'meta_value' => $finalTotal],
+                ['post_id' => $orderId, 'meta_key' => '_order_discount', 'meta_value' => $discount],
+                ['post_id' => $orderId, 'meta_key' => '_order_shipping', 'meta_value' => $shipping],
+                ['post_id' => $orderId, 'meta_key' => '_order_tax', 'meta_value' => $taxes],
                 ['post_id' => $orderId, 'meta_key' => '_payment_method', 'meta_value' => $data['payment_method']],
                 ['post_id' => $orderId, 'meta_key' => '_created_via', 'meta_value' => 'phone-order-dashboard'],
             ];

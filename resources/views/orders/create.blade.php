@@ -4,6 +4,9 @@
 <form id="order-create-form" method="POST" action="{{ route('orders.store') }}">
     @csrf
     <div class="container">
+        <!-- Flash Messages -->
+        @include('woo-order-dashboard::partials.flash-messages')
+
         <div class="row">
             <div class="col-md-8">
                 <div class="card mb-3">

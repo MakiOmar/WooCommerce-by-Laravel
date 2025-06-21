@@ -2,13 +2,35 @@
 
 @section('content')
 <div class="container-fluid">
+    <!-- Flash Messages -->
+    @include('woo-order-dashboard::partials.flash-messages')
+
     <div class="row mb-4">
         <div class="col-12">
             <div class="card">
                 <div class="card-header bg-light">
-                    <h3 class="card-title mb-0">
-                        <i class="fas fa-shopping-cart mr-2"></i>WooCommerce Orders
-                    </h3>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="card-title mb-0">
+                            <i class="fas fa-shopping-cart mr-2"></i>WooCommerce Orders
+                        </h3>
+                        <div class="bulk-actions" style="display: none;">
+                            <div class="d-flex align-items-center">
+                                <span class="mr-2 text-muted">
+                                    <span id="selected-count">0</span> selected
+                                </span>
+                                <div class="dropdown">
+                                    <button class="btn btn-outline-danger dropdown-toggle" type="button" id="bulkActionDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        Bulk Actions
+                                    </button>
+                                    <div class="dropdown-menu" aria-labelledby="bulkActionDropdown">
+                                        <a class="dropdown-item text-danger" href="#" id="bulk-delete">
+                                            <i class="fas fa-trash mr-2"></i>Delete Selected
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="card-body">
                     <!-- Filters Section -->
@@ -66,6 +88,12 @@
                         <table class="table table-hover mb-0">
                             <thead class="thead-light">
                                 <tr>
+                                    <th class="border-0" style="width: 40px;">
+                                        <div class="custom-control custom-checkbox">
+                                            <input type="checkbox" class="custom-control-input" id="select-all">
+                                            <label class="custom-control-label" for="select-all"></label>
+                                        </div>
+                                    </th>
                                     <th class="border-0">Order ID</th>
                                     <th class="border-0">Date</th>
                                     <th class="border-0">Status</th>
@@ -77,6 +105,12 @@
                             <tbody>
                                 @forelse($orders['data'] ?? [] as $order)
                                     <tr>
+                                        <td class="align-middle">
+                                            <div class="custom-control custom-checkbox">
+                                                <input type="checkbox" class="custom-control-input order-checkbox" id="order-{{ $order['id'] }}" value="{{ $order['id'] }}">
+                                                <label class="custom-control-label" for="order-{{ $order['id'] }}"></label>
+                                            </div>
+                                        </td>
                                         <td class="align-middle">
                                             <span class="font-weight-bold">#{{ $order['id'] }}</span>
                                         </td>
@@ -111,7 +145,7 @@
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="6" class="text-center py-4">
+                                        <td colspan="7" class="text-center py-4">
                                             <div class="text-muted">
                                                 <i class="fas fa-box-open fa-2x mb-2"></i>
                                                 <p class="mb-0">No orders found</p>
@@ -129,6 +163,35 @@
                         </div>
                     @endif
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Delete Confirmation Modal -->
+<div class="modal fade" id="bulkDeleteModal" tabindex="-1" role="dialog" aria-labelledby="bulkDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bulkDeleteModalLabel">
+                    <i class="fas fa-exclamation-triangle text-danger mr-2"></i>Confirm Bulk Delete
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong><span id="delete-count">0</span> selected orders</strong>?</p>
+                <p class="text-danger mb-0">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    This action cannot be undone. All order data including items, notes, and meta information will be permanently deleted.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirm-bulk-delete">
+                    <i class="fas fa-trash mr-1"></i>Delete Orders
+                </button>
             </div>
         </div>
     </div>
@@ -153,6 +216,120 @@
                     $(this).val('');
                 }
             }
+        });
+
+        // Bulk actions functionality
+        var selectedOrders = [];
+
+        // Handle select all checkbox
+        $('#select-all').on('change', function() {
+            var isChecked = $(this).is(':checked');
+            $('.order-checkbox').prop('checked', isChecked);
+            
+            if (isChecked) {
+                selectedOrders = $('.order-checkbox').map(function() {
+                    return $(this).val();
+                }).get();
+            } else {
+                selectedOrders = [];
+            }
+            
+            updateBulkActions();
+        });
+
+        // Handle individual order checkboxes
+        $(document).on('change', '.order-checkbox', function() {
+            var orderId = $(this).val();
+            
+            if ($(this).is(':checked')) {
+                if (selectedOrders.indexOf(orderId) === -1) {
+                    selectedOrders.push(orderId);
+                }
+            } else {
+                selectedOrders = selectedOrders.filter(function(id) {
+                    return id !== orderId;
+                });
+            }
+            
+            // Update select all checkbox
+            var totalCheckboxes = $('.order-checkbox').length;
+            var checkedCheckboxes = $('.order-checkbox:checked').length;
+            
+            if (checkedCheckboxes === 0) {
+                $('#select-all').prop('indeterminate', false).prop('checked', false);
+            } else if (checkedCheckboxes === totalCheckboxes) {
+                $('#select-all').prop('indeterminate', false).prop('checked', true);
+            } else {
+                $('#select-all').prop('indeterminate', true);
+            }
+            
+            updateBulkActions();
+        });
+
+        // Update bulk actions visibility and count
+        function updateBulkActions() {
+            var count = selectedOrders.length;
+            $('#selected-count').text(count);
+            $('#delete-count').text(count);
+            
+            if (count > 0) {
+                $('.bulk-actions').show();
+            } else {
+                $('.bulk-actions').hide();
+            }
+        }
+
+        // Handle bulk delete
+        $('#bulk-delete').on('click', function(e) {
+            e.preventDefault();
+            if (selectedOrders.length > 0) {
+                $('#bulkDeleteModal').modal('show');
+            }
+        });
+
+        // Confirm bulk delete
+        $('#confirm-bulk-delete').on('click', function() {
+            var button = $(this);
+            var originalText = button.html();
+            
+            button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i>Deleting...');
+            
+            $.ajax({
+                url: '{{ route("woo.orders.bulk-delete") }}',
+                method: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    order_ids: selectedOrders
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // Show success message
+                        $('<div class="alert alert-success alert-dismissible fade show" role="alert">' +
+                            '<i class="fas fa-check-circle"></i> ' + response.message +
+                            '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                            '<span aria-hidden="true">&times;</span></button></div>')
+                            .insertAfter('.container-fluid .row:first-child');
+                        
+                        // Reload the page to show updated data
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1500);
+                    } else {
+                        alert('Error: ' + response.message);
+                    }
+                },
+                error: function(xhr) {
+                    var message = 'An error occurred while deleting orders.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        message = xhr.responseJSON.message;
+                    }
+                    alert('Error: ' + message);
+                },
+                complete: function() {
+                    button.prop('disabled', false).html(originalText);
+                    $('#bulkDeleteModal').modal('hide');
+                }
+            });
         });
     });
 </script>

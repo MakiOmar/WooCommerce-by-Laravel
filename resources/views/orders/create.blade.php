@@ -133,7 +133,7 @@
                                         <label class="form-label text-muted">Discount</label>
                                         <div class="input-group">
                                             <span class="input-group-text">ج.م</span>
-                                            <input type="number" class="form-control order-discount" value="0" min="0" step="0.01">
+                                            <input type="number" class="form-control order-discount" name="discount" value="0" min="0" step="0.01">
                                         </div>
                                     </div>
                                 </div>
@@ -144,7 +144,7 @@
                                         <label class="form-label text-muted">Shipping</label>
                                         <div class="input-group">
                                             <span class="input-group-text">ج.م</span>
-                                            <input type="number" class="form-control order-shipping" value="0" min="0" step="0.01">
+                                            <input type="number" class="form-control order-shipping" name="shipping" value="0" min="0" step="0.01">
                                         </div>
                                     </div>
                                 </div>
@@ -155,7 +155,7 @@
                                         <label class="form-label text-muted">Tax</label>
                                         <div class="input-group">
                                             <span class="input-group-text">ج.م</span>
-                                            <input type="number" class="form-control order-taxes" value="0" min="0" step="0.01">
+                                            <input type="number" class="form-control order-taxes" name="taxes" value="0" min="0" step="0.01">
                                         </div>
                                     </div>
                                 </div>
@@ -296,11 +296,13 @@ $(function() {
         var email = $(this).data('email');
         var id = $(this).data('id');
         $custInput.val(name);
+        $('#customer_id').val(id);
         $custDetails.html('<div class="alert alert-info p-2">'+name+'<br><small>'+email+'</small></div>').show();
         if ($custDropdown) $custDropdown.remove();
     });
     $(document).on('click', '.add-new-customer', function(e) {
         e.preventDefault();
+        $('#customer_id').val('');
         $custDetails.html('<div class="alert alert-warning p-2">New customer will be created on order submit.</div>').show();
         if ($custDropdown) $custDropdown.remove();
     });
@@ -324,14 +326,18 @@ $(function() {
             items.push({
                 id: $(this).data('id'),
                 name: $(this).find('td').eq(0).text(),
-                price: $(this).find('.order-price').text(),
-                qty: $(this).find('.order-qty').val()
+                price: parseFloat($(this).find('.order-price').text()) || 0,
+                qty: parseInt($(this).find('.order-qty').val()) || 1
             });
         });
         $('#order_items').val(JSON.stringify(items));
-        // Set customer id if selected
-        var custId = $custDropdown && $custDropdown.find('.cust-item.active').data('id');
-        if (custId) $('#customer_id').val(custId);
+        
+        // Validate that we have at least one item
+        if (items.length === 0) {
+            e.preventDefault();
+            alert('Please add at least one product to the order.');
+            return false;
+        }
     });
 });
 </script>

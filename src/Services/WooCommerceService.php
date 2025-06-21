@@ -457,6 +457,10 @@ class WooCommerceService
             }
 
             $db->commit();
+
+            // Clear the orders cache to reflect the new addition
+            (new CacheHelper())->clearByTags('orders');
+
             return [
                 'success' => true,
                 'order_id' => $orderId,

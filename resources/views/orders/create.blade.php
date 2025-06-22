@@ -183,8 +183,8 @@
 
 @push('js')
 <script>
-$(function() {
-    // Product search dropdown
+$(document).ready(function() {
+    // Product search dropdown - define variables inside document ready
     var $prodInput = $('#product_search');
     var $prodTable = $('#products-table tbody');
     var $prodDropdown = $('#product_search_dropdown');
@@ -192,6 +192,8 @@ $(function() {
     // Debug: Check if table body is found
     console.log('Table body found:', $prodTable.length);
     console.log('Table body element:', $prodTable);
+    console.log('Product input found:', $prodInput.length);
+    console.log('Product dropdown found:', $prodDropdown.length);
 
     function recalcSummary() {
         var subtotal = 0;
@@ -265,10 +267,15 @@ $(function() {
         e.preventDefault();
         e.stopPropagation();
         
+        console.log('Product item clicked!');
+        console.log('Clicked element:', this);
+        
         var productId = $(this).data('product-id');
         var variationId = $(this).data('variation-id');
         var name = $(this).data('name');
         var price = parseFloat($(this).data('price')) || 0;
+        
+        console.log('Product data:', {productId, variationId, name, price});
         
         // Handle attributes more safely
         var attributes = {};
@@ -281,14 +288,21 @@ $(function() {
             console.log('Error parsing attributes:', e);
             attributes = {};
         }
+        
+        console.log('Attributes:', attributes);
 
         var rowId = variationId > 0 ? variationId : productId;
         var $existingRow = $prodTable.find('tr[data-row-id="'+rowId+'"]');
         
+        console.log('Row ID:', rowId);
+        console.log('Existing row found:', $existingRow.length);
+        
         if ($existingRow.length > 0) {
+            console.log('Updating existing row quantity');
             var $qtyInput = $existingRow.find('.order-qty');
             $qtyInput.val(parseInt($qtyInput.val() || 1) + 1).trigger('input');
         } else {
+            console.log('Creating new row');
             var attrHtml = '';
             if (Object.keys(attributes).length > 0) {
                 attrHtml = '<br><small class="text-info">' + Object.entries(attributes).map(function([k, v]) {
@@ -304,22 +318,29 @@ $(function() {
                 '<td><button type="button" class="btn btn-sm btn-danger remove-item">&times;</button></td>' +
                 '</tr>';
             
-            console.log('Attempting to append row:', row);
+            console.log('Row HTML to append:', row);
             console.log('Target table body:', $prodTable);
             console.log('Table body length:', $prodTable.length);
+            console.log('Table body HTML:', $prodTable.html());
             
             // Try multiple approaches to append the row
             if ($prodTable.length > 0) {
+                console.log('Attempting to append to existing table body');
                 $prodTable.append(row);
                 console.log('Row appended successfully');
+                console.log('Table body after append:', $prodTable.html());
             } else {
+                console.log('Table body not found, trying fallback');
                 // Fallback: try to find the table body again
                 var $tableBody = $('#products-table tbody');
+                console.log('Fallback table body found:', $tableBody.length);
                 if ($tableBody.length > 0) {
                     $tableBody.append(row);
                     console.log('Row appended using fallback method');
                 } else {
                     console.error('Could not find table body to append row');
+                    console.log('Available elements with products-table ID:', $('#products-table').length);
+                    console.log('Available tbody elements:', $('tbody').length);
                 }
             }
         }

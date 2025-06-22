@@ -189,6 +189,10 @@ $(function() {
     var $prodTable = $('#products-table tbody');
     var $prodDropdown = $('#product_search_dropdown');
 
+    // Debug: Check if table body is found
+    console.log('Table body found:', $prodTable.length);
+    console.log('Table body element:', $prodTable);
+
     function recalcSummary() {
         var subtotal = 0;
         
@@ -299,7 +303,25 @@ $(function() {
                 '<td class="line-item-total">'+price.toFixed(2)+'</td>' +
                 '<td><button type="button" class="btn btn-sm btn-danger remove-item">&times;</button></td>' +
                 '</tr>';
-            $prodTable.append(row);
+            
+            console.log('Attempting to append row:', row);
+            console.log('Target table body:', $prodTable);
+            console.log('Table body length:', $prodTable.length);
+            
+            // Try multiple approaches to append the row
+            if ($prodTable.length > 0) {
+                $prodTable.append(row);
+                console.log('Row appended successfully');
+            } else {
+                // Fallback: try to find the table body again
+                var $tableBody = $('#products-table tbody');
+                if ($tableBody.length > 0) {
+                    $tableBody.append(row);
+                    console.log('Row appended using fallback method');
+                } else {
+                    console.error('Could not find table body to append row');
+                }
+            }
         }
         
         $prodDropdown.hide();

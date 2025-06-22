@@ -226,6 +226,7 @@ $(function() {
         }
         
         $.getJSON("{{ route('orders.products.search') }}", {q: q}, function(data) {
+            console.log('Search results:', data);
             $prodDropdown.empty().show();
             if (data.length === 0) {
                 $prodDropdown.append('<div class="list-group-item">No products found</div>');
@@ -239,26 +240,43 @@ $(function() {
                     }
                     
                     var skuInfo = p.sku ? ' (SKU: ' + p.sku + ')' : '';
-                    $prodDropdown.append(
-                        '<button type="button" class="list-group-item list-group-item-action prod-item" ' +
+                    var buttonHtml = '<button type="button" class="list-group-item list-group-item-action prod-item" ' +
                         'data-product-id="'+p.product_id+'" data-variation-id="'+p.variation_id+'" ' +
                         'data-name="'+p.name+'" data-price="'+p.price+'" data-attributes=\''+JSON.stringify(p.attributes || {})+'\'>' +
                         '<div class="d-flex justify-content-between align-items-start">' +
                         '<div><strong>'+p.name+'</strong>'+attrs+'<br><small class="text-muted">ID: '+p.product_id+(p.variation_id ? ' | Variation: '+p.variation_id : '')+skuInfo+'</small></div>' +
                         '<div class="text-right"><strong>$'+(parseFloat(p.price) || 0).toFixed(2)+'</strong></div>' +
-                        '</div></button>'
-                    );
+                        '</div></button>';
+                    
+                    $prodDropdown.append(buttonHtml);
                 });
             }
+        }).fail(function(xhr, status, error) {
+            console.error('Search failed:', error);
+            $prodDropdown.empty().show().append('<div class="list-group-item text-danger">Search failed: ' + error + '</div>');
         });
     });
 
-    $(document).on('click', '.prod-item', function() {
+    $(document).on('click', '.prod-item', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        
         var productId = $(this).data('product-id');
         var variationId = $(this).data('variation-id');
         var name = $(this).data('name');
         var price = parseFloat($(this).data('price')) || 0;
-        var attributes = $(this).data('attributes') ? JSON.parse($(this).attr('data-attributes')) : {};
+        
+        // Handle attributes more safely
+        var attributes = {};
+        try {
+            var attrData = $(this).attr('data-attributes');
+            if (attrData) {
+                attributes = JSON.parse(attrData);
+            }
+        } catch (e) {
+            console.log('Error parsing attributes:', e);
+            attributes = {};
+        }
 
         var rowId = variationId > 0 ? variationId : productId;
         var $existingRow = $prodTable.find('tr[data-row-id="'+rowId+'"]');
@@ -287,6 +305,8 @@ $(function() {
         $prodDropdown.hide();
         $prodInput.val('');
         recalcSummary();
+        
+        console.log('Product added:', {productId, variationId, name, price, attributes});
     });
 
     $prodTable.on('input', '.order-qty', function() {

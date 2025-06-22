@@ -307,17 +307,17 @@ class WooCommerceService
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('p.post_title', 'like', "%$search%")
-                  ->orWhereExists(function ($sub) use ($search) {
-                      $sub->select(DB::raw(1))
-                          ->from('postmeta')
-                          ->whereRaw('postmeta.post_id = p.ID')
-                          ->where('postmeta.meta_key', '_sku')
-                          ->where('postmeta.meta_value', 'like', "%$search%");
-                  })
-                  ->orWhere(function($q2) use ($search) {
-                      $q2->where('p.post_type', 'product_variation')
-                         ->where('parent.post_title', 'like', "%$search%");
-                  });
+                ->orWhereExists(function ($sub) use ($search) {
+                    $sub->select(DB::raw(1))
+                        ->from('postmeta')
+                        ->whereColumn('postmeta.post_id', 'p.ID')
+                        ->where('postmeta.meta_key', '_sku')
+                        ->where('postmeta.meta_value', 'like', "%$search%");
+                })
+                ->orWhere(function ($q2) use ($search) {
+                    $q2->where('p.post_type', 'product_variation')
+                        ->where('parent.post_title', 'like', "%$search%");
+                });
             });
         }
 
@@ -328,20 +328,23 @@ class WooCommerceService
         }
 
         $postIds = $results->pluck('post_id')->all();
+
+        // Load basic meta (_sku, _price)
         $meta = DB::connection('woocommerce')->table('postmeta')
             ->whereIn('post_id', $postIds)
             ->whereIn('meta_key', ['_sku', '_price'])
             ->get()
             ->groupBy('post_id');
 
-        // Fetch variation attributes for variable products
+        // Load variation attributes
         $variationAttributes = [];
         $variationIds = $results->where('post_type', 'product_variation')->pluck('post_id')->all();
-        if ($variationIds) {
+        if (!empty($variationIds)) {
             $attrs = DB::connection('woocommerce')->table('postmeta')
                 ->whereIn('post_id', $variationIds)
                 ->where('meta_key', 'like', 'attribute_%')
                 ->get();
+
             foreach ($attrs as $attr) {
                 $variationAttributes[$attr->post_id][$attr->meta_key] = $attr->meta_value;
             }
@@ -352,7 +355,7 @@ class WooCommerceService
             $isVariation = $product->post_type === 'product_variation';
 
             $name = $isVariation
-                ? ($product->parent_name . ' - ' . str_replace(' - ', ', ', $product->post_name))
+                ? trim($product->parent_name . ' - ' . str_replace(' - ', ', ', $product->post_name))
                 : $product->post_name;
 
             $attributes = $isVariation ? ($variationAttributes[$product->post_id] ?? []) : [];

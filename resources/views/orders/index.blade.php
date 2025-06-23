@@ -14,7 +14,7 @@
                     </h3>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('woo.orders') }}" method="GET" class="form-horizontal">
+                    <form action="{{ route('orders.index') }}" method="GET" class="form-horizontal">
                         <div class="row">
                             <div class="col-md-3">
                                 <div class="form-group">
@@ -87,7 +87,7 @@
                                         <button type="submit" class="btn btn-primary">
                                             <i class="fas fa-search mr-1"></i> Filter
                                         </button>
-                                        <a href="{{ route('woo.orders') }}" class="btn btn-secondary">
+                                        <a href="{{ route('orders.index') }}" class="btn btn-secondary">
                                             <i class="fas fa-redo mr-1"></i> Reset
                                         </a>
                                     </div>
@@ -182,7 +182,7 @@
                                             </div>
                                         </td>
                                         <td class="align-middle text-center">
-                                            <a href="{{ route('woo.orders.show', $order['id']) }}" class="btn btn-sm btn-info">
+                                            <a href="{{ route('orders.show', $order['id']) }}" class="btn btn-sm btn-info">
                                                 <i class="fas fa-eye mr-1"></i> View
                                             </a>
                                         </td>
@@ -339,7 +339,7 @@
             button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i>Deleting...');
             
             $.ajax({
-                url: '{{ route("woo.orders.bulk-delete") }}',
+                url: '{{ route("orders.bulk-delete") }}',
                 method: 'POST',
                 data: {
                     _token: '{{ csrf_token() }}',

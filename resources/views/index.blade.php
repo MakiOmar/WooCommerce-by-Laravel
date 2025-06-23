@@ -287,7 +287,7 @@
             button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i>Deleting...');
             
             $.ajax({
-                url: '{{ route("woo.orders.bulk-delete") }}',
+                url: '{{ route("orders.bulk-delete") }}',
                 method: 'POST',
                 data: {
                     _token: '{{ csrf_token() }}',

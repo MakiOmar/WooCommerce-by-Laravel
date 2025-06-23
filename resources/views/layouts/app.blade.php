@@ -213,7 +213,7 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
-            <a class="navbar-brand" href="{{ route('woo.dashboard') }}">
+            <a class="navbar-brand" href="{{ route('orders.index') }}">
                 <i class="fas fa-shopping-cart mr-2"></i>
                 WooCommerce Order Dashboard
             </a>
@@ -223,8 +223,8 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('woo.dashboard') ? 'active' : '' }}" 
-                           href="{{ route('woo.dashboard') }}">
+                        <a class="nav-link {{ request()->routeIs('orders.index') ? 'active' : '' }}" 
+                           href="{{ route('orders.index') }}">
                             <i class="fas fa-chart-line mr-1"></i> Dashboard
                         </a>
                     </li>

@@ -189,12 +189,6 @@ $(document).ready(function() {
     var $prodTable = $('#products-table tbody');
     var $prodDropdown = $('#product_search_dropdown');
 
-    // Debug: Check if table body is found
-    console.log('Table body found:', $prodTable.length);
-    console.log('Table body element:', $prodTable);
-    console.log('Product input found:', $prodInput.length);
-    console.log('Product dropdown found:', $prodDropdown.length);
-
     function recalcSummary() {
         var subtotal = 0;
         
@@ -232,12 +226,20 @@ $(document).ready(function() {
         }
         
         $.getJSON("{{ route('orders.products.search') }}", {q: q}, function(data) {
-            console.log('Search results:', data);
             $prodDropdown.empty().show();
             if (data.length === 0) {
                 $prodDropdown.append('<div class="list-group-item">No products found</div>');
             } else {
                 data.forEach(function(p) {
+                    var productData = {
+                        productId: p.product_id,
+                        variationId: p.variation_id,
+                        name: p.name,
+                        price: p.price,
+                        sku: p.sku,
+                        attributes: p.attributes || {}
+                    };
+
                     var attrs = '';
                     if (p.variation_id && p.attributes && Object.keys(p.attributes).length > 0) {
                         attrs = '<br><small class="text-info">' + Object.entries(p.attributes).map(function([k, v]) {
@@ -246,15 +248,15 @@ $(document).ready(function() {
                     }
                     
                     var skuInfo = p.sku ? ' (SKU: ' + p.sku + ')' : '';
-                    var buttonHtml = '<button type="button" class="list-group-item list-group-item-action prod-item" ' +
-                        'data-product-id="'+p.product_id+'" data-variation-id="'+p.variation_id+'" ' +
-                        'data-name="'+p.name+'" data-price="'+p.price+'" data-attributes=\''+JSON.stringify(p.attributes || {})+'\'>' +
-                        '<div class="d-flex justify-content-between align-items-start">' +
+                    var buttonHtml = '<div class="d-flex justify-content-between align-items-start">' +
                         '<div><strong>'+p.name+'</strong>'+attrs+'<br><small class="text-muted">ID: '+p.product_id+(p.variation_id ? ' | Variation: '+p.variation_id : '')+skuInfo+'</small></div>' +
                         '<div class="text-right"><strong>$'+(parseFloat(p.price) || 0).toFixed(2)+'</strong></div>' +
-                        '</div></button>';
-                    
-                    $prodDropdown.append(buttonHtml);
+                        '</div>';
+
+                    $('<button type="button" class="list-group-item list-group-item-action prod-item"></button>')
+                        .html(buttonHtml)
+                        .data('product', productData)
+                        .appendTo($prodDropdown);
                 });
             }
         }).fail(function(xhr, status, error) {
@@ -267,42 +269,25 @@ $(document).ready(function() {
         e.preventDefault();
         e.stopPropagation();
         
-        console.log('Product item clicked!');
-        console.log('Clicked element:', this);
-        
-        var productId = $(this).data('product-id');
-        var variationId = $(this).data('variation-id');
-        var name = $(this).data('name');
-        var price = parseFloat($(this).data('price')) || 0;
-        
-        console.log('Product data:', {productId, variationId, name, price});
-        
-        // Handle attributes more safely
-        var attributes = {};
-        try {
-            var attrData = $(this).attr('data-attributes');
-            if (attrData) {
-                attributes = JSON.parse(attrData);
-            }
-        } catch (e) {
-            console.log('Error parsing attributes:', e);
-            attributes = {};
+        var product = $(this).data('product');
+        if (!product) {
+            console.error('Could not retrieve product data.');
+            return;
         }
-        
-        console.log('Attributes:', attributes);
+
+        var productId = product.productId;
+        var variationId = product.variationId;
+        var name = product.name;
+        var price = parseFloat(product.price) || 0;
+        var attributes = product.attributes || {};
 
         var rowId = variationId > 0 ? variationId : productId;
         var $existingRow = $prodTable.find('tr[data-row-id="'+rowId+'"]');
         
-        console.log('Row ID:', rowId);
-        console.log('Existing row found:', $existingRow.length);
-        
         if ($existingRow.length > 0) {
-            console.log('Updating existing row quantity');
             var $qtyInput = $existingRow.find('.order-qty');
             $qtyInput.val(parseInt($qtyInput.val() || 1) + 1).trigger('input');
         } else {
-            console.log('Creating new row');
             var attrHtml = '';
             if (Object.keys(attributes).length > 0) {
                 attrHtml = '<br><small class="text-info">' + Object.entries(attributes).map(function([k, v]) {
@@ -310,46 +295,25 @@ $(document).ready(function() {
                 }).join(', ') + '</small>';
             }
             
-            var row = '<tr data-row-id="'+rowId+'" data-product-id="'+productId+'" data-variation-id="'+variationId+'" data-attributes=\''+JSON.stringify(attributes)+'\">' +
-                '<td><strong>'+name+'</strong>'+attrHtml+'</td>' +
-                '<td class="order-price">'+price.toFixed(2)+'</td>' +
-                '<td><input type="number" class="form-control form-control-sm order-qty" value="1" min="1" style="width:70px;"></td>' +
-                '<td class="line-item-total">'+price.toFixed(2)+'</td>' +
-                '<td><button type="button" class="btn btn-sm btn-danger remove-item">&times;</button></td>' +
-                '</tr>';
-            
-            console.log('Row HTML to append:', row);
-            console.log('Target table body:', $prodTable);
-            console.log('Table body length:', $prodTable.length);
-            console.log('Table body HTML:', $prodTable.html());
-            
-            // Try multiple approaches to append the row
-            if ($prodTable.length > 0) {
-                console.log('Attempting to append to existing table body');
-                $prodTable.append(row);
-                console.log('Row appended successfully');
-                console.log('Table body after append:', $prodTable.html());
-            } else {
-                console.log('Table body not found, trying fallback');
-                // Fallback: try to find the table body again
-                var $tableBody = $('#products-table tbody');
-                console.log('Fallback table body found:', $tableBody.length);
-                if ($tableBody.length > 0) {
-                    $tableBody.append(row);
-                    console.log('Row appended using fallback method');
-                } else {
-                    console.error('Could not find table body to append row');
-                    console.log('Available elements with products-table ID:', $('#products-table').length);
-                    console.log('Available tbody elements:', $('tbody').length);
-                }
-            }
+            var row = $('<tr></tr>')
+                .attr('data-row-id', rowId)
+                .attr('data-product-id', productId)
+                .attr('data-variation-id', variationId)
+                .data('attributes', attributes)
+                .html(
+                    '<td><strong>'+name+'</strong>'+attrHtml+'</td>' +
+                    '<td class="order-price">'+price.toFixed(2)+'</td>' +
+                    '<td><input type="number" class="form-control form-control-sm order-qty" value="1" min="1" style="width:70px;"></td>' +
+                    '<td class="line-item-total">'+price.toFixed(2)+'</td>' +
+                    '<td><button type="button" class="btn btn-sm btn-danger remove-item">&times;</button></td>'
+                );
+
+            $prodTable.append(row);
         }
         
         $prodDropdown.hide();
         $prodInput.val('');
         recalcSummary();
-        
-        console.log('Product added:', {productId, variationId, name, price, attributes});
     });
 
     $prodTable.on('input', '.order-qty', function() {
@@ -413,14 +377,15 @@ $(document).ready(function() {
     // On form submit, serialize order items and customer id
     $('#order-create-form').on('submit', function(e) {
         var items = [];
-        $prodTable.find('tr').each(function() {
+        $('#products-table tbody tr').each(function() {
+            var $row = $(this);
             items.push({
-                product_id: $(this).data('product-id'),
-                variation_id: $(this).data('variation-id'),
-                name: $(this).find('td').eq(0).text().trim(),
-                price: parseFloat($(this).find('.order-price').text()) || 0,
-                qty: parseInt($(this).find('.order-qty').val()) || 1,
-                attributes: $(this).data('attributes') ? JSON.parse($(this).attr('data-attributes')) : {}
+                product_id: $row.data('product-id'),
+                variation_id: $row.data('variation-id'),
+                name: $row.find('td:first-child strong').text(),
+                price: parseFloat($row.find('.order-price').text()) || 0,
+                qty: parseInt($row.find('.order-qty').val()) || 1,
+                attributes: $row.data('attributes') || {}
             });
         });
         $('#order_items').val(JSON.stringify(items));

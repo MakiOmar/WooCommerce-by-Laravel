@@ -10,6 +10,7 @@ use Makiomar\WooOrderDashboard\Models\Order;
 use Makiomar\WooOrderDashboard\Models\OrderItem;
 use Makiomar\WooOrderDashboard\Models\OrderItemMeta;
 use Makiomar\WooOrderDashboard\Models\Customer;
+use Makiomar\WooOrderDashboard\Models\PostMeta;
 
 class OrdersController extends Controller
 {
@@ -103,63 +104,53 @@ class OrdersController extends Controller
 
         DB::beginTransaction();
         try {
-            // 1. Create the main order record
+            // 1. Create the main order record in 'posts'
             $subtotal = collect($items)->sum(function ($item) {
                 return ($item['price'] * $item['qty']);
             });
-
             $total = $subtotal - ($data['discount'] ?? 0) + ($data['shipping'] ?? 0) + ($data['taxes'] ?? 0);
 
             $order = Order::create([
-                'status' => $data['order_status'] ?? 'wc-processing',
-                'customer_id' => $data['customer_id'] ?? 0,
-                'customer_note' => $data['customer_note'] ?? '',
-                'total' => $total,
-                'discount_total' => $data['discount'] ?? 0,
-                'shipping_total' => $data['shipping'] ?? 0,
-                'cart_tax' => $data['taxes'] ?? 0,
-                'payment_method' => $data['payment_method'] ?? '',
-                'date_created_gmt' => now(),
-                'date_updated_gmt' => now(),
+                'post_type' => 'shop_order',
+                'post_status' => $data['order_status'] ?? 'wc-processing',
+                'ping_status' => 'closed',
+                'post_author' => auth()->id() ?? 1,
+                'post_title' => 'Order &ndash; ' . now()->format('F j, Y @ h:i A'),
+                'post_content' => '',
+                'post_excerpt' => $data['customer_note'] ?? '',
+                'post_date' => now(),
+                'post_date_gmt' => now()->utc(),
             ]);
 
-            // 2. Create order items and their meta
+            // 2. Add meta data to the order
+            $order->meta()->createMany([
+                ['_customer_user', $data['customer_id'] ?? 0],
+                ['_order_total', $total],
+                ['_order_currency', 'USD'], // Consider making this dynamic
+                ['_payment_method', $data['payment_method'] ?? ''],
+                ['_cart_discount', $data['discount'] ?? 0],
+            ]);
+
+            // 3. Create order items and their meta
             foreach ($items as $itemData) {
                 $orderItem = $order->items()->create([
                     'order_item_name' => $itemData['name'],
                     'order_item_type' => 'line_item',
+                    'order_id' => $order->ID,
                 ]);
 
                 $orderItem->meta()->createMany([
-                    ['meta_key' => '_product_id', 'meta_value' => $itemData['product_id']],
-                    ['meta_key' => '_variation_id', 'meta_value' => $itemData['variation_id'] ?? 0],
-                    ['meta_key' => '_quantity', 'meta_value' => $itemData['qty']],
-                    ['meta_key' => '_line_subtotal', 'meta_value' => $itemData['price'] * $itemData['qty']],
-                    ['meta_key' => '_line_total', 'meta_value' => $itemData['price'] * $itemData['qty']],
-                ]);
-
-                if (!empty($itemData['attributes'])) {
-                    foreach($itemData['attributes'] as $key => $value) {
-                        $orderItem->meta()->create([
-                            'meta_key' => str_replace('attribute_', '', $key), 
-                            'meta_value' => $value
-                        ]);
-                    }
-                }
-            }
-
-            // 3. Create private note if it exists
-            if (!empty($data['private_note'])) {
-                // This is a simplified version. A full implementation might involve a different table or logic
-                $order->items()->create([
-                    'order_item_name' => $data['private_note'],
-                    'order_item_type' => 'order_note',
+                    ['_product_id', $itemData['product_id']],
+                    ['_variation_id', $itemData['variation_id'] ?? 0],
+                    ['_qty', $itemData['qty']],
+                    ['_line_subtotal', $itemData['price'] * $itemData['qty']],
+                    ['_line_total', $itemData['price'] * $itemData['qty']],
                 ]);
             }
-
+            
             DB::commit();
 
-            return redirect()->route('woo.orders.index')->with('success', 'Order created successfully. Order ID: ' . $order->id);
+            return redirect()->route('woo.orders.index')->with('success', 'Order created successfully. Order ID: ' . $order->ID);
 
         } catch (\Exception $e) {
             DB::rollBack();
@@ -177,14 +168,16 @@ class OrdersController extends Controller
         
         try {
             DB::transaction(function () use ($orderIds) {
-                // Use the Order model to delete orders. This assumes HPOS table.
-                $deletedCount = Order::whereIn('id', $orderIds)->delete();
+                // Delete from posts table
+                Order::whereIn('ID', $orderIds)->delete();
 
-                // Order items and meta will be deleted via cascading constraints if they exist,
-                // otherwise we should delete them manually.
+                // Delete associated postmeta
+                PostMeta::whereIn('post_id', $orderIds)->delete();
+
+                // Delete order items and their meta
+                $orderItemIds = OrderItem::whereIn('order_id', $orderIds)->pluck('order_item_id');
                 OrderItem::whereIn('order_id', $orderIds)->delete();
-                // This is a bit of a simplification, as we'd need to get the order_item_ids first.
-                // A better approach would be to loop, but for bulk this is faster.
+                OrderItemMeta::whereIn('order_item_id', $orderItemIds)->delete();
             });
 
             return response()->json([

@@ -2,6 +2,7 @@
 
 namespace Makiomar\WooOrderDashboard\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 class Order extends Model
@@ -18,61 +19,48 @@ class Order extends Model
      *
      * @var string
      */
-    protected $table = 'wc_orders';
+    protected $table = 'posts';
+
+    /**
+     * The primary key for the model.
+     *
+     * @var string
+     */
+    protected $primaryKey = 'ID';
 
     /**
      * Indicates if the model should be timestamped.
      *
      * @var bool
      */
-    public $timestamps = false; // We will handle date columns manually
+    public $timestamps = false; // WooCommerce handles its own date columns
 
     /**
-     * The attributes that should be cast to native types.
+     * The "booted" method of the model.
      *
-     * @var array
+     * @return void
      */
-    protected $casts = [
-        'date_created_gmt' => 'datetime',
-        'date_updated_gmt' => 'datetime',
-    ];
+    protected static function booted()
+    {
+        static::addGlobalScope('shop_order', function (Builder $builder) {
+            $builder->where('post_type', 'shop_order');
+        });
+    }
 
     /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
+     * Get the meta for the order.
      */
-    protected $fillable = [
-        'status',
-        'currency',
-        'discount_total',
-        'discount_tax',
-        'shipping_total',
-        'shipping_tax',
-        'cart_tax',
-        'total',
-        'total_tax',
-        'customer_id',
-        'payment_method',
-        'payment_method_title',
-        'transaction_id',
-        'customer_ip_address',
-        'customer_user_agent',
-        'created_via',
-        'customer_note',
-        'date_completed',
-        'date_paid',
-        'cart_hash',
-        'date_created_gmt',
-        'date_updated_gmt',
-    ];
+    public function meta()
+    {
+        return $this->hasMany(PostMeta::class, 'post_id', 'ID');
+    }
 
     /**
      * Get the order items for the order.
      */
     public function items()
     {
-        return $this->hasMany(OrderItem::class, 'order_id');
+        return $this->hasMany(OrderItem::class, 'order_id', 'ID');
     }
 
     /**
@@ -80,7 +68,7 @@ class Order extends Model
      */
     public function customer()
     {
-        // This assumes a wp_users table and a Customer model exist
-        return $this->belongsTo(Customer::class, 'customer_id');
+        // This requires getting customer_id from postmeta
+        return $this->belongsTo(Customer::class, 'customer_id'); // This will need adjustment
     }
 } 

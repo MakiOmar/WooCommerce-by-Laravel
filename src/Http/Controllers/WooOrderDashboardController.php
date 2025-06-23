@@ -17,22 +17,22 @@ class WooOrderDashboardController extends Controller
         $cacheKey = 'woo_orders_' . md5(json_encode($filters));
         
         $orders = Cache::remember($cacheKey, config('woo-order-dashboard.cache.ttl.orders', 60), function () use ($filters) {
-            $query = Order::with('items.meta');
+            $query = Order::with(['meta', 'items.meta']);
 
             if (!empty($filters['order_id'])) {
-                $query->where('id', $filters['order_id']);
+                $query->where('ID', $filters['order_id']);
             }
             if (!empty($filters['status'])) {
-                $query->where('status', $filters['status']);
+                $query->where('post_status', $filters['status']);
             }
             if (!empty($filters['start_date'])) {
-                $query->whereDate('date_created_gmt', '>=', $filters['start_date']);
+                $query->whereDate('post_date_gmt', '>=', $filters['start_date']);
             }
             if (!empty($filters['end_date'])) {
-                $query->whereDate('date_created_gmt', '<=', $filters['end_date']);
+                $query->whereDate('post_date_gmt', '<=', $filters['end_date']);
             }
             
-            return $query->orderBy('date_created_gmt', 'desc')
+            return $query->orderBy('post_date_gmt', 'desc')
                          ->paginate($filters['per_page'] ?? config('woo-order-dashboard.pagination.per_page', 15));
         });
 
@@ -44,7 +44,7 @@ class WooOrderDashboardController extends Controller
         $cacheKey = 'woo_order_' . $id;
         
         $order = Cache::remember($cacheKey, config('woo-order-dashboard.cache.ttl.order', 60), function () use ($id) {
-            return Order::with(['items.meta', 'customer.meta'])->find($id);
+            return Order::with(['meta', 'items.meta'])->find($id);
         });
 
         if (!$order) {

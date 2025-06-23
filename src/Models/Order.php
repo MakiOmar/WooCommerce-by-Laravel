@@ -34,8 +34,8 @@ class Order extends Model
      * @var array
      */
     protected $casts = [
-        'date_created' => 'datetime',
-        'date_updated' => 'datetime',
+        'date_created_gmt' => 'datetime',
+        'date_updated_gmt' => 'datetime',
     ];
 
     /**
@@ -64,6 +64,8 @@ class Order extends Model
         'date_completed',
         'date_paid',
         'cart_hash',
+        'date_created_gmt',
+        'date_updated_gmt',
     ];
 
     /**

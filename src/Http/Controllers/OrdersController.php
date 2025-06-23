@@ -119,8 +119,8 @@ class OrdersController extends Controller
                 'shipping_total' => $data['shipping'] ?? 0,
                 'cart_tax' => $data['taxes'] ?? 0,
                 'payment_method' => $data['payment_method'] ?? '',
-                'date_created' => now(),
-                'date_updated' => now(),
+                'date_created_gmt' => now(),
+                'date_updated_gmt' => now(),
             ]);
 
             // 2. Create order items and their meta

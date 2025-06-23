@@ -26,13 +26,13 @@ class WooOrderDashboardController extends Controller
                 $query->where('status', $filters['status']);
             }
             if (!empty($filters['start_date'])) {
-                $query->whereDate('date_created', '>=', $filters['start_date']);
+                $query->whereDate('date_created_gmt', '>=', $filters['start_date']);
             }
             if (!empty($filters['end_date'])) {
-                $query->whereDate('date_created', '<=', $filters['end_date']);
+                $query->whereDate('date_created_gmt', '<=', $filters['end_date']);
             }
             
-            return $query->orderBy('date_created', 'desc')
+            return $query->orderBy('date_created_gmt', 'desc')
                          ->paginate($filters['per_page'] ?? config('woo-order-dashboard.pagination.per_page', 15));
         });
 

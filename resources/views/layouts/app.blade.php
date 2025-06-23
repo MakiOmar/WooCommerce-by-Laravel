@@ -229,9 +229,10 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('woo.orders') ? 'active' : '' }}" 
-                           href="{{ route('woo.orders') }}">
-                            <i class="fas fa-list mr-1"></i> Orders
+                        <a class="nav-link {{ request()->routeIs('woo.orders.index') ? 'active' : '' }}"
+                           href="{{ route('woo.orders.index') }}">
+                            <i class="nav-icon fas fa-shopping-cart"></i>
+                            <p>WooCommerce Orders</p>
                         </a>
                     </li>
                 </ul>

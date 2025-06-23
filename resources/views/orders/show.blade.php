@@ -8,7 +8,7 @@
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h3 class="card-title">Order #{{ $order->ID }}</h3>
                     <div>
-                        <a href="{{ route('woo.orders') }}" class="btn btn-secondary">
+                        <a href="{{ route('woo.orders.index') }}" class="btn btn-secondary">
                             <i class="fas fa-arrow-left"></i> Back to Orders
                         </a>
                         @if($order->post_status !== 'completed')

@@ -16,7 +16,8 @@ class OrdersController extends Controller
 {
     public function create()
     {
-        return view('woo-order-dashboard::orders.create');
+        $prefix = DB::getDatabaseName() . '.';
+        return view('woo-order-dashboard::orders.create', compact('prefix'));
     }
 
     public function searchProducts(Request $request)

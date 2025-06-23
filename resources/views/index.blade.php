@@ -34,7 +34,7 @@
                 </div>
                 <div class="card-body">
                     <!-- Filters Section -->
-                    <form action="{{ route('woo.orders') }}" method="GET" class="mb-4">
+                    <form action="{{ route('woo.orders.index') }}" method="GET" class="mb-4">
                         <div class="row">
                             <!-- Order ID -->
                             <div class="form-group col-md-3">
@@ -76,7 +76,7 @@
                                 <button type="submit" class="btn btn-primary">
                                     <i class="fas fa-filter mr-1"></i> Apply Filters
                                 </button>
-                                <a href="{{ route('woo.orders') }}" class="btn btn-light">
+                                <a href="{{ route('woo.orders.index') }}" class="btn btn-light">
                                     <i class="fas fa-times mr-1"></i> Clear Filters
                                 </a>
                             </div>

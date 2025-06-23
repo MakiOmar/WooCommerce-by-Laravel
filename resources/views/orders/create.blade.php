@@ -1,11 +1,20 @@
 @extends('layouts.admin')
 
 @section('content')
-<form id="order-create-form" method="POST" action="{{ route('orders.store') }}">
+<form action="{{ route('woo.orders.store') }}" method="POST" id="order-create-form">
     @csrf
-    <div class="container">
-        <!-- Flash Messages -->
-        @include('woo-order-dashboard::partials.flash-messages')
+    <div class="container-fluid">
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2 class="h3 mb-0">Create New Order</h2>
+                    <div>
+                        <a href="{{ route('woo.orders.index') }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-success">Submit Order</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div class="row">
             <div class="col-md-8">
@@ -225,7 +234,7 @@ $(document).ready(function() {
             return; 
         }
         
-        $.getJSON("{{ route('orders.products.search') }}", {q: q}, function(data) {
+        $.getJSON("{{ route('woo.products.search') }}", {q: q}, function(data) {
             $prodDropdown.empty().show();
             if (data.length === 0) {
                 $prodDropdown.append('<div class="list-group-item">No products found</div>');
@@ -333,7 +342,7 @@ $(document).ready(function() {
     $custInput.on('input', function() {
         var q = $(this).val();
         if (q.length < 2) { if ($custDropdown) $custDropdown.remove(); return; }
-        $.getJSON("{{ route('orders.customers.search') }}", {q: q}, function(customers) {
+        $.getJSON("{{ route('woo.customers.search') }}", {q: q}, function(customers) {
             if ($custDropdown) $custDropdown.remove();
             $custDropdown = $('<div class="list-group position-absolute w-100" style="z-index:1000;"></div>');
             if (customers.length === 0) {

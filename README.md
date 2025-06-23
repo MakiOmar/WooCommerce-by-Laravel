@@ -4,15 +4,17 @@ A powerful Laravel package that provides a clean and efficient dashboard for man
 
 ## Features
 
-- 🚀 High-performance order management
+- 🚀 High-performance order management with Eloquent ORM
 - 📊 Real-time order statistics and analytics
 - 🔍 Advanced order filtering and search
 - 🎯 Smart caching system with multiple driver support
-- 🛠️ Comprehensive helper classes for WooCommerce data
+- 🛠️ Comprehensive Eloquent models for WooCommerce data
 - 📱 Responsive and modern UI
 - 🔒 Safe integration with WooCommerce (no database modifications by default)
 - 📦 Optional database optimizations for new installations
-- 🛣️ Flexible routing with optional route registration
+- 🛣️ Clean, unprefixed routing system
+- ✨ Order creation and management interface
+- 🔄 Bulk operations support
 
 ## Requirements
 
@@ -35,201 +37,233 @@ composer require makiomar/woo-order-dashboard
 php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider"
 ```
 
-3. Configure your database connection in `.env`:
+3. Configure your WooCommerce database connection in `config/database.php`:
+
+```php
+'connections' => [
+    // ... other connections
+    
+    'woocommerce' => [
+        'driver' => 'mysql',
+        'host' => env('WOO_DB_HOST', env('DB_HOST', '127.0.0.1')),
+        'port' => env('WOO_DB_PORT', env('DB_PORT', '3306')),
+        'database' => env('WOO_DB_DATABASE', env('DB_DATABASE')),
+        'username' => env('WOO_DB_USERNAME', env('DB_USERNAME')),
+        'password' => env('WOO_DB_PASSWORD', env('DB_PASSWORD')),
+        'charset' => 'utf8mb4',
+        'collation' => 'utf8mb4_unicode_ci',
+        'prefix' => env('WOO_DB_PREFIX', 'wp_'),
+        'strict' => true,
+        'engine' => null,
+    ],
+],
+```
+
+4. Add WooCommerce database credentials to your `.env`:
 
 ```env
-WOO_DB_PREFIX=wp_  # Your WordPress table prefix
+WOO_DB_HOST=127.0.0.1
+WOO_DB_PORT=3306
+WOO_DB_DATABASE=your_woocommerce_db
+WOO_DB_USERNAME=your_username
+WOO_DB_PASSWORD=your_password
+WOO_DB_PREFIX=wp_
 ```
 
 ## Route Configuration
 
-By default, the package's routes are disabled to give you full control over routing. To enable and configure the routes:
+The package provides clean, unprefixed routes for easy integration:
 
-1. Enable routes in your `.env`:
-```env
-WOO_ROUTES_ENABLED=true
-```
-
-2. Configure route settings (optional):
-```env
-WOO_ROUTE_PREFIX=woo-dashboard
-WOO_ROUTE_MIDDLEWARE=web
-WOO_ROUTE_NAME_PREFIX=woo.
-```
-
-3. Publish and customize routes (optional):
-```bash
-php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="routes"
-```
-
-This will create `routes/woo-dashboard.php` which you can customize.
-
-4. Available Routes (when enabled):
-```
-GET /woo-dashboard/orders          - List orders
-GET /woo-dashboard/orders/{id}     - View order details
-GET /woo-dashboard/statistics      - View dashboard statistics
-```
-
-You can also register routes manually in your application's route file:
+### Available Routes
 
 ```php
-use Makiomar\WooOrderDashboard\Http\Controllers\WooOrderDashboardController;
+// Order Management
+GET /orders                    - List all orders (orders.index)
+GET /orders/{id}              - View order details (orders.show)
+GET /orders/create            - Create new order form (orders.create)
+POST /orders                  - Store new order (orders.store)
 
-Route::group(['middleware' => ['web', 'auth']], function () {
-    Route::get('/my-custom-path/orders', [WooOrderDashboardController::class, 'index'])->name('custom.orders.index');
-    Route::get('/my-custom-path/orders/{id}', [WooOrderDashboardController::class, 'show'])->name('custom.orders.show');
+// AJAX Search Routes
+GET /products/search          - Search products (products.search)
+GET /customers/search         - Search customers (customers.search)
+
+// Bulk Operations
+POST /orders/bulk-delete      - Delete multiple orders (orders.bulk-delete)
+```
+
+### Route Registration
+
+Routes are automatically registered with the following middleware:
+- `web` - Web middleware group
+- `auth:admin` - Authentication middleware (customize as needed)
+
+You can customize the middleware in `routes/web.php`:
+
+```php
+Route::group(['middleware' => ['web', 'auth:admin']], function() {
+    // Your custom routes here
 });
 ```
 
-## Optional Database Optimizations
+## Database Architecture
 
-The package includes optional database optimizations that can be used for new WooCommerce installations. These are disabled by default to ensure compatibility with existing installations.
+This package uses Eloquent ORM models to interact with WooCommerce data, providing a more Laravel-native approach:
 
-To use the optional database optimizations:
+### Core Models
 
-1. Publish the optional migrations:
-```bash
-php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="optional-migrations"
-```
+- `Order` - WooCommerce orders (posts table)
+- `OrderItem` - Order line items (woocommerce_order_items table)
+- `OrderItemMeta` - Order item metadata (woocommerce_order_itemmeta table)
+- `Product` - WooCommerce products (posts table)
+- `Customer` - WooCommerce customers (users table)
+- `PostMeta` - WordPress post metadata (postmeta table)
+- `UserMeta` - WordPress user metadata (usermeta table)
+- `Comment` - WordPress comments (comments table)
 
-2. Review the migrations in `database/migrations/optional`:
-   - These migrations add performance-optimizing indexes
-   - They are safe for new installations
-   - Use with caution on existing installations
+### Database Compatibility
 
-3. To apply the optional migrations:
-```bash
-php artisan migrate --path=database/migrations/optional
-```
-
-Note: Always backup your database before applying any migrations to an existing WooCommerce installation.
+The package supports both traditional WooCommerce installations (using `posts` table for orders) and High-Performance Order Storage (HPOS) setups. The models automatically adapt to your database schema.
 
 ## Configuration
 
 ### Basic Configuration
 
-The package supports extensive configuration through environment variables or the `config/woo-order-dashboard.php` file:
+The package supports extensive configuration through the `config/woo-order-dashboard.php` file:
 
 ```php
 return [
-    'db_prefix' => env('WOO_DB_PREFIX', 'wp_'),
-    
     'cache' => [
         'enabled' => env('WOO_CACHE_ENABLED', true),
         'driver' => env('WOO_CACHE_DRIVER', 'file'),
         'prefix' => env('WOO_CACHE_PREFIX', 'woo_'),
-        'tags_enabled' => env('WOO_CACHE_TAGS_ENABLED', true),
+        'ttl' => [
+            'order' => env('WOO_CACHE_TTL_ORDER', 60),
+            'product' => env('WOO_CACHE_TTL_PRODUCT', 300),
+            'customer' => env('WOO_CACHE_TTL_CUSTOMER', 300),
+        ],
     ],
-    // ... more configuration options
+    
+    'order_statuses' => [
+        'pending', 'processing', 'on-hold', 'completed', 
+        'cancelled', 'refunded', 'failed'
+    ],
+    
+    'status_colors' => [
+        'pending' => 'warning',
+        'processing' => 'info',
+        'on-hold' => 'secondary',
+        'completed' => 'success',
+        'cancelled' => 'danger',
+        'refunded' => 'info',
+        'failed' => 'danger',
+    ],
+    
+    'meta_keys' => [
+        '_order_total' => 'Order Total',
+        '_billing_first_name' => 'Billing First Name',
+        '_billing_last_name' => 'Billing Last Name',
+        '_billing_email' => 'Billing Email',
+        '_billing_phone' => 'Billing Phone',
+        '_shipping_first_name' => 'Shipping First Name',
+        '_shipping_last_name' => 'Shipping Last Name',
+    ],
 ];
 ```
 
-### Cache Configuration
-
-The package supports multiple cache drivers with automatic fallbacks:
+### Environment Variables
 
 ```env
 # Cache Settings
 WOO_CACHE_ENABLED=true
-WOO_CACHE_DRIVER=file  # Options: file, redis, memcached, array
+WOO_CACHE_DRIVER=file
 WOO_CACHE_PREFIX=woo_
-WOO_CACHE_TAGS_ENABLED=false  # Set to true if using Redis/Memcached
+WOO_CACHE_TTL_ORDER=60
+WOO_CACHE_TTL_PRODUCT=300
+WOO_CACHE_TTL_CUSTOMER=300
 
-# Cache TTL Settings (in seconds)
-WOO_CACHE_TTL_SHORT=300    # 5 minutes
-WOO_CACHE_TTL_MEDIUM=1800  # 30 minutes
-WOO_CACHE_TTL_LONG=3600    # 1 hour
-WOO_CACHE_TTL_EXTENDED=86400  # 24 hours
-```
-
-### Performance Settings
-
-Configure performance-related settings:
-
-```env
-# Chunk size for processing large datasets
-WOO_CHUNK_SIZE=100
-
-# Query timeout and retry settings
-WOO_QUERY_TIMEOUT=5
-WOO_MAX_RETRY_ATTEMPTS=3
-
-# Monitoring
-WOO_QUERY_LOG_ENABLED=false
-WOO_SLOW_QUERY_THRESHOLD=1000
+# Database Settings
+WOO_DB_HOST=127.0.0.1
+WOO_DB_PORT=3306
+WOO_DB_DATABASE=your_woocommerce_db
+WOO_DB_USERNAME=your_username
+WOO_DB_PASSWORD=your_password
+WOO_DB_PREFIX=wp_
 ```
 
 ## Usage
 
-### Order Management
+### Order Management with Eloquent Models
 
 ```php
-use Makiomar\WooOrderDashboard\Helpers\Orders\OrderHelper;
+use Makiomar\WooOrderDashboard\Models\Order;
+use Makiomar\WooOrderDashboard\Models\Product;
+use Makiomar\WooOrderDashboard\Models\Customer;
 
-// Get orders with filters
-$orders = OrderHelper::getOrders([
-    'status' => ['processing', 'completed'],
-    'date_from' => '2024-01-01',
-    'date_to' => '2024-12-31'
-]);
+// Get orders with relationships
+$orders = Order::with(['meta', 'items.meta', 'comments'])
+    ->where('post_status', 'wc-completed')
+    ->orderBy('post_date_gmt', 'desc')
+    ->paginate(15);
 
 // Get order details
-$orderItems = OrderHelper::getOrderItems($orderId);
-$orderMeta = OrderHelper::getOrderMeta($orderId);
+$order = Order::with(['meta', 'items.meta', 'comments'])->find($orderId);
 
-// Get order statistics
-$stats = OrderHelper::getOrderStats('2024-01-01', '2024-12-31');
+// Get order meta
+$orderTotal = $order->meta->where('meta_key', '_order_total')->first()->meta_value ?? 0;
+
+// Get order items
+$orderItems = $order->items;
+
+// Search products
+$products = Product::where('post_title', 'like', '%search term%')
+    ->where('post_type', 'product')
+    ->get();
+
+// Get customers
+$customers = Customer::with('meta')->get();
 ```
 
-### Helper Classes
-
-The package provides several helper classes for different aspects of WooCommerce:
+### Creating Orders
 
 ```php
-use Makiomar\WooOrderDashboard\Helpers\Orders\OrderHelper;
-use Makiomar\WooOrderDashboard\Helpers\Products\ProductHelper;
-use Makiomar\WooOrderDashboard\Helpers\Customers\CustomerHelper;
+use Makiomar\WooOrderDashboard\Models\Order;
+use Makiomar\WooOrderDashboard\Models\OrderItem;
 
-// Order operations
-$orders = OrderHelper::getOrders($filters);
+// Create a new order
+$order = new Order();
+$order->post_title = 'Order &ndash; January 1, 2024 @ 12:00 PM';
+$order->post_content = '';
+$order->post_status = 'wc-processing';
+$order->post_type = 'shop_order';
+$order->post_date = now();
+$order->post_date_gmt = now()->utc();
+$order->post_modified = now();
+$order->post_modified_gmt = now()->utc();
+$order->save();
 
-// Product operations
-$products = ProductHelper::getProducts($filters);
+// Add order meta
+$order->meta()->create([
+    'meta_key' => '_order_total',
+    'meta_value' => 99.99
+]);
 
-// Customer operations
-$customers = CustomerHelper::getCustomers($filters);
+// Add order items
+$orderItem = new OrderItem();
+$orderItem->order_id = $order->ID;
+$orderItem->order_item_name = 'Product Name';
+$orderItem->order_item_type = 'line_item';
+$orderItem->save();
 ```
-
-### Performance Optimization
-
-The package includes built-in performance optimizations:
-
-1. **Smart Caching**:
-   - Automatic cache key generation
-   - Support for multiple cache drivers
-   - Intelligent cache invalidation
-   - Configurable TTL for different types of data
-
-2. **Query Optimization**:
-   - Efficient use of existing WooCommerce indexes
-   - Chunked processing for large datasets
-   - Query retry mechanism for better reliability
-
-3. **Memory Management**:
-   - Automatic chunk processing for large datasets
-   - Memory-efficient collection handling
-   - Configurable chunk sizes
 
 ## Views and Assets
 
 The package includes pre-built views and assets:
 
-- Order listing view
-- Order detail view
-- Dashboard statistics
-- Filtering components
-- Modern, responsive UI
+- Order listing view with advanced filtering
+- Order detail view with comprehensive information
+- Order creation interface with product/customer search
+- Bulk operations interface
+- Modern, responsive UI with Bootstrap 4
 
 To customize the views, publish them:
 
@@ -237,62 +271,99 @@ To customize the views, publish them:
 php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="views"
 ```
 
+## Recent Updates
+
+### Version 2.0 - Architectural Refactoring
+
+This version includes significant architectural improvements:
+
+1. **Eloquent ORM Integration**: Replaced service-based architecture with native Laravel Eloquent models
+2. **Clean Routing**: Removed route prefixes for simpler, more intuitive URLs
+3. **Enhanced Order Management**: Added order creation and bulk operations
+4. **Improved Performance**: Better caching and query optimization
+5. **Modern UI**: Updated interface with better UX and responsive design
+
+### Migration from Service-Based to Model-Based Architecture
+
+The package has been refactored to use Laravel's Eloquent ORM instead of custom service classes. This provides:
+
+- Better integration with Laravel's ecosystem
+- More intuitive data access patterns
+- Improved performance through Eloquent's query optimization
+- Easier testing and maintenance
+
 ## Best Practices
 
-1. **Cache Configuration**:
-   - Use Redis or Memcached in production for best performance
-   - File cache works well for smaller sites
-   - Configure TTL values based on your needs
+1. **Database Configuration**:
+   - Use separate database connections for WooCommerce and Laravel
+   - Configure proper table prefixes
+   - Ensure proper indexing for performance
 
-2. **Performance Tuning**:
-   - Adjust chunk sizes based on your server capacity
-   - Monitor slow queries and adjust thresholds
-   - Use appropriate cache TTL values
+2. **Caching Strategy**:
+   - Use Redis or Memcached in production
+   - Configure appropriate TTL values
+   - Clear cache when WooCommerce data changes
 
-3. **Error Handling**:
-   - Monitor logs for cache and query errors
-   - Configure proper retry attempts for queries
-   - Set appropriate timeouts
+3. **Performance Optimization**:
+   - Use eager loading for relationships
+   - Implement pagination for large datasets
+   - Monitor query performance
+
+4. **Security**:
+   - Implement proper authentication middleware
+   - Validate all user inputs
+   - Use CSRF protection for forms
 
 ## Troubleshooting
 
-### Cache Issues
+### Database Connection Issues
 
-If experiencing cache-related issues:
+If experiencing database connection issues:
 
-1. Check if caching is enabled:
+1. Check your WooCommerce database configuration:
 ```env
-WOO_CACHE_ENABLED=true
+WOO_DB_HOST=127.0.0.1
+WOO_DB_DATABASE=your_woocommerce_db
+WOO_DB_USERNAME=your_username
+WOO_DB_PASSWORD=your_password
+WOO_DB_PREFIX=wp_
 ```
 
-2. Try different cache drivers:
-```env
-WOO_CACHE_DRIVER=file  # or redis, memcached
-```
-
-3. Clear the cache:
+2. Verify the database connection:
 ```bash
-php artisan cache:clear
+php artisan tinker
+>>> DB::connection('woocommerce')->getPdo();
+```
+
+### Route Issues
+
+If routes are not working:
+
+1. Check if routes are properly registered in `routes/web.php`
+2. Verify middleware configuration
+3. Clear route cache:
+```bash
+php artisan route:clear
 ```
 
 ### Performance Issues
 
 If experiencing performance issues:
 
-1. Adjust chunk sizes:
+1. Check cache configuration:
 ```env
-WOO_CHUNK_SIZE=50  # Decrease if memory issues
+WOO_CACHE_ENABLED=true
+WOO_CACHE_DRIVER=redis
 ```
 
-2. Monitor slow queries:
-```env
-WOO_QUERY_LOG_ENABLED=true
-WOO_SLOW_QUERY_THRESHOLD=1000
+2. Monitor database queries:
+```php
+DB::connection('woocommerce')->enableQueryLog();
 ```
 
-3. Check cache configuration:
-```env
-WOO_CACHE_TTL_MEDIUM=1800  # Adjust based on needs
+3. Use eager loading for relationships:
+```php
+$orders = Order::with(['meta', 'items.meta'])->get();
 ```
 
 ## Contributing

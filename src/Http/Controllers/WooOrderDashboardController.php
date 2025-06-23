@@ -48,7 +48,7 @@ class WooOrderDashboardController extends Controller
         });
 
         if (!$order) {
-            return redirect()->route('woo.orders.index')->with('error', 'Order not found.');
+            return redirect()->route('orders.index')->with('error', 'Order not found.');
         }
 
         return view('woo-order-dashboard::orders.show', compact('order'));

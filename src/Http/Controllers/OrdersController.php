@@ -176,7 +176,7 @@ class OrdersController extends Controller
             
             DB::connection('woocommerce')->commit();
 
-            return redirect()->route('woo.orders.index')->with('success', 'Order created successfully. Order ID: ' . $order->ID);
+            return redirect()->route('orders.index')->with('success', 'Order created successfully. Order ID: ' . $order->ID);
 
         } catch (\Exception $e) {
             DB::connection('woocommerce')->rollBack();

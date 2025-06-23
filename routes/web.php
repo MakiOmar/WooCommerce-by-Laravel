@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use Makiomar\WooOrderDashboard\Http\Controllers\WooOrderDashboardController;
 use Makiomar\WooOrderDashboard\Http\Controllers\OrdersController;
 
-Route::group(['middleware' => ['web', 'auth:admin'], 'prefix' => 'woo', 'as' => 'woo.'], function() {
+Route::group(['middleware' => ['web', 'auth:admin']], function() {
 
     // Main Order Dashboard
     Route::get('/orders', [WooOrderDashboardController::class, 'index'])->name('orders.index');

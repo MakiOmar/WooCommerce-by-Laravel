@@ -229,10 +229,9 @@
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {{ request()->routeIs('woo.orders.index') ? 'active' : '' }}"
-                           href="{{ route('woo.orders.index') }}">
+                        <a class="nav-link {{ request()->routeIs('orders.index') || request()->routeIs('orders.show') || request()->routeIs('orders.create') ? 'active' : '' }}" href="{{ route('orders.index') }}">
                             <i class="nav-icon fas fa-shopping-cart"></i>
-                            <p>WooCommerce Orders</p>
+                            <p>Orders</p>
                         </a>
                     </li>
                 </ul>

@@ -26,13 +26,13 @@ class WooOrderDashboardController extends Controller
                 $query->where('post_status', $filters['status']);
             }
             if (!empty($filters['start_date'])) {
-                $query->whereDate('post_modified', '>=', $filters['start_date']);
+                $query->whereDate('post_date_gmt', '>=', $filters['start_date']);
             }
             if (!empty($filters['end_date'])) {
-                $query->whereDate('post_modified', '<=', $filters['end_date']);
+                $query->whereDate('post_date_gmt', '<=', $filters['end_date']);
             }
             
-            return $query->orderBy('post_modified', 'desc')
+            return $query->orderBy('post_date_gmt', 'desc')
                          ->paginate($filters['per_page'] ?? config('woo-order-dashboard.pagination.per_page', 15));
         });
 

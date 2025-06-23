@@ -102,7 +102,7 @@ class OrdersController extends Controller
 
         $items = json_decode($data['order_items'], true);
 
-        DB::beginTransaction();
+        DB::connection('woocommerce')->beginTransaction();
         try {
             // 1. Create the main order record in 'posts'
             $subtotal = collect($items)->sum(function ($item) {
@@ -119,41 +119,66 @@ class OrdersController extends Controller
                 'post_content' => '',
                 'post_excerpt' => $data['customer_note'] ?? '',
                 'post_date' => now(),
+                'post_date_gmt' => now()->utc(),
                 'post_modified' => now(),
+                'post_modified_gmt' => now()->utc(),
             ]);
 
             // 2. Add meta data to the order
-            $order->meta()->createMany([
-                ['_customer_user', $data['customer_id'] ?? 0],
+            $metaData = [
+                ['_customer_user', $data['customer_id'] ?? '0'],
                 ['_order_total', $total],
-                ['_order_currency', 'USD'], // Consider making this dynamic
+                ['_order_currency', 'USD'], // Consider making this dynamic from config
                 ['_payment_method', $data['payment_method'] ?? ''],
-                ['_cart_discount', $data['discount'] ?? 0],
-            ]);
+                ['_payment_method_title', $data['payment_method'] ? ucwords(str_replace('_', ' ', $data['payment_method'])) : ''],
+                ['_cart_discount', $data['discount'] ?? '0'],
+                ['_order_shipping', $data['shipping'] ?? '0'],
+                ['_order_tax', $data['taxes'] ?? '0'],
+            ];
+
+            foreach ($metaData as $meta) {
+                PostMeta::create([
+                    'post_id' => $order->ID,
+                    'meta_key' => $meta[0],
+                    'meta_value' => $meta[1],
+                ]);
+            }
 
             // 3. Create order items and their meta
             foreach ($items as $itemData) {
-                $orderItem = $order->items()->create([
+                $orderItem = OrderItem::create([
                     'order_item_name' => $itemData['name'],
                     'order_item_type' => 'line_item',
                     'order_id' => $order->ID,
                 ]);
 
-                $orderItem->meta()->createMany([
+                $orderItemMeta = [
                     ['_product_id', $itemData['product_id']],
                     ['_variation_id', $itemData['variation_id'] ?? 0],
                     ['_qty', $itemData['qty']],
-                    ['_line_subtotal', $itemData['price'] * $itemData['qty']],
+                    ['_tax_class', ''],
+                    ['_line_subtotal', $itemData['price']],
+                    ['_line_subtotal_tax', '0'],
                     ['_line_total', $itemData['price'] * $itemData['qty']],
-                ]);
+                    ['_line_tax', '0'],
+                    ['_line_tax_data', 'a:2:{s:5:"total";a:0:{}s:8:"subtotal";a:0:{}}'],
+                ];
+                
+                foreach ($orderItemMeta as $meta) {
+                    OrderItemMeta::create([
+                        'order_item_id' => $orderItem->order_item_id,
+                        'meta_key' => $meta[0],
+                        'meta_value' => $meta[1],
+                    ]);
+                }
             }
             
-            DB::commit();
+            DB::connection('woocommerce')->commit();
 
             return redirect()->route('woo.orders.index')->with('success', 'Order created successfully. Order ID: ' . $order->ID);
 
         } catch (\Exception $e) {
-            DB::rollBack();
+            DB::connection('woocommerce')->rollBack();
             return back()->with('error', 'Order creation failed: ' . $e->getMessage());
         }
     }
@@ -166,25 +191,31 @@ class OrdersController extends Controller
 
         $orderIds = $request->input('order_ids');
         
+        DB::connection('woocommerce')->beginTransaction();
         try {
-            DB::transaction(function () use ($orderIds) {
-                // Delete from posts table
-                Order::whereIn('ID', $orderIds)->delete();
+            // Get order item IDs before deleting them
+            $orderItemIds = OrderItem::whereIn('order_id', $orderIds)->pluck('order_item_id');
 
-                // Delete associated postmeta
-                PostMeta::whereIn('post_id', $orderIds)->delete();
+            // Delete meta for the order items
+            OrderItemMeta::whereIn('order_item_id', $orderItemIds)->delete();
+            
+            // Delete the order items themselves
+            OrderItem::whereIn('order_id', $orderIds)->delete();
 
-                // Delete order items and their meta
-                $orderItemIds = OrderItem::whereIn('order_id', $orderIds)->pluck('order_item_id');
-                OrderItem::whereIn('order_id', $orderIds)->delete();
-                OrderItemMeta::whereIn('order_item_id', $orderItemIds)->delete();
-            });
+            // Delete post meta for the orders
+            PostMeta::whereIn('post_id', $orderIds)->delete();
+
+            // Delete the orders from the posts table
+            Order::whereIn('ID', $orderIds)->delete();
+
+            DB::connection('woocommerce')->commit();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Successfully deleted ' . count($orderIds) . ' orders.'
             ]);
         } catch (\Exception $e) {
+            DB::connection('woocommerce')->rollBack();
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete orders: ' . $e->getMessage()

@@ -8,11 +8,18 @@ use Illuminate\Support\Facades\DB;
 class Order extends Model
 {
     /**
+     * The connection name for the model.
+     *
+     * @var string
+     */
+    protected $connection = 'woocommerce';
+
+    /**
      * The table associated with the model.
      *
      * @var string
      */
-    protected $table;
+    protected $table = 'wc_orders';
 
     /**
      * Indicates if the model should be timestamped.
@@ -68,7 +75,6 @@ class Order extends Model
     public function __construct(array $attributes = [])
     {
         parent::__construct($attributes);
-        $this->table = DB::getDatabaseName() . '.wc_orders';
     }
 
     /**

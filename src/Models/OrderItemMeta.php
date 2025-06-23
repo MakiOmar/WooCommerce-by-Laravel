@@ -8,11 +8,18 @@ use Illuminate\Support\Facades\DB;
 class OrderItemMeta extends Model
 {
     /**
+     * The connection name for the model.
+     *
+     * @var string
+     */
+    protected $connection = 'woocommerce';
+
+    /**
      * The table associated with the model.
      *
      * @var string
      */
-    protected $table;
+    protected $table = 'woocommerce_order_itemmeta';
 
     /**
      * The primary key for the model.
@@ -48,7 +55,6 @@ class OrderItemMeta extends Model
     public function __construct(array $attributes = [])
     {
         parent::__construct($attributes);
-        $this->table = DB::getDatabaseName() . '.woocommerce_order_itemmeta';
     }
 
     /**

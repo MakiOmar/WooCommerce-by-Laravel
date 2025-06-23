@@ -8,11 +8,18 @@ use Illuminate\Support\Facades\DB;
 class OrderItem extends Model
 {
     /**
+     * The connection name for the model.
+     *
+     * @var string
+     */
+    protected $connection = 'woocommerce';
+
+    /**
      * The table associated with the model.
      *
      * @var string
      */
-    protected $table;
+    protected $table = 'woocommerce_order_items';
 
     /**
      * The primary key for the model.

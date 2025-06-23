@@ -3,16 +3,22 @@
 namespace Makiomar\WooOrderDashboard\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 
 class Customer extends Model
 {
+    /**
+     * The connection name for the model.
+     *
+     * @var string
+     */
+    protected $connection = 'woocommerce';
+
     /**
      * The table associated with the model.
      *
      * @var string
      */
-    protected $table;
+    protected $table = 'users';
 
     /**
      * The primary key for the model.
@@ -27,18 +33,6 @@ class Customer extends Model
      * @var bool
      */
     public $timestamps = false;
-
-    /**
-     * Create a new Eloquent model instance.
-     *
-     * @param  array  $attributes
-     * @return void
-     */
-    public function __construct(array $attributes = [])
-    {
-        parent::__construct($attributes);
-        $this->table = DB::getDatabaseName() . '.wp_users';
-    }
 
     /**
      * Get the meta for the user.

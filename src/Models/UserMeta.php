@@ -8,11 +8,18 @@ use Illuminate\Support\Facades\DB;
 class UserMeta extends Model
 {
     /**
+     * The connection name for the model.
+     *
+     * @var string
+     */
+    protected $connection = 'woocommerce';
+
+    /**
      * The table associated with the model.
      *
      * @var string
      */
-    protected $table;
+    protected $table = 'usermeta';
 
     /**
      * The primary key for the model.

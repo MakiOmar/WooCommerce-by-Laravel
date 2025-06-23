@@ -6,12 +6,12 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h3 class="card-title">Order #{{ $order['id'] }}</h3>
+                    <h3 class="card-title">Order #{{ $order->ID }}</h3>
                     <div>
                         <a href="{{ route('woo.orders') }}" class="btn btn-secondary">
                             <i class="fas fa-arrow-left"></i> Back to Orders
                         </a>
-                        @if($order['status'] !== 'completed')
+                        @if($order->post_status !== 'completed')
                             <button onclick="window.print()" class="btn btn-primary">
                                 <i class="fas fa-print"></i> Print
                             </button>

@@ -71,4 +71,12 @@ class Order extends Model
         // This requires getting customer_id from postmeta
         return $this->belongsTo(Customer::class, 'customer_id'); // This will need adjustment
     }
+
+    /**
+     * Get the comments (order notes) for the order.
+     */
+    public function comments()
+    {
+        return $this->hasMany(Comment::class, 'comment_post_ID', 'ID')->where('comment_type', 'order_note');
+    }
 } 

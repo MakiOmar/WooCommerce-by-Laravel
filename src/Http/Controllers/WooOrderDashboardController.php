@@ -44,7 +44,7 @@ class WooOrderDashboardController extends Controller
         $cacheKey = 'woo_order_' . $id;
         
         $order = Cache::remember($cacheKey, config('woo-order-dashboard.cache.ttl.order', 60), function () use ($id) {
-            return Order::with(['meta', 'items.meta'])->find($id);
+            return Order::with(['meta', 'items.meta', 'comments'])->find($id);
         });
 
         if (!$order) {

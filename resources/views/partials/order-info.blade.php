@@ -3,13 +3,15 @@
         <h5 class="card-title mb-0">
             <i class="fas fa-info-circle mr-2"></i>Order Information
         </h5>
-        <span class="badge badge-{{ $order['status'] === 'completed' ? 'success' : 
-            ($order['status'] === 'processing' ? 'primary' : 
-            ($order['status'] === 'cancelled' ? 'danger' : 'secondary')) }}">
-            <i class="fas {{ $order['status'] === 'completed' ? 'fa-check-circle' : 
-                ($order['status'] === 'processing' ? 'fa-cog' : 
-                ($order['status'] === 'cancelled' ? 'fa-times-circle' : 'fa-clock')) }} mr-1"></i>
-            {{ ucfirst($order['status']) }}
+        @php
+            $status_label = str_replace('wc-', '', $order->post_status);
+            $status_class = 'secondary'; // default
+            if (isset(config('woo-order-dashboard.status_colors')[$status_label])) {
+                $status_class = config('woo-order-dashboard.status_colors')[$status_label];
+            }
+        @endphp
+        <span class="badge badge-{{ $status_class }}">
+            {{ ucwords($status_label) }}
         </span>
     </div>
     <div class="card-body">
@@ -19,44 +21,33 @@
                     <small class="text-muted d-block">Date Created</small>
                     <div class="d-flex align-items-center">
                         <i class="fas fa-calendar-alt text-primary mr-2"></i>
-                        {{ \Carbon\Carbon::parse($order['date_created'])->format('M d, Y H:i') }}
+                        {{ \Carbon\Carbon::parse($order->post_date)->format('M d, Y H:i') }}
                     </div>
                 </div>
                 <div class="mb-3">
                     <small class="text-muted d-block">Payment Method</small>
                     <div class="d-flex align-items-center">
                         <i class="fas fa-credit-card text-primary mr-2"></i>
-                        {{ $order['payment_method_title'] }}
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <small class="text-muted d-block">Transaction ID</small>
-                    <div class="d-flex align-items-center">
-                        <i class="fas fa-receipt text-primary mr-2"></i>
-                        {{ $order['transaction_id'] ?? 'N/A' }}
+                        {{ $order->meta->where('meta_key', '_payment_method_title')->first()->meta_value ?? 'N/A' }}
                     </div>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="mb-3">
-                    <small class="text-muted d-block">Shipping Method</small>
-                    <div class="d-flex align-items-center">
-                        <i class="fas fa-truck text-primary mr-2"></i>
-                        {{ $order['shipping_method'] }}
-                    </div>
-                </div>
-                <div class="mb-3">
                     <small class="text-muted d-block">Currency</small>
                     <div class="d-flex align-items-center">
                         <i class="fas fa-money-bill-wave text-primary mr-2"></i>
-                        {{ $order['currency'] }}
+                        {{ $order->meta->where('meta_key', '_order_currency')->first()->meta_value ?? 'N/A' }}
                     </div>
                 </div>
                 <div class="mb-3">
                     <small class="text-muted d-block">Total Amount</small>
                     <div class="d-flex align-items-center">
                         <i class="fas fa-tag text-primary mr-2"></i>
-                        <strong>{{ $order['currency'] }} {{ number_format($order['total'], 2) }}</strong>
+                        <strong>
+                            {{ $order->meta->where('meta_key', '_order_currency')->first()->meta_value ?? '' }} 
+                            {{ number_format($order->meta->where('meta_key', '_order_total')->first()->meta_value ?? 0, 2) }}
+                        </strong>
                     </div>
                 </div>
             </div>

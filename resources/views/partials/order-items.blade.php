@@ -12,75 +12,66 @@
                 <thead class="thead-light">
                     <tr>
                         <th class="border-0">Product</th>
-                        <th class="border-0 text-center">SKU</th>
                         <th class="border-0 text-center">Quantity</th>
                         <th class="border-0 text-right">Price</th>
                         <th class="border-0 text-right">Total</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($order['line_items'] as $item)
+                    @foreach($order->items->where('order_item_type', 'line_item') as $item)
                     <tr>
                         <td class="align-middle">
-                            <div class="d-flex align-items-center">
-                                @if(isset($item['image']) && $item['image']['src'])
-                                    <img src="{{ $item['image']['src'] }}" alt="{{ $item['name'] }}" 
-                                         class="img-thumbnail mr-3" style="width: 50px; height: 50px; object-fit: cover;">
-                                @else
-                                    <div class="bg-light rounded mr-3 d-flex align-items-center justify-content-center" 
-                                         style="width: 50px; height: 50px;">
-                                        <i class="fas fa-box text-muted"></i>
-                                    </div>
-                                @endif
-                                <div>
-                                    <h6 class="mb-0">{{ $item['name'] }}</h6>
-                                    @if(isset($item['meta_data']) && count($item['meta_data']) > 0)
-                                        <small class="text-muted">
-                                            @foreach($item['meta_data'] as $meta)
-                                                @if($meta['display_key'] && $meta['display_value'])
-                                                    {{ $meta['display_key'] }}: {{ $meta['display_value'] }}<br>
-                                                @endif
-                                            @endforeach
-                                        </small>
-                                    @endif
-                                </div>
-                            </div>
+                            <h6 class="mb-0">{{ $item->order_item_name }}</h6>
                         </td>
                         <td class="align-middle text-center">
-                            <span class="badge badge-light">{{ $item['sku'] ?? 'N/A' }}</span>
-                        </td>
-                        <td class="align-middle text-center">
-                            <span class="badge badge-info">{{ $item['quantity'] }}</span>
-                        </td>
-                        <td class="align-middle text-right">
-                            {{ $order['currency'] }} {{ number_format($item['price'], 2) }}
+                            @php
+                                $qty = $item->meta->where('meta_key', '_qty')->first()->meta_value ?? 1;
+                            @endphp
+                            <span class="badge badge-info">{{ $qty }}</span>
                         </td>
                         <td class="align-middle text-right">
-                            <strong>{{ $order['currency'] }} {{ number_format($item['total'], 2) }}</strong>
+                            @php
+                                $total = $item->meta->where('meta_key', '_line_total')->first()->meta_value ?? 0;
+                                $price = $qty > 0 ? $total / $qty : 0;
+                                $currency = $order->meta->where('meta_key', '_order_currency')->first()->meta_value ?? '';
+                            @endphp
+                            {{ $currency }} {{ number_format($price, 2) }}
+                        </td>
+                        <td class="align-middle text-right">
+                            <strong>{{ $currency }} {{ number_format($total, 2) }}</strong>
                         </td>
                     </tr>
                     @endforeach
                 </tbody>
                 <tfoot class="bg-light">
+                    @php
+                        $subtotal = $order->items->where('order_item_type', 'line_item')->sum(function($item) {
+                            return $item->meta->where('meta_key', '_line_total')->first()->meta_value ?? 0;
+                        });
+                        $shipping = $order->meta->where('meta_key', '_order_shipping')->first()->meta_value ?? 0;
+                        $discount = $order->meta->where('meta_key', '_cart_discount')->first()->meta_value ?? 0;
+                        $total = $order->meta->where('meta_key', '_order_total')->first()->meta_value ?? 0;
+                        $currency = $order->meta->where('meta_key', '_order_currency')->first()->meta_value ?? '';
+                    @endphp
                     <tr>
-                        <td colspan="4" class="text-right"><strong>Subtotal:</strong></td>
-                        <td class="text-right">{{ $order['currency'] }} {{ number_format($order['subtotal'], 2) }}</td>
+                        <td colspan="3" class="text-right"><strong>Subtotal:</strong></td>
+                        <td class="text-right">{{ $currency }} {{ number_format($subtotal, 2) }}</td>
                     </tr>
-                    @if($order['shipping_total'] > 0)
+                    @if($shipping > 0)
                     <tr>
-                        <td colspan="4" class="text-right"><strong>Shipping:</strong></td>
-                        <td class="text-right">{{ $order['currency'] }} {{ number_format($order['shipping_total'], 2) }}</td>
+                        <td colspan="3" class="text-right"><strong>Shipping:</strong></td>
+                        <td class="text-right">{{ $currency }} {{ number_format($shipping, 2) }}</td>
                     </tr>
                     @endif
-                    @if($order['discount_total'] > 0)
+                    @if($discount > 0)
                     <tr>
-                        <td colspan="4" class="text-right"><strong>Discount:</strong></td>
-                        <td class="text-right text-danger">-{{ $order['currency'] }} {{ number_format($order['discount_total'], 2) }}</td>
+                        <td colspan="3" class="text-right"><strong>Discount:</strong></td>
+                        <td class="text-right text-danger">-{{ $currency }} {{ number_format($discount, 2) }}</td>
                     </tr>
                     @endif
                     <tr>
-                        <td colspan="4" class="text-right"><strong>Total:</strong></td>
-                        <td class="text-right"><strong>{{ $order['currency'] }} {{ number_format($order['total'], 2) }}</strong></td>
+                        <td colspan="3" class="text-right"><strong>Total:</strong></td>
+                        <td class="text-right"><strong>{{ $currency }} {{ number_format($total, 2) }}</strong></td>
                     </tr>
                 </tfoot>
             </table>

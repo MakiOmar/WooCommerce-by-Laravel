@@ -103,42 +103,50 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse($orders['data'] ?? [] as $order)
+                                @forelse($orders as $order)
                                     <tr>
                                         <td class="align-middle">
                                             <div class="custom-control custom-checkbox">
-                                                <input type="checkbox" class="custom-control-input order-checkbox" id="order-{{ $order['id'] }}" value="{{ $order['id'] }}">
-                                                <label class="custom-control-label" for="order-{{ $order['id'] }}"></label>
+                                                <input type="checkbox" class="custom-control-input order-checkbox" id="order-{{ $order->ID }}" value="{{ $order->ID }}">
+                                                <label class="custom-control-label" for="order-{{ $order->ID }}"></label>
                                             </div>
                                         </td>
                                         <td class="align-middle">
-                                            <span class="font-weight-bold">#{{ $order['id'] }}</span>
+                                            <span class="font-weight-bold">#{{ $order->ID }}</span>
                                         </td>
                                         <td class="align-middle">
                                             <i class="far fa-calendar-alt text-muted mr-1"></i>
-                                            {{ \Carbon\Carbon::parse($order['date_created'])->format('M d, Y H:i') }}
+                                            {{ \Carbon\Carbon::parse($order->post_date)->format('M d, Y H:i') }}
                                         </td>
                                         <td class="align-middle">
-                                            <span class="badge badge-{{ config('woo-order-dashboard.status_colors.' . $order['status'], 'default') }}">
-                                                {{ app(\Makiomar\WooOrderDashboard\Helpers\Orders\StatusHelper::class)->getStatusLabel($order['status']) }}
+                                            @php
+                                                $status_label = str_replace('wc-', '', $order->post_status);
+                                                $status_class = 'default';
+                                                if (isset(config('woo-order-dashboard.status_colors')[$status_label])) {
+                                                    $status_class = config('woo-order-dashboard.status_colors')[$status_label];
+                                                }
+                                            @endphp
+                                            <span class="badge badge-{{ $status_class }}">
+                                                {{ ucwords($status_label) }}
                                             </span>
                                         </td>
                                         <td class="align-middle">
-                                            <span class="font-weight-bold">${{ number_format($order['total'], 2) }}</span>
+                                            <span class="font-weight-bold">${{ number_format($order->meta->where('meta_key', '_order_total')->first()->meta_value ?? 0, 2) }}</span>
                                         </td>
                                         <td class="align-middle">
                                             <div class="d-flex flex-column">
                                                 <span class="font-weight-bold">
-                                                    {{ $order['billing']['first_name'] ?? '' }} {{ $order['billing']['last_name'] ?? '' }}
+                                                    {{ $order->meta->where('meta_key', '_billing_first_name')->first()->meta_value ?? '' }} 
+                                                    {{ $order->meta->where('meta_key', '_billing_last_name')->first()->meta_value ?? '' }}
                                                 </span>
                                                 <small class="text-muted">
                                                     <i class="far fa-envelope mr-1"></i>
-                                                    {{ $order['billing']['email'] ?? 'N/A' }}
+                                                    {{ $order->meta->where('meta_key', '_billing_email')->first()->meta_value ?? 'N/A' }}
                                                 </small>
                                             </div>
                                         </td>
                                         <td class="align-middle text-center">
-                                            <a href="{{ route('woo.orders.show', $order['id']) }}" class="btn btn-sm btn-info">
+                                            <a href="{{ route('woo.orders.show', $order->ID) }}" class="btn btn-sm btn-info">
                                                 <i class="fas fa-eye mr-1"></i> View
                                             </a>
                                         </td>
@@ -157,9 +165,9 @@
                         </table>
                     </div>
 
-                    @if(isset($orders['data']) && $orders['data']->hasPages())
+                    @if($orders->hasPages())
                         <div class="card-footer bg-light">
-                            {{ $orders['data']->links() }}
+                            {{ $orders->links() }}
                         </div>
                     @endif
                 </div>

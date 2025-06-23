@@ -119,7 +119,7 @@ class OrdersController extends Controller
                 'post_content' => '',
                 'post_excerpt' => $data['customer_note'] ?? '',
                 'post_date' => now(),
-                'post_date_gmt' => now()->utc(),
+                'post_modified' => now(),
             ]);
 
             // 2. Add meta data to the order

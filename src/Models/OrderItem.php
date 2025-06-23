@@ -3,7 +3,6 @@
 namespace Makiomar\WooOrderDashboard\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 
 class OrderItem extends Model
 {
@@ -45,18 +44,6 @@ class OrderItem extends Model
         'order_item_name',
         'order_item_type',
     ];
-
-    /**
-     * Create a new Eloquent model instance.
-     *
-     * @param  array  $attributes
-     * @return void
-     */
-    public function __construct(array $attributes = [])
-    {
-        parent::__construct($attributes);
-        $this->table = DB::getDatabaseName() . '.woocommerce_order_items';
-    }
 
     /**
      * Get the order that the item belongs to.

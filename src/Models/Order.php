@@ -3,7 +3,6 @@
 namespace Makiomar\WooOrderDashboard\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 
 class Order extends Model
 {
@@ -67,17 +66,6 @@ class Order extends Model
         'date_created_gmt',
         'date_updated_gmt',
     ];
-
-    /**
-     * Create a new Eloquent model instance.
-     *
-     * @param  array  $attributes
-     * @return void
-     */
-    public function __construct(array $attributes = [])
-    {
-        parent::__construct($attributes);
-    }
 
     /**
      * Get the order items for the order.

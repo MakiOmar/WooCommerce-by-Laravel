@@ -3,7 +3,6 @@
 namespace Makiomar\WooOrderDashboard\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 
 class UserMeta extends Model
 {
@@ -34,18 +33,6 @@ class UserMeta extends Model
      * @var bool
      */
     public $timestamps = false;
-
-    /**
-     * Create a new Eloquent model instance.
-     *
-     * @param  array  $attributes
-     * @return void
-     */
-    public function __construct(array $attributes = [])
-    {
-        parent::__construct($attributes);
-        $this->table = DB::getDatabaseName() . '.wp_usermeta';
-    }
 
     /**
      * Get the user that owns the meta.

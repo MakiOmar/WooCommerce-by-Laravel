@@ -15,6 +15,12 @@ A powerful Laravel package that provides a clean and efficient dashboard for man
 - 🛣️ Clean, unprefixed routing system
 - ✨ Order creation and management interface
 - 🔄 Bulk operations support
+- **Order Management**: View, create, and manage WooCommerce orders
+- **Dynamic Status Management**: Automatically fetch order statuses from WooCommerce database
+- **AJAX Tab Loading**: Load order details, customer info, and notes dynamically
+- **Status Change**: Change order status directly from the order detail page
+- **Performance Optimized**: Cached queries and optimized database operations
+- **Responsive Design**: Bootstrap 4 based responsive interface
 
 ## Requirements
 
@@ -406,6 +412,32 @@ $orderItem->order_item_name = 'Product Name';
 $orderItem->order_item_type = 'line_item';
 $orderItem->save();
 ```
+
+### Order Status Management
+
+The package provides dynamic status management with the ability to change order statuses directly from the order detail page:
+
+#### Viewing Order Status
+- Order statuses are automatically fetched from the WooCommerce database
+- Statuses are displayed with color-coded badges
+- Both default and custom statuses are supported
+
+#### Changing Order Status
+1. Navigate to an order detail page (`/orders/{id}`)
+2. In the "Order Information" section, click the "Change Status" dropdown
+3. Select the new status from the dropdown
+4. Confirm the status change
+5. The status will be updated via AJAX with automatic cache clearing
+
+#### Status Change Features
+- **Confirmation Dialog**: Prevents accidental status changes
+- **Loading States**: Visual feedback during status updates
+- **Success/Error Messages**: Clear feedback on operation results
+- **Automatic Cache Clearing**: Ensures data consistency
+- **Order Notes**: Status changes are automatically logged as order notes
+- **Page Refresh**: Ensures all data is updated after status change
+
+### AJAX Tab Loading
 
 ## Views and Assets
 

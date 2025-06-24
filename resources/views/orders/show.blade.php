@@ -196,6 +196,74 @@
     .tab-pane.active {
         display: block !important;
     }
+    
+    /* Status dropdown styles */
+    .dropdown-item.status-option {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.5rem 1rem;
+        border: none;
+        background: none;
+        width: 100%;
+        text-align: left;
+        text-decoration: none;
+        color: #495057;
+    }
+    
+    .dropdown-item.status-option:hover {
+        background-color: #f8f9fa;
+        color: #495057;
+        text-decoration: none;
+    }
+    
+    .dropdown-item.status-option.active {
+        background-color: #e3f2fd;
+        color: #1976d2;
+        font-weight: 500;
+    }
+    
+    .dropdown-item.status-option.active:hover {
+        background-color: #e3f2fd;
+        color: #1976d2;
+    }
+    
+    .dropdown-item.status-option .badge {
+        font-size: 0.75rem;
+    }
+    
+    .dropdown-item.status-option i.fa-check {
+        margin-left: auto;
+    }
+    
+    /* Alert styles */
+    .alert {
+        margin-bottom: 1rem;
+        border-radius: 0.375rem;
+    }
+    
+    .alert-dismissible .close {
+        padding: 0.75rem 1.25rem;
+    }
+    
+    /* Loading spinner for button */
+    .btn .fa-spin {
+        margin-right: 0.25rem;
+    }
+    
+    /* Dropdown menu improvements */
+    .dropdown-menu {
+        border: 1px solid #dee2e6;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        border-radius: 0.375rem;
+        min-width: 200px;
+    }
+    
+    /* Status badge improvements */
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.375rem 0.75rem;
+    }
 </style>
 @endpush
 
@@ -249,6 +317,107 @@ $(document).ready(function() {
     
     // Mark first tab as loaded
     loadedTabs['order-info'] = true;
+    
+    // Handle status change
+    $('.status-option').on('click', function(e) {
+        e.preventDefault();
+        
+        var $this = $(this);
+        var newStatus = $this.data('status');
+        var statusKey = $this.data('status-key');
+        var statusLabel = $this.data('status-label');
+        var orderId = {{ $order->ID }};
+        
+        // Don't update if it's the current status
+        if ($this.hasClass('active')) {
+            return;
+        }
+        
+        // Show confirmation dialog
+        if (!confirm('Are you sure you want to change the order status to "' + statusLabel + '"?')) {
+            return;
+        }
+        
+        // Show loading state
+        var $dropdown = $('#statusDropdown');
+        var originalText = $dropdown.html();
+        $dropdown.html('<i class="fas fa-spinner fa-spin"></i> Updating...');
+        $dropdown.prop('disabled', true);
+        
+        // Make AJAX request
+        $.ajax({
+            url: '{{ route("orders.update-status", $order->ID) }}',
+            method: 'PATCH',
+            data: {
+                status: newStatus,
+                _token: '{{ csrf_token() }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    // Update the status badge
+                    var statusClass = 'secondary';
+                    @foreach(config('woo-order-dashboard.status_colors', []) as $key => $color)
+                        if ('{{ $key }}' === statusKey) {
+                            statusClass = '{{ $color }}';
+                        }
+                    @endforeach
+                    
+                    $('#current-status-badge')
+                        .removeClass()
+                        .addClass('badge badge-' + statusClass + ' mr-2')
+                        .text(statusLabel);
+                    
+                    // Update dropdown items
+                    $('.status-option').removeClass('active');
+                    $this.addClass('active');
+                    
+                    // Show success message
+                    showAlert('success', 'Order status updated successfully!');
+                    
+                    // Refresh the page after a short delay to ensure all data is updated
+                    setTimeout(function() {
+                        location.reload();
+                    }, 1500);
+                } else {
+                    showAlert('danger', 'Failed to update order status: ' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error updating order status:', error);
+                var errorMessage = 'Failed to update order status.';
+                if (xhr.responseJSON && xhr.responseJSON.message) {
+                    errorMessage = xhr.responseJSON.message;
+                }
+                showAlert('danger', errorMessage);
+            },
+            complete: function() {
+                // Restore original button state
+                $dropdown.html(originalText);
+                $dropdown.prop('disabled', false);
+            }
+        });
+    });
+    
+    // Function to show alerts
+    function showAlert(type, message) {
+        var alertHtml = '<div class="alert alert-' + type + ' alert-dismissible fade show" role="alert">' +
+                        message +
+                        '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                        '<span aria-hidden="true">&times;</span>' +
+                        '</button>' +
+                        '</div>';
+        
+        // Remove any existing alerts
+        $('.alert').remove();
+        
+        // Add new alert at the top of the page
+        $('.container-fluid').prepend(alertHtml);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(function() {
+            $('.alert').fadeOut();
+        }, 5000);
+    }
 });
 </script>
 @endpush 

@@ -122,9 +122,12 @@ class OrdersController extends Controller
         DB::connection('woocommerce')->beginTransaction();
         try {
             // Debug: Log the order data we're about to create
+            $orderStatus = $data['order_status'] ?? 'processing';
+            $wcOrderStatus = strpos($orderStatus, 'wc-') === 0 ? $orderStatus : 'wc-' . $orderStatus;
+            
             $orderData = [
                 'post_type' => 'shop_order',
-                'post_status' => $data['order_status'] ?? 'wc-processing',
+                'post_status' => $wcOrderStatus,
                 'ping_status' => 'closed',
                 'post_author' => auth()->id() ?? 1,
                 'post_title' => 'Order &ndash; ' . now()->format('F j, Y @ h:i A'),
@@ -144,6 +147,7 @@ class OrdersController extends Controller
             ];
             
             \Log::info('Creating order with data:', $orderData);
+            \Log::info('Order status:', ['original' => $orderStatus, 'wc_formatted' => $wcOrderStatus]);
             
             // 1. Create the main order record in 'posts'
             $subtotal = collect($items)->sum(function ($item) {
@@ -156,6 +160,18 @@ class OrdersController extends Controller
             $order = Order::create($orderData);
             
             \Log::info('Order created successfully:', ['order_id' => $order->ID]);
+            
+            // Verify the order exists in the database
+            $verificationOrder = DB::connection('woocommerce')->table('posts')->where('ID', $order->ID)->first();
+            \Log::info('Order verification:', ['exists' => $verificationOrder ? 'yes' : 'no', 'post_type' => $verificationOrder->post_type ?? 'N/A', 'post_status' => $verificationOrder->post_status ?? 'N/A']);
+
+            // Check existing WooCommerce orders for comparison
+            $existingOrders = DB::connection('woocommerce')->table('posts')
+                ->where('post_type', 'shop_order')
+                ->orderBy('ID', 'desc')
+                ->limit(5)
+                ->get(['ID', 'post_status', 'post_title']);
+            \Log::info('Existing WooCommerce orders:', $existingOrders->toArray());
 
             // 2. Add meta data to the order
             $metaData = [
@@ -186,6 +202,21 @@ class OrdersController extends Controller
                 ['_shipping_state', ''],
                 ['_shipping_postcode', ''],
                 ['_shipping_country', ''],
+                // Additional WooCommerce meta fields
+                ['_order_key', 'wc_' . uniqid()],
+                ['_order_version', '7.0.0'],
+                ['_prices_include_tax', 'no'],
+                ['_discount_total', $data['discount'] ?? '0'],
+                ['_discount_tax', '0'],
+                ['_shipping_tax', '0'],
+                ['_cart_tax', $data['taxes'] ?? '0'],
+                ['_total_tax', $data['taxes'] ?? '0'],
+                ['_customer_ip_address', request()->ip()],
+                ['_customer_user_agent', request()->userAgent()],
+                ['_created_via', 'admin'],
+                ['_date_completed', ''],
+                ['_date_paid', now()->format('Y-m-d H:i:s')],
+                ['_cart_hash', ''],
             ];
 
             \Log::info('Creating meta data:', $metaData);
@@ -253,7 +284,7 @@ class OrdersController extends Controller
                     'shipping_total' => $data['shipping'] ?? 0,
                     'net_total' => $total - ($data['taxes'] ?? 0) - ($data['shipping'] ?? 0),
                     'returning_customer' => 0,
-                    'status' => $data['order_status'] ?? 'wc-processing',
+                    'status' => $wcOrderStatus,
                 ]);
                 
                 \Log::info('Added to wc_order_stats table');
@@ -277,6 +308,15 @@ class OrdersController extends Controller
                 }
                 
                 \Log::info('Added to wc_order_product_lookup table');
+                
+                // Verify lookup table entries
+                $statsEntry = DB::connection('woocommerce')->table('wc_order_stats')->where('order_id', $order->ID)->first();
+                $productEntry = DB::connection('woocommerce')->table('wc_order_product_lookup')->where('order_id', $order->ID)->first();
+                
+                \Log::info('Lookup table verification:', [
+                    'wc_order_stats_exists' => $statsEntry ? 'yes' : 'no',
+                    'wc_order_product_lookup_exists' => $productEntry ? 'yes' : 'no'
+                ]);
                 
                 // Add to wc_order_tax_lookup table
                 if (($data['taxes'] ?? 0) > 0) {

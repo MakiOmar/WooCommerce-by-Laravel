@@ -7,48 +7,7 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h3 class="card-title">Order #{{ $order->ID }}</h3>
-                    <div class="d-flex align-items-center">
-                        <!-- Status Display and Change -->
-                        <div class="mr-3">
-                            @php
-                                $status_label = \Makiomar\WooOrderDashboard\Helpers\Orders\StatusHelper::removeStatusPrefix($order->post_status);
-                                $status_class = 'secondary'; // default
-                                if (isset(config('woo-order-dashboard.status_colors')[$status_label])) {
-                                    $status_class = config('woo-order-dashboard.status_colors')[$status_label];
-                                }
-                            @endphp
-                            <span class="badge badge-{{ $status_class }} mr-2" id="current-status-badge">
-                                {{ $orderStatuses[$status_label] ?? ucwords($status_label) }}
-                            </span>
-                            <div class="dropdown d-inline-block">
-                                <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" id="statusDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    <i class="fas fa-edit"></i> Change Status
-                                </button>
-                                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="statusDropdown">
-                                    @foreach($orderStatuses as $status_key => $status_label)
-                                        @php
-                                            $status_class = 'secondary';
-                                            if (isset(config('woo-order-dashboard.status_colors')[$status_key])) {
-                                                $status_class = config('woo-order-dashboard.status_colors')[$status_key];
-                                            }
-                                            $is_current = $status_key === \Makiomar\WooOrderDashboard\Helpers\Orders\StatusHelper::removeStatusPrefix($order->post_status);
-                                        @endphp
-                                        <a class="dropdown-item status-option {{ $is_current ? 'active' : '' }}" 
-                                           href="#" 
-                                           data-status="{{ \Makiomar\WooOrderDashboard\Helpers\Orders\StatusHelper::getStatusWithPrefix($status_key) }}"
-                                           data-status-key="{{ $status_key }}"
-                                           data-status-label="{{ $status_label }}">
-                                            <span class="badge badge-{{ $status_class }} mr-2">{{ $status_label }}</span>
-                                            @if($is_current)
-                                                <i class="fas fa-check text-success"></i>
-                                            @endif
-                                        </a>
-                                    @endforeach
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- Action Buttons -->
+                    <div>
                         <a href="{{ route('orders.index') }}" class="btn btn-secondary">
                             <i class="fas fa-arrow-left"></i> Back to Orders
                         </a>
@@ -60,6 +19,64 @@
                     </div>
                 </div>
                 <div class="card-body">
+                    <!-- Status Change Section -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card border-primary">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="card-title mb-0">
+                                        <i class="fas fa-edit mr-2"></i>Order Status
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <div>
+                                            <small class="text-muted d-block">Current Status</small>
+                                            @php
+                                                $status_label = \Makiomar\WooOrderDashboard\Helpers\Orders\StatusHelper::removeStatusPrefix($order->post_status);
+                                                $status_class = 'secondary'; // default
+                                                if (isset(config('woo-order-dashboard.status_colors')[$status_label])) {
+                                                    $status_class = config('woo-order-dashboard.status_colors')[$status_label];
+                                                }
+                                            @endphp
+                                            <span class="badge badge-{{ $status_class }} badge-lg" id="current-status-badge">
+                                                {{ $orderStatuses[$status_label] ?? ucwords($status_label) }}
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <div class="dropdown">
+                                                <button class="btn btn-primary dropdown-toggle" type="button" id="statusDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                    <i class="fas fa-edit"></i> Change Status
+                                                </button>
+                                                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="statusDropdown">
+                                                    @foreach($orderStatuses as $status_key => $status_label)
+                                                        @php
+                                                            $status_class = 'secondary';
+                                                            if (isset(config('woo-order-dashboard.status_colors')[$status_key])) {
+                                                                $status_class = config('woo-order-dashboard.status_colors')[$status_key];
+                                                            }
+                                                            $is_current = $status_key === \Makiomar\WooOrderDashboard\Helpers\Orders\StatusHelper::removeStatusPrefix($order->post_status);
+                                                        @endphp
+                                                        <a class="dropdown-item status-option {{ $is_current ? 'active' : '' }}" 
+                                                           href="#" 
+                                                           data-status="{{ \Makiomar\WooOrderDashboard\Helpers\Orders\StatusHelper::getStatusWithPrefix($status_key) }}"
+                                                           data-status-key="{{ $status_key }}"
+                                                           data-status-label="{{ $status_label }}">
+                                                            <span class="badge badge-{{ $status_class }} mr-2">{{ $status_label }}</span>
+                                                            @if($is_current)
+                                                                <i class="fas fa-check text-success"></i>
+                                                            @endif
+                                                        </a>
+                                                    @endforeach
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Tab Navigation -->
                     <ul class="nav nav-tabs" id="orderTabs" role="tablist">
                         <li class="nav-item">
@@ -126,6 +143,8 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
 <!-- Font Awesome -->
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+<!-- SweetAlert2 -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
 <style>
     .nav-tabs {
@@ -306,42 +325,109 @@
         padding: 0.375rem 0.75rem;
     }
     
-    /* Card header improvements */
-    .card-header {
-        background-color: #f8f9fa;
-        border-bottom: 1px solid #dee2e6;
-        padding: 1rem 1.25rem;
+    .badge-lg {
+        font-size: 1rem;
+        padding: 0.5rem 1rem;
     }
     
-    .card-header .card-title {
-        margin-bottom: 0;
-        font-size: 1.25rem;
+    /* Status section card */
+    .card.border-primary {
+        border-width: 2px;
+    }
+    
+    .card.border-primary .card-header {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        border-bottom: none;
+    }
+    
+    .card.border-primary .card-header .card-title {
+        color: white;
+        font-size: 1.1rem;
         font-weight: 600;
     }
     
-    /* Status section in header */
-    .card-header .mr-3 {
-        display: flex;
-        align-items: center;
+    .card.border-primary .card-body {
+        background-color: #f8f9fa;
+        padding: 1.5rem;
     }
     
-    /* Responsive adjustments */
+    /* Status display section */
+    .status-display {
+        background-color: white;
+        border-radius: 0.375rem;
+        padding: 1rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    /* Responsive adjustments for status section */
     @media (max-width: 768px) {
-        .card-header {
+        .card.border-primary .card-body .d-flex {
             flex-direction: column;
-            align-items: flex-start !important;
+            align-items: flex-start;
         }
         
-        .card-header .d-flex {
+        .card.border-primary .card-body .d-flex > div:last-child {
             margin-top: 1rem;
             width: 100%;
-            justify-content: space-between;
         }
         
-        .card-header .mr-3 {
-            margin-right: 0 !important;
-            margin-bottom: 0.5rem;
+        .card.border-primary .card-body .dropdown {
+            width: 100%;
         }
+        
+        .card.border-primary .card-body .dropdown .btn {
+            width: 100%;
+        }
+    }
+    
+    /* SweetAlert2 customizations */
+    .swal2-popup {
+        border-radius: 0.5rem;
+        font-family: inherit;
+    }
+    
+    .swal2-title {
+        color: #495057;
+        font-weight: 600;
+    }
+    
+    .swal2-html-container {
+        color: #6c757d;
+    }
+    
+    .swal2-confirm {
+        background-color: #007bff !important;
+        border-color: #007bff !important;
+    }
+    
+    .swal2-confirm:hover {
+        background-color: #0056b3 !important;
+        border-color: #0056b3 !important;
+    }
+    
+    .swal2-cancel {
+        background-color: #6c757d !important;
+        border-color: #6c757d !important;
+    }
+    
+    .swal2-cancel:hover {
+        background-color: #545b62 !important;
+        border-color: #545b62 !important;
+    }
+    
+    .swal2-icon.swal2-error {
+        border-color: #dc3545;
+        color: #dc3545;
+    }
+    
+    .swal2-icon.swal2-success {
+        border-color: #28a745;
+        color: #28a745;
+    }
+    
+    .swal2-icon.swal2-question {
+        border-color: #007bff;
+        color: #007bff;
     }
 </style>
 @endpush
@@ -349,6 +435,7 @@
 @push('js')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
 <script>
 $(document).ready(function() {
     var loadedTabs = {};
@@ -412,11 +499,26 @@ $(document).ready(function() {
             return;
         }
         
-        // Show confirmation dialog
-        if (!confirm('Are you sure you want to change the order status to "' + statusLabel + '"?')) {
-            return;
-        }
-        
+        // Show SweetAlert2 confirmation dialog
+        Swal.fire({
+            title: 'Change Order Status?',
+            html: `Are you sure you want to change the order status to <strong>"${statusLabel}"</strong>?`,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#007bff',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Yes, change it!',
+            cancelButtonText: 'Cancel',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                updateOrderStatus(newStatus, statusKey, statusLabel, $this);
+            }
+        });
+    });
+    
+    // Function to update order status
+    function updateOrderStatus(newStatus, statusKey, statusLabel, $this) {
         // Show loading state
         var $dropdown = $('#statusDropdown');
         var originalText = $dropdown.html();
@@ -443,22 +545,26 @@ $(document).ready(function() {
                     
                     $('#current-status-badge')
                         .removeClass()
-                        .addClass('badge badge-' + statusClass + ' mr-2')
+                        .addClass('badge badge-' + statusClass + ' badge-lg')
                         .text(statusLabel);
                     
                     // Update dropdown items
                     $('.status-option').removeClass('active');
                     $this.addClass('active');
                     
-                    // Show success message
-                    showAlert('success', 'Order status updated successfully!');
-                    
-                    // Refresh the page after a short delay to ensure all data is updated
-                    setTimeout(function() {
+                    // Show success message with SweetAlert2
+                    Swal.fire({
+                        title: 'Success!',
+                        text: 'Order status updated successfully!',
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        // Refresh the page after success
                         location.reload();
-                    }, 1500);
+                    });
                 } else {
-                    showAlert('danger', 'Failed to update order status: ' + response.message);
+                    showErrorAlert('Failed to update order status: ' + response.message);
                 }
             },
             error: function(xhr, status, error) {
@@ -467,7 +573,7 @@ $(document).ready(function() {
                 if (xhr.responseJSON && xhr.responseJSON.message) {
                     errorMessage = xhr.responseJSON.message;
                 }
-                showAlert('danger', errorMessage);
+                showErrorAlert(errorMessage);
             },
             complete: function() {
                 // Restore original button state
@@ -475,27 +581,16 @@ $(document).ready(function() {
                 $dropdown.prop('disabled', false);
             }
         });
-    });
+    }
     
-    // Function to show alerts
-    function showAlert(type, message) {
-        var alertHtml = '<div class="alert alert-' + type + ' alert-dismissible fade show" role="alert">' +
-                        message +
-                        '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
-                        '<span aria-hidden="true">&times;</span>' +
-                        '</button>' +
-                        '</div>';
-        
-        // Remove any existing alerts
-        $('.alert').remove();
-        
-        // Add new alert at the top of the page
-        $('.container-fluid').prepend(alertHtml);
-        
-        // Auto-dismiss after 5 seconds
-        setTimeout(function() {
-            $('.alert').fadeOut();
-        }, 5000);
+    // Function to show error alerts with SweetAlert2
+    function showErrorAlert(message) {
+        Swal.fire({
+            title: 'Error!',
+            text: message,
+            icon: 'error',
+            confirmButtonColor: '#dc3545'
+        });
     }
 });
 </script>

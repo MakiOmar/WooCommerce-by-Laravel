@@ -60,49 +60,75 @@ php artisan migrate --path=vendor/makiomar/woo-order-dashboard/database/migratio
 
 The package provides several publish tags for different components:
 
+### Using Provider-Based Commands (Recommended)
+```bash
+# Publish all package assets
+php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider"
+
+# Publish specific components:
+php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="config"
+php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="views"
+php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="assets"
+php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="migrations"
+php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="routes"
+```
+
+### Using Tag-Based Commands (Alternative)
+```bash
+# Publish all package assets
+php artisan vendor:publish --tag=woo-order-dashboard
+
+# Or publish specific components:
+php artisan vendor:publish --tag=woo-order-dashboard-config
+php artisan vendor:publish --tag=woo-order-dashboard-views
+php artisan vendor:publish --tag=woo-order-dashboard-assets
+php artisan vendor:publish --tag=woo-order-dashboard-migrations
+php artisan vendor:publish --tag=woo-order-dashboard-routes
+```
+
 ### Configuration
 ```bash
-php artisan vendor:publish --tag=woo-order-dashboard-config
+php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="config"
 ```
 Publishes the configuration file to `config/woo-order-dashboard.php`
 
 ### Views
 ```bash
-php artisan vendor:publish --tag=woo-order-dashboard-views
+php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="views"
 ```
 Publishes Blade views to `resources/views/vendor/woo-order-dashboard/`
 
 ### Assets
 ```bash
-php artisan vendor:publish --tag=woo-order-dashboard-assets
+php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="assets"
 ```
 Publishes CSS and JS assets to `public/vendor/woo-order-dashboard/`
 
 ### Migrations
 ```bash
-php artisan vendor:publish --tag=woo-order-dashboard-migrations
+php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="migrations"
 ```
 Publishes optional database migrations to `database/migrations/optional/`
 
 ### Routes
 ```bash
-php artisan vendor:publish --tag=woo-order-dashboard-routes
+php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="routes"
 ```
 Publishes routes file to `routes/woo-dashboard.php` for customization
 
 ### All Assets
 ```bash
-php artisan vendor:publish --tag=woo-order-dashboard
+php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider"
 ```
 Publishes all package assets (config, views, assets, migrations)
 
 ### Available Tags Summary
-- `woo-order-dashboard-config` - Configuration file
-- `woo-order-dashboard-views` - Blade templates
-- `woo-order-dashboard-assets` - CSS and JavaScript files
-- `woo-order-dashboard-migrations` - Optional database migrations
-- `woo-order-dashboard-routes` - Routes file for customization
-- `woo-order-dashboard` - All assets (recommended for first-time setup)
+- `config` - Configuration file
+- `views` - Blade templates
+- `assets` - CSS and JavaScript files
+- `migrations` - Optional database migrations
+- `routes` - Routes file for customization
+- No tag - All assets (recommended for first-time setup)
 
 ## Configuration
 

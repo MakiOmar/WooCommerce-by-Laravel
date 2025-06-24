@@ -167,6 +167,9 @@ class OrdersController extends Controller
      */
     protected function createOrderViaDatabase(array $data)
     {
+        // Decode order items from the data
+        $items = json_decode($data['order_items'], true);
+        
         DB::connection('woocommerce')->beginTransaction();
         try {
             // Debug: Log the order data we're about to create

@@ -11,7 +11,7 @@
             }
         @endphp
         <span class="badge badge-{{ $status_class }}">
-            {{ ucwords($status_label) }}
+            {{ $orderStatuses[$status_label] ?? ucwords($status_label) }}
         </span>
     </div>
     <div class="card-body">

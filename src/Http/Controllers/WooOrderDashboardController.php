@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Makiomar\WooOrderDashboard\Models\Order;
+use Makiomar\WooOrderDashboard\Helpers\Orders\StatusHelper;
 use Illuminate\Support\Facades\Log;
 
 class WooOrderDashboardController extends Controller
@@ -36,7 +37,10 @@ class WooOrderDashboardController extends Controller
                          ->paginate($filters['per_page'] ?? config('woo-order-dashboard.pagination.per_page', 15));
         });
 
-        return view('woo-order-dashboard::index', compact('orders', 'filters'));
+        // Get dynamic order statuses from the database
+        $orderStatuses = StatusHelper::getAllStatuses();
+
+        return view('woo-order-dashboard::index', compact('orders', 'filters', 'orderStatuses'));
     }
 
     public function show($id)
@@ -51,7 +55,10 @@ class WooOrderDashboardController extends Controller
             return redirect()->route('orders.index')->with('error', 'Order not found.');
         }
 
-        return view('woo-order-dashboard::orders.show', compact('order'));
+        // Get dynamic order statuses from the database
+        $orderStatuses = StatusHelper::getAllStatuses();
+
+        return view('woo-order-dashboard::orders.show', compact('order', 'orderStatuses'));
     }
 
     protected function validateFilters(Request $request)

@@ -62,7 +62,7 @@
                                 <label for="status" class="font-weight-bold">Status</label>
                                 <select name="status" id="status" class="form-control">
                                     <option value="">All Statuses</option>
-                                    @foreach(app(\Makiomar\WooOrderDashboard\Helpers\Orders\StatusHelper::class)->getAllStatuses() as $statusKey => $statusLabel)
+                                    @foreach($orderStatuses ?? [] as $statusKey => $statusLabel)
                                         <option value="{{ $statusKey }}" {{ request('status') == $statusKey ? 'selected' : '' }}>
                                             {{ $statusLabel }}
                                         </option>
@@ -127,7 +127,7 @@
                                                 }
                                             @endphp
                                             <span class="badge badge-{{ $status_class }}">
-                                                {{ ucwords($status_label) }}
+                                                {{ $orderStatuses[$status_label] ?? ucwords($status_label) }}
                                             </span>
                                         </td>
                                         <td class="align-middle">

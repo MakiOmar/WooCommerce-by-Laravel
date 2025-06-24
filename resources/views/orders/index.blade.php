@@ -39,9 +39,9 @@
                                     <label for="status" class="font-weight-bold">Status</label>
                                     <select class="form-control" id="status" name="status">
                                         <option value="">All Statuses</option>
-                                        @foreach(config('woo-order-dashboard.order_statuses', []) as $status)
-                                            <option value="{{ $status }}" {{ request('status') == $status ? 'selected' : '' }}>
-                                                {{ ucfirst($status) }}
+                                        @foreach($orderStatuses ?? [] as $statusKey => $statusLabel)
+                                            <option value="{{ $statusKey }}" {{ request('status') == $statusKey ? 'selected' : '' }}>
+                                                {{ $statusLabel }}
                                             </option>
                                         @endforeach
                                     </select>
@@ -164,7 +164,7 @@
                                         </td>
                                         <td class="align-middle">
                                             <span class="badge badge-{{ config('woo-order-dashboard.status_colors.' . $order['status'], 'secondary') }}">
-                                                {{ ucfirst($order['status']) }}
+                                                {{ $orderStatuses[$order['status']] ?? ucfirst($order['status']) }}
                                             </span>
                                         </td>
                                         <td class="align-middle">

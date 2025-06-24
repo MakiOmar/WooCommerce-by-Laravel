@@ -101,7 +101,6 @@
                         <!-- Tab 1: Order Info & Items -->
                         <div class="tab-pane fade show active" id="order-info" role="tabpanel" aria-labelledby="order-info-tab">
                             <div class="mt-4">
-                                @include('woo-order-dashboard::partials.order-customer-info', ['order' => $order])
                                 @include('woo-order-dashboard::partials.order-items', ['order' => $order])
                                 @include('woo-order-dashboard::partials.order-meta', ['order' => $order])
                             </div>

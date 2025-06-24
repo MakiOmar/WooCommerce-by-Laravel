@@ -15,6 +15,7 @@ A powerful Laravel package that provides a clean and efficient dashboard for man
 - 🛣️ Clean, unprefixed routing system
 - ✨ Order creation and management interface
 - 🔄 Bulk operations support
+- 🌐 **WooCommerce REST API Integration**: Optional API-based order creation for better integration
 - **Order Management**: View, create, and manage WooCommerce orders
 - **Dynamic Status Management**: Automatically fetch order statuses from WooCommerce database
 - **AJAX Tab Loading**: Load order details, customer info, and notes dynamically
@@ -172,6 +173,80 @@ WOO_DB_USERNAME=your_username
 WOO_DB_PASSWORD=your_password
 WOO_DB_PREFIX=wp_
 ```
+
+## WooCommerce REST API Configuration (Optional)
+
+The package supports creating orders via the WooCommerce REST API for better integration and compatibility with WooCommerce plugins.
+
+### API Configuration
+
+Add the following environment variables to your `.env` file:
+
+```env
+# WooCommerce API Configuration
+WOO_API_ENABLED=false
+WOO_SITE_URL=https://your-woocommerce-site.com
+WOO_CONSUMER_KEY=ck_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+WOO_CONSUMER_SECRET=cs_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+WOO_API_VERSION=wc/v3
+WOO_API_TIMEOUT=30
+WOO_API_MAX_RETRIES=3
+WOO_API_RETRY_DELAY=2
+WOO_API_VERIFY_SSL=true
+WOO_API_DEFAULT_CURRENCY=USD
+```
+
+### Getting API Credentials
+
+1. **Log in to your WooCommerce admin panel**
+2. **Go to WooCommerce → Settings → Advanced → REST API**
+3. **Click "Add Key"**
+4. **Fill in the details:**
+   - Description: "Laravel Dashboard API"
+   - User: Select an admin user
+   - Permissions: "Read/Write"
+5. **Click "Generate API Key"**
+6. **Copy the Consumer Key and Consumer Secret**
+
+### Testing the API Connection
+
+Run the following command to test your API configuration:
+
+```bash
+php artisan woo:test-api
+```
+
+### Usage Modes
+
+#### Database Method (Default)
+By default, orders are created using direct database insertion:
+```env
+WOO_API_ENABLED=false
+```
+
+#### API Method
+To use the WooCommerce REST API for order creation:
+```env
+WOO_API_ENABLED=true
+```
+
+**Note**: Payment method and order status are taken from the form submission, not from environment variables. This ensures that users can select the appropriate payment method and order status for each order.
+
+### Benefits
+
+**API Method Benefits:**
+- Better integration with WooCommerce plugins
+- Automatic cache updates and lookup table management
+- Triggers all WooCommerce hooks and filters
+- Data validation by WooCommerce
+
+**Database Method Benefits:**
+- Faster performance
+- Works offline
+- More control over data structure
+- No API rate limits
+
+For detailed API configuration instructions, see [WOOCOMMERCE_API_CONFIG.md](WOOCOMMERCE_API_CONFIG.md).
 
 ## Bootstrap 4 Pagination
 

@@ -13,6 +13,7 @@ use Makiomar\WooOrderDashboard\Models\Customer;
 use Makiomar\WooOrderDashboard\Models\PostMeta;
 use Makiomar\WooOrderDashboard\Helpers\CacheHelper;
 use Makiomar\WooOrderDashboard\Models\Comment;
+use Makiomar\WooOrderDashboard\Services\WooCommerceApiService;
 
 class OrdersController extends Controller
 {
@@ -119,6 +120,53 @@ class OrdersController extends Controller
             return back()->with('error', 'No order items found. Please add at least one product to the order.');
         }
 
+        // Check if WooCommerce API is enabled
+        if (config('woo-order-dashboard.api.enabled', false)) {
+            return $this->createOrderViaApi($data);
+        } else {
+            return $this->createOrderViaDatabase($data);
+        }
+    }
+
+    /**
+     * Create order via WooCommerce REST API
+     *
+     * @param array $data
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    protected function createOrderViaApi(array $data)
+    {
+        try {
+            $apiService = new WooCommerceApiService();
+            
+            // Test API connection first
+            if (!$apiService->testConnection()) {
+                \Log::error('WooCommerce API connection failed');
+                return back()->with('error', 'Unable to connect to WooCommerce API. Please check your API configuration.');
+            }
+
+            // Create order via API
+            $order = $apiService->createOrder($data);
+            
+            \Log::info('Order created successfully via API', ['order_id' => $order['id']]);
+            
+            return redirect()->route('orders.show', $order['id'])
+                ->with('success', 'Order #' . $order['id'] . ' created successfully via WooCommerce API!');
+                
+        } catch (\Exception $e) {
+            \Log::error('Failed to create order via API', ['error' => $e->getMessage()]);
+            return back()->with('error', 'Failed to create order via API: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Create order via direct database insertion (current method)
+     *
+     * @param array $data
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    protected function createOrderViaDatabase(array $data)
+    {
         DB::connection('woocommerce')->beginTransaction();
         try {
             // Debug: Log the order data we're about to create

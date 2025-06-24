@@ -13,6 +13,46 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | WooCommerce API Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configure the WooCommerce REST API settings for order creation.
+    |
+    */
+    'api' => [
+        // Enable/disable WooCommerce API usage for order creation
+        'enabled' => env('WOO_API_ENABLED', false),
+        
+        // WooCommerce site URL
+        'site_url' => env('WOO_SITE_URL'),
+        
+        // Consumer Key (WooCommerce API Key)
+        'consumer_key' => env('WOO_CONSUMER_KEY'),
+        
+        // Consumer Secret (WooCommerce API Secret)
+        'consumer_secret' => env('WOO_CONSUMER_SECRET'),
+        
+        // API version to use
+        'version' => env('WOO_API_VERSION', 'wc/v3'),
+        
+        // Request timeout in seconds
+        'timeout' => env('WOO_API_TIMEOUT', 30),
+        
+        // Maximum retry attempts for failed API calls
+        'max_retries' => env('WOO_API_MAX_RETRIES', 3),
+        
+        // Retry delay in seconds between attempts
+        'retry_delay' => env('WOO_API_RETRY_DELAY', 2),
+        
+        // Enable/disable SSL verification (set to false for self-signed certificates)
+        'verify_ssl' => env('WOO_API_VERIFY_SSL', true),
+        
+        // Default currency
+        'default_currency' => env('WOO_API_DEFAULT_CURRENCY', 'USD'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Route Configuration
     |--------------------------------------------------------------------------
     |

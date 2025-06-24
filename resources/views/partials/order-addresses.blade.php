@@ -4,7 +4,7 @@
             <div class="card-header">
                 <h5 class="mb-0">Billing Address</h5>
             </div>
-            <div class="card-body">
+            <div class="card-body p-2">
                 <address class="mb-0">
                     {{ $order['billing']['first_name'] }} {{ $order['billing']['last_name'] }}<br>
                     @if(!empty($order['billing']['company']))
@@ -31,7 +31,7 @@
             <div class="card-header">
                 <h5 class="mb-0">Shipping Address</h5>
             </div>
-            <div class="card-body">
+            <div class="card-body p-2">
                 <address class="mb-0">
                     {{ $order['shipping']['first_name'] }} {{ $order['shipping']['last_name'] }}<br>
                     @if(!empty($order['shipping']['company']))

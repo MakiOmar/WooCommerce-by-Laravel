@@ -167,11 +167,133 @@ return [
     |--------------------------------------------------------------------------
     | Available Meta Keys for Filtering
     |--------------------------------------------------------------------------
+    |
+    | Define the available meta keys for filtering orders.
+    | Users can extend this list by adding their own custom meta keys.
+    | Format: 'meta_key' => 'Display Label'
+    |
     */
     'meta_keys' => [
-        'billing_phone',
-        '_wcpdf_invoice_number',
-        'odoo_order_number',
+        // Billing Information
+        '_billing_first_name' => 'Billing First Name',
+        '_billing_last_name' => 'Billing Last Name',
+        '_billing_email' => 'Billing Email',
+        '_billing_phone' => 'Billing Phone',
+        '_billing_address_1' => 'Billing Address 1',
+        '_billing_address_2' => 'Billing Address 2',
+        '_billing_city' => 'Billing City',
+        '_billing_state' => 'Billing State',
+        '_billing_postcode' => 'Billing Postcode',
+        '_billing_country' => 'Billing Country',
+        '_billing_company' => 'Billing Company',
+        
+        // Shipping Information
+        '_shipping_first_name' => 'Shipping First Name',
+        '_shipping_last_name' => 'Shipping Last Name',
+        '_shipping_address_1' => 'Shipping Address 1',
+        '_shipping_address_2' => 'Shipping Address 2',
+        '_shipping_city' => 'Shipping City',
+        '_shipping_state' => 'Shipping State',
+        '_shipping_postcode' => 'Shipping Postcode',
+        '_shipping_country' => 'Shipping Country',
+        '_shipping_company' => 'Shipping Company',
+        
+        // Payment Information
+        '_payment_method' => 'Payment Method',
+        '_payment_method_title' => 'Payment Method Title',
+        '_transaction_id' => 'Transaction ID',
+        '_order_currency' => 'Order Currency',
+        '_order_total' => 'Order Total',
+        '_order_tax' => 'Order Tax',
+        '_order_shipping' => 'Order Shipping',
+        '_cart_discount' => 'Cart Discount',
+        '_order_discount' => 'Order Discount',
+        
+        // Customer Information
+        '_customer_user' => 'Customer User ID',
+        '_customer_ip_address' => 'Customer IP Address',
+        '_customer_user_agent' => 'Customer User Agent',
+        
+        // Order Information
+        '_order_key' => 'Order Key',
+        '_order_version' => 'Order Version',
+        '_prices_include_tax' => 'Prices Include Tax',
+        '_tax_display_cart' => 'Tax Display Cart',
+        '_order_stock_reduced' => 'Order Stock Reduced',
+        
+        // Custom/Third-party Meta Keys
+        '_wcpdf_invoice_number' => 'PDF Invoice Number',
+        'odoo_order_number' => 'Odoo Order Number',
+        '_wc_order_attribution_tracking_id' => 'Order Attribution Tracking ID',
+        '_wc_order_attribution_utm_source' => 'Order Attribution UTM Source',
+        '_wc_order_attribution_utm_medium' => 'Order Attribution UTM Medium',
+        '_wc_order_attribution_utm_campaign' => 'Order Attribution UTM Campaign',
+        
+        // WooCommerce Subscriptions (if applicable)
+        '_subscription_id' => 'Subscription ID',
+        '_subscription_status' => 'Subscription Status',
+        
+        // WooCommerce Bookings (if applicable)
+        '_booking_id' => 'Booking ID',
+        '_booking_start' => 'Booking Start Date',
+        '_booking_end' => 'Booking End Date',
+        
+        // Custom Meta Keys (extensible)
+        // Add your custom meta keys here:
+        // '_custom_field' => 'Custom Field Label',
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Meta Key Categories
+    |--------------------------------------------------------------------------
+    |
+    | Group meta keys into categories for better organization in the dropdown.
+    | This helps users find the right meta key more easily.
+    |
+    */
+    'meta_key_categories' => [
+        'billing' => [
+            'label' => 'Billing Information',
+            'keys' => [
+                '_billing_first_name', '_billing_last_name', '_billing_email', '_billing_phone',
+                '_billing_address_1', '_billing_address_2', '_billing_city', '_billing_state',
+                '_billing_postcode', '_billing_country', '_billing_company'
+            ]
+        ],
+        'shipping' => [
+            'label' => 'Shipping Information',
+            'keys' => [
+                '_shipping_first_name', '_shipping_last_name', '_shipping_address_1', '_shipping_address_2',
+                '_shipping_city', '_shipping_state', '_shipping_postcode', '_shipping_country', '_shipping_company'
+            ]
+        ],
+        'payment' => [
+            'label' => 'Payment Information',
+            'keys' => [
+                '_payment_method', '_payment_method_title', '_transaction_id', '_order_currency',
+                '_order_total', '_order_tax', '_order_shipping', '_cart_discount', '_order_discount'
+            ]
+        ],
+        'customer' => [
+            'label' => 'Customer Information',
+            'keys' => [
+                '_customer_user', '_customer_ip_address', '_customer_user_agent'
+            ]
+        ],
+        'order' => [
+            'label' => 'Order Information',
+            'keys' => [
+                '_order_key', '_order_version', '_prices_include_tax', '_tax_display_cart', '_order_stock_reduced'
+            ]
+        ],
+        'custom' => [
+            'label' => 'Custom Fields',
+            'keys' => [
+                '_wcpdf_invoice_number', 'odoo_order_number', '_wc_order_attribution_tracking_id',
+                '_wc_order_attribution_utm_source', '_wc_order_attribution_utm_medium', '_wc_order_attribution_utm_campaign'
+            ]
+        ]
     ],
 
     /*

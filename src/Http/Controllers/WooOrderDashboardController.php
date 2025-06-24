@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Makiomar\WooOrderDashboard\Models\Order;
 use Makiomar\WooOrderDashboard\Helpers\Orders\StatusHelper;
+use Makiomar\WooOrderDashboard\Helpers\MetaHelper;
 use Illuminate\Support\Facades\Log;
 
 class WooOrderDashboardController extends Controller
@@ -51,8 +52,12 @@ class WooOrderDashboardController extends Controller
 
         // Get dynamic order statuses from the database
         $orderStatuses = StatusHelper::getAllStatuses();
+        
+        // Get meta key categories for the dropdown
+        $metaKeyCategories = MetaHelper::getMetaKeyCategories();
+        $availableMetaKeys = MetaHelper::getAvailableMetaKeys();
 
-        return view('woo-order-dashboard::index', compact('orders', 'filters', 'orderStatuses'));
+        return view('woo-order-dashboard::index', compact('orders', 'filters', 'orderStatuses', 'metaKeyCategories', 'availableMetaKeys'));
     }
 
     public function show($id)

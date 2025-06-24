@@ -75,11 +75,41 @@
                             <!-- Meta Key -->
                             <div class="form-group col-md-4">
                                 <label for="meta_key" class="font-weight-bold">Meta Key</label>
-                                <input type="text" name="meta_key" id="meta_key" value="{{ request('meta_key') }}" 
-                                       class="form-control" placeholder="e.g., _payment_method, _billing_email">
+                                <select name="meta_key" id="meta_key" class="form-control">
+                                    <option value="">All Meta Keys</option>
+                                    @foreach($metaKeyCategories ?? [] as $category => $categoryData)
+                                        <optgroup label="{{ $categoryData['label'] }}">
+                                            @foreach($categoryData['keys'] as $key)
+                                                @php
+                                                    $label = $availableMetaKeys[$key] ?? ucwords(str_replace('_', ' ', $key));
+                                                @endphp
+                                                <option value="{{ $key }}" {{ request('meta_key') == $key ? 'selected' : '' }}>
+                                                    {{ $label }}
+                                                </option>
+                                            @endforeach
+                                        </optgroup>
+                                    @endforeach
+                                    <!-- Fallback for any meta keys not in categories -->
+                                    @foreach($availableMetaKeys ?? [] as $key => $label)
+                                        @php
+                                            $inCategory = false;
+                                            foreach($metaKeyCategories ?? [] as $categoryData) {
+                                                if (in_array($key, $categoryData['keys'])) {
+                                                    $inCategory = true;
+                                                    break;
+                                                }
+                                            }
+                                        @endphp
+                                        @if(!$inCategory)
+                                            <option value="{{ $key }}" {{ request('meta_key') == $key ? 'selected' : '' }}>
+                                                {{ $label }}
+                                            </option>
+                                        @endif
+                                    @endforeach
+                                </select>
                                 <small class="form-text text-muted">
                                     <i class="fas fa-info-circle mr-1"></i>
-                                    Common keys: _payment_method, _billing_email, _order_total
+                                    Select a meta key to filter orders by specific order data
                                 </small>
                             </div>
 

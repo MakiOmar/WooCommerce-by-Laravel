@@ -278,6 +278,71 @@ class OrdersController extends Controller
                 
                 \Log::info('Added to wc_order_product_lookup table');
                 
+                // Add to wc_order_tax_lookup table
+                if (($data['taxes'] ?? 0) > 0) {
+                    DB::connection('woocommerce')->table('wc_order_tax_lookup')->insert([
+                        'order_id' => $order->ID,
+                        'tax_rate_id' => 1, // Default tax rate
+                        'date_created' => now(),
+                        'shipping_tax' => 0,
+                        'order_tax' => $data['taxes'] ?? 0,
+                        'total_tax' => $data['taxes'] ?? 0,
+                    ]);
+                }
+                
+                // Add to wc_order_coupon_lookup table (empty for now)
+                // This table is used for coupon tracking
+                
+                // Add to wc_order_operational_data table (WooCommerce 7.0+)
+                try {
+                    DB::connection('woocommerce')->table('wc_order_operational_data')->insert([
+                        'order_id' => $order->ID,
+                        'created_via' => 'admin',
+                        'woocommerce_version' => '7.0.0',
+                        'prices_include_tax' => 0,
+                        'discount_total' => $data['discount'] ?? 0,
+                        'discount_tax' => 0,
+                        'shipping_total' => $data['shipping'] ?? 0,
+                        'shipping_tax' => 0,
+                        'cart_tax' => $data['taxes'] ?? 0,
+                        'total' => $total,
+                        'total_tax' => $data['taxes'] ?? 0,
+                        'customer_id' => $data['customer_id'] ?? 0,
+                        'order_key' => 'wc_' . uniqid(),
+                        'billing_email' => '',
+                        'billing_first_name' => '',
+                        'billing_last_name' => '',
+                        'billing_phone' => '',
+                        'billing_address_1' => '',
+                        'billing_address_2' => '',
+                        'billing_city' => '',
+                        'billing_state' => '',
+                        'billing_postcode' => '',
+                        'billing_country' => '',
+                        'shipping_first_name' => '',
+                        'shipping_last_name' => '',
+                        'shipping_address_1' => '',
+                        'shipping_address_2' => '',
+                        'shipping_city' => '',
+                        'shipping_state' => '',
+                        'shipping_postcode' => '',
+                        'shipping_country' => '',
+                        'payment_method' => $data['payment_method'] ?? '',
+                        'payment_method_title' => $data['payment_method'] ? ucwords(str_replace('_', ' ', $data['payment_method'])) : '',
+                        'transaction_id' => '',
+                        'customer_ip_address' => request()->ip(),
+                        'customer_user_agent' => request()->userAgent(),
+                        'customer_note' => $data['customer_note'] ?? '',
+                        'date_completed' => null,
+                        'date_paid' => now(),
+                        'cart_hash' => '',
+                    ]);
+                    
+                    \Log::info('Added to wc_order_operational_data table');
+                } catch (\Exception $e) {
+                    \Log::info('wc_order_operational_data table not available or failed: ' . $e->getMessage());
+                }
+                
             } catch (\Exception $e) {
                 \Log::warning('Failed to add WooCommerce lookup table entries: ' . $e->getMessage());
                 // Continue with order creation even if lookup tables fail
@@ -289,6 +354,21 @@ class OrdersController extends Controller
             // Clear cache after successful order creation
             CacheHelper::clearCacheOnOrderCreate();
             \Log::info('Cache cleared successfully');
+
+            // Clear WooCommerce cache to ensure order appears in admin
+            try {
+                // Clear WooCommerce transients
+                DB::connection('woocommerce')->table('options')->where('option_name', 'like', '_transient_wc_order_%')->delete();
+                DB::connection('woocommerce')->table('options')->where('option_name', 'like', '_transient_timeout_wc_order_%')->delete();
+                
+                // Clear WooCommerce cache
+                DB::connection('woocommerce')->table('options')->where('option_name', 'like', '_transient_wc_%')->delete();
+                DB::connection('woocommerce')->table('options')->where('option_name', 'like', '_transient_timeout_wc_%')->delete();
+                
+                \Log::info('WooCommerce cache cleared successfully');
+            } catch (\Exception $e) {
+                \Log::warning('Failed to clear WooCommerce cache: ' . $e->getMessage());
+            }
 
             return redirect()->route('orders.index')->with('success', 'Order created successfully. Order ID: ' . $order->ID);
 

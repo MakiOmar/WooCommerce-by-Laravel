@@ -101,7 +101,7 @@
                         <!-- Tab 1: Order Info & Items -->
                         <div class="tab-pane fade show active" id="order-info" role="tabpanel" aria-labelledby="order-info-tab">
                             <div class="mt-4">
-                                @include('partials.order-customer-info', ['order' => $order])
+                                @include('woo-order-dashboard::partials.order-customer-info', ['order' => $order])
                                 @include('woo-order-dashboard::partials.order-items', ['order' => $order])
                                 @include('woo-order-dashboard::partials.order-meta', ['order' => $order])
                             </div>
@@ -110,7 +110,7 @@
                         <!-- Tab 2: Customer Info -->
                         <div class="tab-pane fade" id="customer-info" role="tabpanel" aria-labelledby="customer-info-tab">
                             <div class="mt-4">
-                                @include('partials.order-customer-info', ['order' => $order])
+                                @include('woo-order-dashboard::partials.order-customer-info', ['order' => $order])
                             </div>
                         </div>
 

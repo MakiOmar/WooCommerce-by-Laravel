@@ -277,6 +277,7 @@
 
 @section('styles')
 <link href="{{ asset('css/woo-order-dashboard.css') }}" rel="stylesheet">
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 @endsection
 
 @section('scripts')

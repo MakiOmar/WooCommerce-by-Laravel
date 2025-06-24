@@ -214,9 +214,6 @@ $(document).ready(function() {
         var target = $(e.target).attr('href');
         var tabName = target.replace('#', '');
         
-        // Store active tab in localStorage
-        localStorage.setItem('activeOrderTab', target);
-        
         // Load tab content via AJAX if not already loaded
         if (!loadedTabs[tabName] && tabName !== 'order-info') {
             loadTabContent(tabName);
@@ -249,11 +246,8 @@ $(document).ready(function() {
         });
     }
     
-    // Restore active tab on page load
-    var activeTab = localStorage.getItem('activeOrderTab');
-    if (activeTab) {
-        $('#orderTabs a[href="' + activeTab + '"]').tab('show');
-    }
+    // Ensure "Order Info & Items" tab is always active by default
+    $('#orderTabs a[href="#order-info"]').tab('show');
     
     // Mark first tab as loaded
     loadedTabs['order-info'] = true;

@@ -174,6 +174,35 @@ class OrdersController extends Controller
             \Log::info('Existing WooCommerce orders:', $existingOrders->toArray());
 
             // 2. Add meta data to the order
+            $customerInfo = [];
+            if (!empty($data['customer_id'])) {
+                // Fetch customer information
+                $customer = Customer::find($data['customer_id']);
+                if ($customer) {
+                    $customerMeta = $customer->meta->pluck('meta_value', 'meta_key');
+                    $customerInfo = [
+                        '_billing_first_name' => $customerMeta->get('first_name', ''),
+                        '_billing_last_name' => $customerMeta->get('last_name', ''),
+                        '_billing_email' => $customer->user_email,
+                        '_billing_phone' => $customerMeta->get('billing_phone', ''),
+                        '_billing_address_1' => $customerMeta->get('billing_address_1', ''),
+                        '_billing_address_2' => $customerMeta->get('billing_address_2', ''),
+                        '_billing_city' => $customerMeta->get('billing_city', ''),
+                        '_billing_state' => $customerMeta->get('billing_state', ''),
+                        '_billing_postcode' => $customerMeta->get('billing_postcode', ''),
+                        '_billing_country' => $customerMeta->get('billing_country', ''),
+                        '_shipping_first_name' => $customerMeta->get('shipping_first_name', $customerMeta->get('first_name', '')),
+                        '_shipping_last_name' => $customerMeta->get('shipping_last_name', $customerMeta->get('last_name', '')),
+                        '_shipping_address_1' => $customerMeta->get('shipping_address_1', $customerMeta->get('billing_address_1', '')),
+                        '_shipping_address_2' => $customerMeta->get('shipping_address_2', $customerMeta->get('billing_address_2', '')),
+                        '_shipping_city' => $customerMeta->get('shipping_city', $customerMeta->get('billing_city', '')),
+                        '_shipping_state' => $customerMeta->get('shipping_state', $customerMeta->get('billing_state', '')),
+                        '_shipping_postcode' => $customerMeta->get('shipping_postcode', $customerMeta->get('billing_postcode', '')),
+                        '_shipping_country' => $customerMeta->get('shipping_country', $customerMeta->get('billing_country', '')),
+                    ];
+                }
+            }
+            
             $metaData = [
                 ['_customer_user', $data['customer_id'] ?? '0'],
                 ['_order_total', $total],
@@ -183,25 +212,25 @@ class OrdersController extends Controller
                 ['_cart_discount', $data['discount'] ?? '0'],
                 ['_order_shipping', $data['shipping'] ?? '0'],
                 ['_order_tax', $data['taxes'] ?? '0'],
-                // Add billing and shipping meta fields
-                ['_billing_first_name', ''],
-                ['_billing_last_name', ''],
-                ['_billing_email', ''],
-                ['_billing_phone', ''],
-                ['_billing_address_1', ''],
-                ['_billing_address_2', ''],
-                ['_billing_city', ''],
-                ['_billing_state', ''],
-                ['_billing_postcode', ''],
-                ['_billing_country', ''],
-                ['_shipping_first_name', ''],
-                ['_shipping_last_name', ''],
-                ['_shipping_address_1', ''],
-                ['_shipping_address_2', ''],
-                ['_shipping_city', ''],
-                ['_shipping_state', ''],
-                ['_shipping_postcode', ''],
-                ['_shipping_country', ''],
+                // Add billing and shipping meta fields (use customer info if available, otherwise empty)
+                ['_billing_first_name', $customerInfo['_billing_first_name'] ?? ''],
+                ['_billing_last_name', $customerInfo['_billing_last_name'] ?? ''],
+                ['_billing_email', $customerInfo['_billing_email'] ?? ''],
+                ['_billing_phone', $customerInfo['_billing_phone'] ?? ''],
+                ['_billing_address_1', $customerInfo['_billing_address_1'] ?? ''],
+                ['_billing_address_2', $customerInfo['_billing_address_2'] ?? ''],
+                ['_billing_city', $customerInfo['_billing_city'] ?? ''],
+                ['_billing_state', $customerInfo['_billing_state'] ?? ''],
+                ['_billing_postcode', $customerInfo['_billing_postcode'] ?? ''],
+                ['_billing_country', $customerInfo['_billing_country'] ?? ''],
+                ['_shipping_first_name', $customerInfo['_shipping_first_name'] ?? ''],
+                ['_shipping_last_name', $customerInfo['_shipping_last_name'] ?? ''],
+                ['_shipping_address_1', $customerInfo['_shipping_address_1'] ?? ''],
+                ['_shipping_address_2', $customerInfo['_shipping_address_2'] ?? ''],
+                ['_shipping_city', $customerInfo['_shipping_city'] ?? ''],
+                ['_shipping_state', $customerInfo['_shipping_state'] ?? ''],
+                ['_shipping_postcode', $customerInfo['_shipping_postcode'] ?? ''],
+                ['_shipping_country', $customerInfo['_shipping_country'] ?? ''],
                 // Additional WooCommerce meta fields
                 ['_order_key', 'wc_' . uniqid()],
                 ['_order_version', '7.0.0'],

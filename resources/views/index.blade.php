@@ -203,16 +203,47 @@
                                             <span class="font-weight-bold">${{ number_format($order->meta->where('meta_key', '_order_total')->first()->meta_value ?? 0, 2) }}</span>
                                         </td>
                                         <td class="align-middle">
-                                            <div class="d-flex flex-column">
-                                                <span class="font-weight-bold">
-                                                    {{ $order->meta->where('meta_key', '_billing_first_name')->first()->meta_value ?? '' }} 
-                                                    {{ $order->meta->where('meta_key', '_billing_last_name')->first()->meta_value ?? '' }}
-                                                </span>
-                                                <small class="text-muted">
-                                                    <i class="far fa-envelope mr-1"></i>
-                                                    {{ $order->meta->where('meta_key', '_billing_email')->first()->meta_value ?? 'N/A' }}
-                                                </small>
-                                            </div>
+                                            @php
+                                                $customerId = $order->meta->where('meta_key', '_customer_user')->first()->meta_value ?? null;
+                                                $firstName = $order->meta->where('meta_key', '_billing_first_name')->first()->meta_value ?? '';
+                                                $lastName = $order->meta->where('meta_key', '_billing_last_name')->first()->meta_value ?? '';
+                                                $email = $order->meta->where('meta_key', '_billing_email')->first()->meta_value ?? '';
+                                                $phone = $order->meta->where('meta_key', '_billing_phone')->first()->meta_value ?? '';
+                                                
+                                                $hasCustomerData = !empty($firstName) || !empty($lastName) || !empty($email);
+                                            @endphp
+                                            
+                                            @if($hasCustomerData)
+                                                <div class="d-flex flex-column">
+                                                    <span class="font-weight-bold">
+                                                        {{ $firstName }} {{ $lastName }}
+                                                        @if($customerId && $customerId != '0')
+                                                            <small class="text-muted">(ID: {{ $customerId }})</small>
+                                                        @endif
+                                                    </span>
+                                                    @if(!empty($email))
+                                                        <small class="text-muted">
+                                                            <i class="far fa-envelope mr-1"></i>
+                                                            {{ $email }}
+                                                        </small>
+                                                    @endif
+                                                    @if(!empty($phone))
+                                                        <small class="text-muted">
+                                                            <i class="fas fa-phone mr-1"></i>
+                                                            {{ $phone }}
+                                                        </small>
+                                                    @endif
+                                                </div>
+                                            @else
+                                                <div class="text-muted">
+                                                    <i class="fas fa-user-slash mr-1"></i>
+                                                    @if($customerId && $customerId != '0')
+                                                        Customer ID: {{ $customerId }}
+                                                    @else
+                                                        Guest Customer
+                                                    @endif
+                                                </div>
+                                            @endif
                                         </td>
                                         <td class="align-middle text-center">
                                             <a href="{{ route('orders.show', $order->ID) }}" class="btn btn-sm btn-info">

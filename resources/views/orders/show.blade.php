@@ -147,9 +147,7 @@
     .tab-pane.fade.show {
         opacity: 1;
     }
-    .card-body {
-        padding: 0;
-    }
+
     .card-body .tab-content {
         margin: 0;
         border-left: none;

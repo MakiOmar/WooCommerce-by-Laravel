@@ -11,6 +11,8 @@ use Makiomar\WooOrderDashboard\Models\OrderItem;
 use Makiomar\WooOrderDashboard\Models\OrderItemMeta;
 use Makiomar\WooOrderDashboard\Models\Customer;
 use Makiomar\WooOrderDashboard\Models\PostMeta;
+use Makiomar\WooOrderDashboard\Helpers\CacheHelper;
+use Makiomar\WooOrderDashboard\Models\Comment;
 
 class OrdersController extends Controller
 {
@@ -176,6 +178,9 @@ class OrdersController extends Controller
             
             DB::connection('woocommerce')->commit();
 
+            // Clear cache after successful order creation
+            CacheHelper::clearCacheOnOrderCreate();
+
             return redirect()->route('orders.index')->with('success', 'Order created successfully. Order ID: ' . $order->ID);
 
         } catch (\Exception $e) {
@@ -211,6 +216,9 @@ class OrdersController extends Controller
 
             DB::connection('woocommerce')->commit();
 
+            // Clear cache after successful bulk deletion
+            CacheHelper::clearCacheOnOrderDelete($orderIds);
+
             return response()->json([
                 'success' => true,
                 'message' => 'Successfully deleted ' . count($orderIds) . ' orders.'
@@ -220,6 +228,124 @@ class OrdersController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete orders: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update an existing order
+     */
+    public function update(Request $request, $id)
+    {
+        $order = Order::find($id);
+        if (!$order) {
+            return response()->json(['error' => 'Order not found'], 404);
+        }
+
+        $data = $request->validate([
+            'order_status' => 'nullable|string',
+            'customer_note' => 'nullable|string',
+            'private_note' => 'nullable|string',
+            'payment_method' => 'nullable|string',
+        ]);
+
+        DB::connection('woocommerce')->beginTransaction();
+        try {
+            // Update order fields
+            if (isset($data['order_status'])) {
+                $order->post_status = $data['order_status'];
+            }
+            if (isset($data['customer_note'])) {
+                $order->post_excerpt = $data['customer_note'];
+            }
+            
+            $order->post_modified = now();
+            $order->post_modified_gmt = now()->utc();
+            $order->save();
+
+            // Update meta if provided
+            if (isset($data['payment_method'])) {
+                PostMeta::updateOrCreate(
+                    ['post_id' => $order->ID, 'meta_key' => '_payment_method'],
+                    ['meta_value' => $data['payment_method']]
+                );
+                
+                PostMeta::updateOrCreate(
+                    ['post_id' => $order->ID, 'meta_key' => '_payment_method_title'],
+                    ['meta_value' => ucwords(str_replace('_', ' ', $data['payment_method']))]
+                );
+            }
+
+            DB::connection('woocommerce')->commit();
+
+            // Clear cache after successful order update
+            CacheHelper::clearCacheOnOrderUpdate($order->ID);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Order updated successfully.'
+            ]);
+
+        } catch (\Exception $e) {
+            DB::connection('woocommerce')->rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update order: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update order status
+     */
+    public function updateStatus(Request $request, $id)
+    {
+        $order = Order::find($id);
+        if (!$order) {
+            return response()->json(['error' => 'Order not found'], 404);
+        }
+
+        $data = $request->validate([
+            'status' => 'required|string',
+        ]);
+
+        DB::connection('woocommerce')->beginTransaction();
+        try {
+            $oldStatus = $order->post_status;
+            $order->post_status = $data['status'];
+            $order->post_modified = now();
+            $order->post_modified_gmt = now()->utc();
+            $order->save();
+
+            // Add order note about status change
+            if ($oldStatus !== $data['status']) {
+                $comment = Comment::create([
+                    'comment_post_ID' => $order->ID,
+                    'comment_author' => auth()->user()->name ?? 'System',
+                    'comment_content' => "Order status changed from {$oldStatus} to {$data['status']}",
+                    'comment_type' => 'order_note',
+                    'comment_date' => now(),
+                    'comment_date_gmt' => now()->utc(),
+                    'comment_approved' => 1,
+                ]);
+            }
+
+            DB::connection('woocommerce')->commit();
+
+            // Clear cache after status change
+            CacheHelper::clearCacheOnOrderStatusChange($order->ID);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Order status updated successfully.',
+                'new_status' => $data['status']
+            ]);
+
+        } catch (\Exception $e) {
+            DB::connection('woocommerce')->rollBack();
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to update order status: ' . $e->getMessage()
             ], 500);
         }
     }

@@ -14,6 +14,8 @@ Route::group(['middleware' => ['web', 'auth:admin']], function() {
     // Order Creation & Actions
     Route::get('/orders/create', [OrdersController::class, 'create'])->name('orders.create');
     Route::post('/orders', [OrdersController::class, 'store'])->name('orders.store');
+    Route::put('/orders/{id}', [OrdersController::class, 'update'])->name('orders.update');
+    Route::patch('/orders/{id}/status', [OrdersController::class, 'updateStatus'])->name('orders.update-status');
 
     // Ajax Search Routes
     Route::get('/products/search', [OrdersController::class, 'searchProducts'])->name('products.search');

@@ -297,6 +297,51 @@ $statusesWithMetadata = StatusHelper::getAllStatusesWithMetadata();
 
 All status queries are cached for 1 hour to improve performance. The cache is automatically invalidated when the helper methods are called.
 
+## Cache Management
+
+The package implements comprehensive cache clearing strategies to ensure data consistency:
+
+### Cache Clearing Triggers
+
+- **Order Creation**: Clears order list cache and statistics cache
+- **Order Updates**: Clears specific order cache and order list cache
+- **Order Deletion**: Clears specific order caches and order list cache
+- **Status Changes**: Clears specific order cache, order list cache, and status cache
+
+### Cache Helper Methods
+
+```php
+// Clear all order-related cache
+CacheHelper::clearOrderCache();
+
+// Clear specific order cache
+CacheHelper::clearOrderCacheById($orderId);
+
+// Clear cache on specific events
+CacheHelper::clearCacheOnOrderCreate();
+CacheHelper::clearCacheOnOrderUpdate($orderId);
+CacheHelper::clearCacheOnOrderDelete($orderIds);
+CacheHelper::clearCacheOnOrderStatusChange($orderId);
+```
+
+### Manual Cache Clearing
+
+You can manually clear cache using the helper methods:
+
+```php
+use Makiomar\WooOrderDashboard\Helpers\CacheHelper;
+
+// Clear all WooCommerce dashboard cache
+CacheHelper::clearAllWooCommerceCache();
+
+// Clear specific cache types
+CacheHelper::clearOrderListCache();
+CacheHelper::clearStatusCache();
+CacheHelper::clearStatisticsCache();
+```
+
+## Performance Optimizations
+
 ## Usage
 
 ### Order Management with Eloquent Models

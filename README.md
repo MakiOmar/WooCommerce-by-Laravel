@@ -190,6 +190,89 @@ WOO_DB_PASSWORD=your_password
 WOO_DB_PREFIX=wp_
 ```
 
+## Status Management
+
+The package includes a comprehensive `StatusHelper` that dynamically manages WooCommerce order statuses by merging predefined default statuses with custom statuses from your database.
+
+### StatusHelper Features
+
+The `StatusHelper` provides several methods for managing order statuses:
+
+```php
+use Makiomar\WooOrderDashboard\Helpers\Orders\StatusHelper;
+
+// Get all statuses (merged: default + database)
+$allStatuses = StatusHelper::getAllStatuses();
+
+// Get only predefined default statuses
+$defaultStatuses = StatusHelper::getDefaultStatuses();
+
+// Get only database statuses
+$databaseStatuses = StatusHelper::getDatabaseStatuses();
+
+// Get statuses with metadata (custom vs default, color classes)
+$statusesWithMetadata = StatusHelper::getAllStatusesWithMetadata();
+
+// Get status label by key
+$label = StatusHelper::getStatusLabel('processing');
+
+// Check if status exists
+$exists = StatusHelper::statusExists('custom-status');
+
+// Check if status is custom (not in default statuses)
+$isCustom = StatusHelper::isCustomStatus('custom-status');
+```
+
+### Default Statuses
+
+The package includes predefined default statuses that are always available:
+
+```php
+'default_order_statuses' => [
+    'pending' => 'Pending payment',
+    'processing' => 'Processing',
+    'on-hold' => 'On hold',
+    'completed' => 'Completed',
+    'cancelled' => 'Cancelled',
+    'refunded' => 'Refunded',
+    'failed' => 'Failed',
+    'checkout-draft' => 'Checkout draft',
+    'auto-draft' => 'Auto draft',
+],
+```
+
+### Custom Statuses
+
+Custom statuses are automatically detected from your WooCommerce database and merged with the default statuses. Database statuses take precedence over default statuses with the same key.
+
+### Status Metadata
+
+The `getAllStatusesWithMetadata()` method provides detailed information about each status:
+
+```php
+$statusesWithMetadata = StatusHelper::getAllStatusesWithMetadata();
+
+// Example output:
+[
+    'processing' => [
+        'label' => 'Processing',
+        'is_custom' => false,
+        'is_default' => true,
+        'color_class' => 'primary',
+    ],
+    'custom-status' => [
+        'label' => 'Custom Status',
+        'is_custom' => true,
+        'is_default' => false,
+        'color_class' => 'secondary',
+    ],
+]
+```
+
+### Caching
+
+All status queries are cached for 1 hour to improve performance. The cache is automatically invalidated when the helper methods are called.
+
 ## Usage
 
 ### Order Management with Eloquent Models

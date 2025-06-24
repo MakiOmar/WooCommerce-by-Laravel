@@ -204,6 +204,18 @@ return [
     | The statuses are now fetched dynamically using WooOrderStatusHelper.
     |
     */
+    'default_order_statuses' => [
+        'pending' => 'Pending payment',
+        'processing' => 'Processing',
+        'on-hold' => 'On hold',
+        'completed' => 'Completed',
+        'cancelled' => 'Cancelled',
+        'refunded' => 'Refunded',
+        'failed' => 'Failed',
+        'checkout-draft' => 'Checkout draft',
+        'auto-draft' => 'Auto draft',
+    ],
+
     'order_statuses' => function() {
         return array_keys(app(\Makiomar\WooOrderDashboard\Helpers\Orders\StatusHelper::class)->getAllStatuses());
     },

@@ -18,6 +18,13 @@
         <div class="row">
             <div class="col-md-6">
                 <div class="mb-3">
+                    <small class="text-muted d-block">Order ID</small>
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-hashtag text-primary mr-2"></i>
+                        <strong>#{{ $order->ID }}</strong>
+                    </div>
+                </div>
+                <div class="mb-3">
                     <small class="text-muted d-block">Date Created</small>
                     <div class="d-flex align-items-center">
                         <i class="fas fa-calendar-alt text-primary mr-2"></i>
@@ -33,6 +40,13 @@
                 </div>
             </div>
             <div class="col-md-6">
+                <div class="mb-3">
+                    <small class="text-muted d-block">Total Items</small>
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-boxes text-primary mr-2"></i>
+                        <strong>{{ $order->items->where('order_item_type', 'line_item')->count() }}</strong>
+                    </div>
+                </div>
                 <div class="mb-3">
                     <small class="text-muted d-block">Currency</small>
                     <div class="d-flex align-items-center">

@@ -19,7 +19,6 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    @include('woo-order-dashboard::partials.order-info', ['order' => $order])
                     @include('woo-order-dashboard::partials.order-customer-info', ['order' => $order])
                     @include('woo-order-dashboard::partials.order-items', ['order' => $order])
                     @include('woo-order-dashboard::partials.order-meta', ['order' => $order])

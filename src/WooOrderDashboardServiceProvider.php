@@ -31,12 +31,12 @@ class WooOrderDashboardServiceProvider extends ServiceProvider
         // Publish configuration
         $this->publishes([
             __DIR__.'/../config/woo-order-dashboard.php' => config_path('woo-order-dashboard.php'),
-        ], 'woo-order-dashboard-config');
+        ], 'config');
 
         // Publish optional migrations
         $this->publishes([
             __DIR__.'/../database/migrations/optional' => database_path('migrations/optional'),
-        ], 'woo-order-dashboard-migrations');
+        ], 'migrations');
 
         // Load only required migrations
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations/required');
@@ -50,12 +50,12 @@ class WooOrderDashboardServiceProvider extends ServiceProvider
         // Publish views
         $this->publishes([
             __DIR__.'/../resources/views' => resource_path('views/vendor/woo-order-dashboard'),
-        ], 'woo-order-dashboard-views');
+        ], 'views');
 
         // Publish assets
         $this->publishes([
             __DIR__.'/../resources/assets' => public_path('vendor/woo-order-dashboard'),
-        ], 'woo-order-dashboard-assets');
+        ], 'assets');
 
         // Publish all assets with main tag
         $this->publishes([
@@ -103,7 +103,7 @@ class WooOrderDashboardServiceProvider extends ServiceProvider
         // Publish routes file for customization
         $this->publishes([
             __DIR__.'/../routes/web.php' => base_path('routes/woo-dashboard.php'),
-        ], 'woo-order-dashboard-routes');
+        ], 'routes');
     }
 
     protected function loadAssets()

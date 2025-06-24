@@ -51,14 +51,24 @@
                         <!-- Tab 2: Customer Info -->
                         <div class="tab-pane fade" id="customer-info" role="tabpanel" aria-labelledby="customer-info-tab">
                             <div class="mt-4">
-                                @include('woo-order-dashboard::partials.order-customer-info', ['order' => $order])
+                                <div class="text-center py-5">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="sr-only">Loading...</span>
+                                    </div>
+                                    <p class="mt-2 text-muted">Loading customer information...</p>
+                                </div>
                             </div>
                         </div>
 
                         <!-- Tab 3: Order Notes -->
                         <div class="tab-pane fade" id="order-notes" role="tabpanel" aria-labelledby="order-notes-tab">
                             <div class="mt-4">
-                                @include('woo-order-dashboard::partials.order-notes', ['order' => $order])
+                                <div class="text-center py-5">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="sr-only">Loading...</span>
+                                    </div>
+                                    <p class="mt-2 text-muted">Loading order notes...</p>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -196,14 +206,57 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 $(document).ready(function() {
-    // Only for tab persistence (remember last active tab)
+    var loadedTabs = {};
+    var orderId = {{ $order->ID }};
+    
+    // Handle tab switching with AJAX loading
     $('#orderTabs a[data-toggle="tab"]').on('shown.bs.tab', function (e) {
-        localStorage.setItem('activeOrderTab', $(e.target).attr('href'));
+        var target = $(e.target).attr('href');
+        var tabName = target.replace('#', '');
+        
+        // Store active tab in localStorage
+        localStorage.setItem('activeOrderTab', target);
+        
+        // Load tab content via AJAX if not already loaded
+        if (!loadedTabs[tabName] && tabName !== 'order-info') {
+            loadTabContent(tabName);
+        }
     });
+    
+    // Function to load tab content via AJAX
+    function loadTabContent(tabName) {
+        var $tabPane = $('#' + tabName);
+        
+        $.ajax({
+            url: '{{ route("orders.tab-content", $order->ID) }}',
+            method: 'GET',
+            data: { tab: tabName },
+            beforeSend: function() {
+                $tabPane.html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="sr-only">Loading...</span></div><p class="mt-2 text-muted">Loading...</p></div>');
+            },
+            success: function(response) {
+                if (response.html) {
+                    $tabPane.html('<div class="mt-4">' + response.html + '</div>');
+                    loadedTabs[tabName] = true;
+                } else {
+                    $tabPane.html('<div class="text-center py-5"><p class="text-danger">Error loading content</p></div>');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error loading tab content:', error);
+                $tabPane.html('<div class="text-center py-5"><p class="text-danger">Error loading content. Please try again.</p></div>');
+            }
+        });
+    }
+    
+    // Restore active tab on page load
     var activeTab = localStorage.getItem('activeOrderTab');
     if (activeTab) {
         $('#orderTabs a[href="' + activeTab + '"]').tab('show');
     }
+    
+    // Mark first tab as loaded
+    loadedTabs['order-info'] = true;
 });
 </script>
 @endpush 

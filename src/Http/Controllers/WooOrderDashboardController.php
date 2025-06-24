@@ -33,6 +33,18 @@ class WooOrderDashboardController extends Controller
                 $query->whereDate('post_date_gmt', '<=', $filters['end_date']);
             }
             
+            // Meta key and value filtering
+            if (!empty($filters['meta_key']) || !empty($filters['meta_value'])) {
+                $query->whereHas('meta', function ($metaQuery) use ($filters) {
+                    if (!empty($filters['meta_key'])) {
+                        $metaQuery->where('meta_key', 'LIKE', '%' . $filters['meta_key'] . '%');
+                    }
+                    if (!empty($filters['meta_value'])) {
+                        $metaQuery->where('meta_value', 'LIKE', '%' . $filters['meta_value'] . '%');
+                    }
+                });
+            }
+            
             return $query->orderBy('post_date_gmt', 'desc')
                          ->paginate($filters['per_page'] ?? config('woo-order-dashboard.pagination.per_page', 15));
         });
@@ -101,8 +113,10 @@ class WooOrderDashboardController extends Controller
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
             'status' => 'nullable|string',
+            'meta_key' => 'nullable|string|max:255',
+            'meta_value' => 'nullable|string|max:255',
             'page' => 'nullable|integer|min:1',
-            'per_page' => 'nullable|integer|min:1',
+            'per_page' => 'nullable|integer|min:1|max:100',
         ]);
     }
 } 

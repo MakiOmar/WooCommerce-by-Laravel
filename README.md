@@ -37,13 +37,76 @@ A powerful Laravel package that provides a clean and efficient dashboard for man
 composer require makiomar/woo-order-dashboard
 ```
 
-2. Publish the configuration:
+2. Publish the package assets and configurations:
 
 ```bash
-php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider"
+# Publish all package assets
+php artisan vendor:publish --tag=woo-order-dashboard
+
+# Or publish specific components:
+php artisan vendor:publish --tag=woo-order-dashboard-config
+php artisan vendor:publish --tag=woo-order-dashboard-views
+php artisan vendor:publish --tag=woo-order-dashboard-assets
+php artisan vendor:publish --tag=woo-order-dashboard-migrations
 ```
 
-3. Configure your WooCommerce database connection in `config/database.php`:
+3. Run the migrations (optional):
+
+```bash
+php artisan migrate --path=vendor/makiomar/woo-order-dashboard/database/migrations
+```
+
+## Publishing Commands
+
+The package provides several publish tags for different components:
+
+### Configuration
+```bash
+php artisan vendor:publish --tag=woo-order-dashboard-config
+```
+Publishes the configuration file to `config/woo-order-dashboard.php`
+
+### Views
+```bash
+php artisan vendor:publish --tag=woo-order-dashboard-views
+```
+Publishes Blade views to `resources/views/vendor/woo-order-dashboard/`
+
+### Assets
+```bash
+php artisan vendor:publish --tag=woo-order-dashboard-assets
+```
+Publishes CSS and JS assets to `public/vendor/woo-order-dashboard/`
+
+### Migrations
+```bash
+php artisan vendor:publish --tag=woo-order-dashboard-migrations
+```
+Publishes optional database migrations to `database/migrations/optional/`
+
+### Routes
+```bash
+php artisan vendor:publish --tag=woo-order-dashboard-routes
+```
+Publishes routes file to `routes/woo-dashboard.php` for customization
+
+### All Assets
+```bash
+php artisan vendor:publish --tag=woo-order-dashboard
+```
+Publishes all package assets (config, views, assets, migrations)
+
+### Available Tags Summary
+- `woo-order-dashboard-config` - Configuration file
+- `woo-order-dashboard-views` - Blade templates
+- `woo-order-dashboard-assets` - CSS and JavaScript files
+- `woo-order-dashboard-migrations` - Optional database migrations
+- `woo-order-dashboard-routes` - Routes file for customization
+- `woo-order-dashboard` - All assets (recommended for first-time setup)
+
+## Configuration
+
+- Configure your WooCommerce database connection in `config/database.php`:
 
 ```php
 'connections' => [
@@ -65,7 +128,7 @@ php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashbo
 ],
 ```
 
-4. Add WooCommerce database credentials to your `.env`:
+- Add WooCommerce database credentials to your `.env`:
 
 ```env
 WOO_DB_HOST=127.0.0.1

@@ -72,6 +72,45 @@
                         </div>
 
                         <div class="row">
+                            <!-- Meta Key -->
+                            <div class="form-group col-md-4">
+                                <label for="meta_key" class="font-weight-bold">Meta Key</label>
+                                <input type="text" name="meta_key" id="meta_key" value="{{ request('meta_key') }}" 
+                                       class="form-control" placeholder="e.g., _payment_method, _billing_email">
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Common keys: _payment_method, _billing_email, _order_total
+                                </small>
+                            </div>
+
+                            <!-- Meta Value -->
+                            <div class="form-group col-md-4">
+                                <label for="meta_value" class="font-weight-bold">Meta Value</label>
+                                <input type="text" name="meta_value" id="meta_value" value="{{ request('meta_value') }}" 
+                                       class="form-control" placeholder="e.g., paypal, john@example.com">
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Search within meta values (partial matches supported)
+                                </small>
+                            </div>
+
+                            <!-- Per Page -->
+                            <div class="form-group col-md-4">
+                                <label for="per_page" class="font-weight-bold">Per Page</label>
+                                <select name="per_page" id="per_page" class="form-control">
+                                    <option value="15" {{ request('per_page', 15) == 15 ? 'selected' : '' }}>15</option>
+                                    <option value="25" {{ request('per_page', 15) == 25 ? 'selected' : '' }}>25</option>
+                                    <option value="50" {{ request('per_page', 15) == 50 ? 'selected' : '' }}>50</option>
+                                    <option value="100" {{ request('per_page', 15) == 100 ? 'selected' : '' }}>100</option>
+                                </select>
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    Number of orders to display per page
+                                </small>
+                            </div>
+                        </div>
+
+                        <div class="row">
                             <div class="col-12 text-right">
                                 <button type="submit" class="btn btn-primary">
                                     <i class="fas fa-filter mr-1"></i> Apply Filters

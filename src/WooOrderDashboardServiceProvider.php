@@ -31,12 +31,12 @@ class WooOrderDashboardServiceProvider extends ServiceProvider
         // Publish configuration
         $this->publishes([
             __DIR__.'/../config/woo-order-dashboard.php' => config_path('woo-order-dashboard.php'),
-        ], 'config');
+        ], 'woo-order-dashboard-config');
 
         // Publish optional migrations
         $this->publishes([
             __DIR__.'/../database/migrations/optional' => database_path('migrations/optional'),
-        ], 'optional-migrations');
+        ], 'woo-order-dashboard-migrations');
 
         // Load only required migrations
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations/required');
@@ -50,12 +50,20 @@ class WooOrderDashboardServiceProvider extends ServiceProvider
         // Publish views
         $this->publishes([
             __DIR__.'/../resources/views' => resource_path('views/vendor/woo-order-dashboard'),
-        ], 'views');
+        ], 'woo-order-dashboard-views');
 
         // Publish assets
         $this->publishes([
             __DIR__.'/../resources/assets' => public_path('vendor/woo-order-dashboard'),
-        ], 'assets');
+        ], 'woo-order-dashboard-assets');
+
+        // Publish all assets with main tag
+        $this->publishes([
+            __DIR__.'/../config/woo-order-dashboard.php' => config_path('woo-order-dashboard.php'),
+            __DIR__.'/../resources/views' => resource_path('views/vendor/woo-order-dashboard'),
+            __DIR__.'/../resources/assets' => public_path('vendor/woo-order-dashboard'),
+            __DIR__.'/../database/migrations/optional' => database_path('migrations/optional'),
+        ], 'woo-order-dashboard');
 
         Blade::component('order.section', 'order-section');
         Blade::component('order.detail', 'order-detail');
@@ -95,7 +103,7 @@ class WooOrderDashboardServiceProvider extends ServiceProvider
         // Publish routes file for customization
         $this->publishes([
             __DIR__.'/../routes/web.php' => base_path('routes/woo-dashboard.php'),
-        ], 'routes');
+        ], 'woo-order-dashboard-routes');
     }
 
     protected function loadAssets()

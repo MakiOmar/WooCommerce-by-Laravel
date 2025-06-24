@@ -238,37 +238,49 @@ class OrdersController extends Controller
             // 4. Add WooCommerce lookup table entries
             \Log::info('Adding WooCommerce lookup table entries');
             
-            // Add to wc_order_stats table
-            DB::connection('woocommerce')->table('wc_order_stats')->insert([
-                'order_id' => $order->ID,
-                'parent_id' => 0,
-                'date_created' => now(),
-                'date_created_gmt' => now()->utc(),
-                'num_items_sold' => collect($items)->sum('qty'),
-                'total_sales' => $total,
-                'tax_total' => $data['taxes'] ?? 0,
-                'shipping_total' => $data['shipping'] ?? 0,
-                'net_total' => $total - ($data['taxes'] ?? 0) - ($data['shipping'] ?? 0),
-                'returning_customer' => 0,
-                'status' => $data['order_status'] ?? 'wc-processing',
-            ]);
-            
-            // Add to wc_order_product_lookup table for each product
-            foreach ($items as $itemData) {
-                DB::connection('woocommerce')->table('wc_order_product_lookup')->insert([
+            try {
+                // Add to wc_order_stats table
+                DB::connection('woocommerce')->table('wc_order_stats')->insert([
                     'order_id' => $order->ID,
-                    'product_id' => $itemData['product_id'],
-                    'variation_id' => $itemData['variation_id'] ?? 0,
-                    'customer_id' => $data['customer_id'] ?? 0,
+                    'parent_id' => 0,
                     'date_created' => now(),
-                    'product_qty' => $itemData['qty'],
-                    'product_net_revenue' => ($itemData['price'] * $itemData['qty']) - (($data['taxes'] ?? 0) / count($items)),
-                    'product_gross_revenue' => $itemData['price'] * $itemData['qty'],
-                    'coupon_amount' => 0,
-                    'tax_amount' => ($data['taxes'] ?? 0) / count($items),
-                    'shipping_amount' => ($data['shipping'] ?? 0) / count($items),
-                    'shipping_tax_amount' => 0,
+                    'date_created_gmt' => now()->utc(),
+                    'date_paid' => now(),
+                    'date_updated' => now(),
+                    'num_items_sold' => collect($items)->sum('qty'),
+                    'total_sales' => $total,
+                    'tax_total' => $data['taxes'] ?? 0,
+                    'shipping_total' => $data['shipping'] ?? 0,
+                    'net_total' => $total - ($data['taxes'] ?? 0) - ($data['shipping'] ?? 0),
+                    'returning_customer' => 0,
+                    'status' => $data['order_status'] ?? 'wc-processing',
                 ]);
+                
+                \Log::info('Added to wc_order_stats table');
+                
+                // Add to wc_order_product_lookup table for each product
+                foreach ($items as $itemData) {
+                    DB::connection('woocommerce')->table('wc_order_product_lookup')->insert([
+                        'order_id' => $order->ID,
+                        'product_id' => $itemData['product_id'],
+                        'variation_id' => $itemData['variation_id'] ?? 0,
+                        'customer_id' => $data['customer_id'] ?? 0,
+                        'date_created' => now(),
+                        'product_qty' => $itemData['qty'],
+                        'product_net_revenue' => ($itemData['price'] * $itemData['qty']) - (($data['taxes'] ?? 0) / count($items)),
+                        'product_gross_revenue' => $itemData['price'] * $itemData['qty'],
+                        'coupon_amount' => 0,
+                        'tax_amount' => ($data['taxes'] ?? 0) / count($items),
+                        'shipping_amount' => ($data['shipping'] ?? 0) / count($items),
+                        'shipping_tax_amount' => 0,
+                    ]);
+                }
+                
+                \Log::info('Added to wc_order_product_lookup table');
+                
+            } catch (\Exception $e) {
+                \Log::warning('Failed to add WooCommerce lookup table entries: ' . $e->getMessage());
+                // Continue with order creation even if lookup tables fail
             }
             
             DB::connection('woocommerce')->commit();

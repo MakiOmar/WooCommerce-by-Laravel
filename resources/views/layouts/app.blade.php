@@ -208,7 +208,7 @@
         }
     </style>
 
-    @stack('styles')
+    @yield('styles')
 </head>
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark">
@@ -276,6 +276,6 @@
     <!-- Package Scripts -->
     {{ $wooOrderDashboardScripts ?? '' }}
 
-    @stack('scripts')
+    @yield('scripts')
 </body>
 </html> 

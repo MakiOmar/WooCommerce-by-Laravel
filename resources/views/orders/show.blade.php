@@ -137,7 +137,7 @@
 </div>
 @endsection
 
-@push('css')
+@section('styles')
 <link href="{{ asset('css/woo-order-dashboard.css') }}" rel="stylesheet">
 <!-- Bootstrap 4 and jQuery dependencies -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
@@ -430,9 +430,9 @@
         color: #007bff;
     }
 </style>
-@endpush
+@endsection
 
-@push('js')
+@section('scripts')
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
@@ -594,4 +594,4 @@ $(document).ready(function() {
     }
 });
 </script>
-@endpush 
+@endsection 

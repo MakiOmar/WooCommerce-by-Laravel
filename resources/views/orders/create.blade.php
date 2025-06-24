@@ -194,7 +194,7 @@
 </form>
 @endsection
 
-@push('js')
+@section('scripts')
 <script>
 $(document).ready(function() {
     // Product search dropdown - define variables inside document ready
@@ -412,4 +412,4 @@ $(document).ready(function() {
     });
 });
 </script>
-@endpush
+@endsection

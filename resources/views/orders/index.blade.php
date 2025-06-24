@@ -242,11 +242,11 @@
 </div>
 @endsection
 
-@push('styles')
+@section('styles')
 <link href="{{ asset('css/woo-order-dashboard.css') }}" rel="stylesheet">
-@endpush
+@endsection
 
-@push('scripts')
+@section('scripts')
 <script>
     $(document).ready(function() {
         // Date range picker initialization
@@ -377,4 +377,4 @@
         });
     });
 </script>
-@endpush 
+@endsection 

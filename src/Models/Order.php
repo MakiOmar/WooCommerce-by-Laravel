@@ -51,7 +51,14 @@ class Order extends Model
         'post_date',
         'post_date_gmt',
         'post_modified',
-        'post_modified_gmt'
+        'post_modified_gmt',
+        'to_ping',
+        'pinged',
+        'post_content_filtered',
+        'post_parent',
+        'menu_order',
+        'comment_status',
+        'guid'
     ];
 
     /**

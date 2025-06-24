@@ -424,7 +424,7 @@ The package provides dynamic status management with the ability to change order 
 
 #### Changing Order Status
 1. Navigate to an order detail page (`/orders/{id}`)
-2. In the "Order Information" section, click the "Change Status" dropdown
+2. In the order header section, click the "Change Status" dropdown next to the current status badge
 3. Select the new status from the dropdown
 4. Confirm the status change
 5. The status will be updated via AJAX with automatic cache clearing

@@ -3,44 +3,16 @@
         <h5 class="card-title mb-0">
             <i class="fas fa-info-circle mr-2"></i>Order Information
         </h5>
-        <div class="d-flex align-items-center">
-            @php
-                $status_label = \Makiomar\WooOrderDashboard\Helpers\Orders\StatusHelper::removeStatusPrefix($order->post_status);
-                $status_class = 'secondary'; // default
-                if (isset(config('woo-order-dashboard.status_colors')[$status_label])) {
-                    $status_class = config('woo-order-dashboard.status_colors')[$status_label];
-                }
-            @endphp
-            <span class="badge badge-{{ $status_class }} mr-2" id="current-status-badge">
-                {{ $orderStatuses[$status_label] ?? ucwords($status_label) }}
-            </span>
-            <div class="dropdown">
-                <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" id="statusDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <i class="fas fa-edit"></i> Change Status
-                </button>
-                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="statusDropdown">
-                    @foreach($orderStatuses as $status_key => $status_label)
-                        @php
-                            $status_class = 'secondary';
-                            if (isset(config('woo-order-dashboard.status_colors')[$status_key])) {
-                                $status_class = config('woo-order-dashboard.status_colors')[$status_key];
-                            }
-                            $is_current = $status_key === \Makiomar\WooOrderDashboard\Helpers\Orders\StatusHelper::removeStatusPrefix($order->post_status);
-                        @endphp
-                        <a class="dropdown-item status-option {{ $is_current ? 'active' : '' }}" 
-                           href="#" 
-                           data-status="{{ \Makiomar\WooOrderDashboard\Helpers\Orders\StatusHelper::getStatusWithPrefix($status_key) }}"
-                           data-status-key="{{ $status_key }}"
-                           data-status-label="{{ $status_label }}">
-                            <span class="badge badge-{{ $status_class }} mr-2">{{ $status_label }}</span>
-                            @if($is_current)
-                                <i class="fas fa-check text-success"></i>
-                            @endif
-                        </a>
-                    @endforeach
-                </div>
-            </div>
-        </div>
+        @php
+            $status_label = \Makiomar\WooOrderDashboard\Helpers\Orders\StatusHelper::removeStatusPrefix($order->post_status);
+            $status_class = 'secondary'; // default
+            if (isset(config('woo-order-dashboard.status_colors')[$status_label])) {
+                $status_class = config('woo-order-dashboard.status_colors')[$status_label];
+            }
+        @endphp
+        <span class="badge badge-{{ $status_class }}">
+            {{ $orderStatuses[$status_label] ?? ucwords($status_label) }}
+        </span>
     </div>
     <div class="card-body">
         <div class="row">

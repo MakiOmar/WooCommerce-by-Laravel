@@ -7,12 +7,53 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h3 class="card-title">Order #{{ $order->ID }}</h3>
-                    <div>
+                    <div class="d-flex align-items-center">
+                        <!-- Status Display and Change -->
+                        <div class="mr-3">
+                            @php
+                                $status_label = \Makiomar\WooOrderDashboard\Helpers\Orders\StatusHelper::removeStatusPrefix($order->post_status);
+                                $status_class = 'secondary'; // default
+                                if (isset(config('woo-order-dashboard.status_colors')[$status_label])) {
+                                    $status_class = config('woo-order-dashboard.status_colors')[$status_label];
+                                }
+                            @endphp
+                            <span class="badge badge-{{ $status_class }} mr-2" id="current-status-badge">
+                                {{ $orderStatuses[$status_label] ?? ucwords($status_label) }}
+                            </span>
+                            <div class="dropdown d-inline-block">
+                                <button class="btn btn-sm btn-outline-primary dropdown-toggle" type="button" id="statusDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <i class="fas fa-edit"></i> Change Status
+                                </button>
+                                <div class="dropdown-menu dropdown-menu-right" aria-labelledby="statusDropdown">
+                                    @foreach($orderStatuses as $status_key => $status_label)
+                                        @php
+                                            $status_class = 'secondary';
+                                            if (isset(config('woo-order-dashboard.status_colors')[$status_key])) {
+                                                $status_class = config('woo-order-dashboard.status_colors')[$status_key];
+                                            }
+                                            $is_current = $status_key === \Makiomar\WooOrderDashboard\Helpers\Orders\StatusHelper::removeStatusPrefix($order->post_status);
+                                        @endphp
+                                        <a class="dropdown-item status-option {{ $is_current ? 'active' : '' }}" 
+                                           href="#" 
+                                           data-status="{{ \Makiomar\WooOrderDashboard\Helpers\Orders\StatusHelper::getStatusWithPrefix($status_key) }}"
+                                           data-status-key="{{ $status_key }}"
+                                           data-status-label="{{ $status_label }}">
+                                            <span class="badge badge-{{ $status_class }} mr-2">{{ $status_label }}</span>
+                                            @if($is_current)
+                                                <i class="fas fa-check text-success"></i>
+                                            @endif
+                                        </a>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Action Buttons -->
                         <a href="{{ route('orders.index') }}" class="btn btn-secondary">
                             <i class="fas fa-arrow-left"></i> Back to Orders
                         </a>
                         @if($order->post_status !== 'completed')
-                            <button onclick="window.print()" class="btn btn-primary">
+                            <button onclick="window.print()" class="btn btn-primary ml-2">
                                 <i class="fas fa-print"></i> Print
                             </button>
                         @endif
@@ -263,6 +304,44 @@
     .badge {
         font-size: 0.75rem;
         padding: 0.375rem 0.75rem;
+    }
+    
+    /* Card header improvements */
+    .card-header {
+        background-color: #f8f9fa;
+        border-bottom: 1px solid #dee2e6;
+        padding: 1rem 1.25rem;
+    }
+    
+    .card-header .card-title {
+        margin-bottom: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+    
+    /* Status section in header */
+    .card-header .mr-3 {
+        display: flex;
+        align-items: center;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .card-header {
+            flex-direction: column;
+            align-items: flex-start !important;
+        }
+        
+        .card-header .d-flex {
+            margin-top: 1rem;
+            width: 100%;
+            justify-content: space-between;
+        }
+        
+        .card-header .mr-3 {
+            margin-right: 0 !important;
+            margin-bottom: 0.5rem;
+        }
     }
 </style>
 @endpush

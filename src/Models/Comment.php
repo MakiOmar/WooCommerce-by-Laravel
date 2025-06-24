@@ -35,6 +35,21 @@ class Comment extends Model
     public $timestamps = false;
 
     /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
+    protected $fillable = [
+        'comment_post_ID',
+        'comment_author',
+        'comment_content',
+        'comment_type',
+        'comment_date',
+        'comment_date_gmt',
+        'comment_approved'
+    ];
+
+    /**
      * Get the post that the comment belongs to.
      */
     public function post()

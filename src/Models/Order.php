@@ -36,6 +36,25 @@ class Order extends Model
     public $timestamps = false; // WooCommerce handles its own date columns
 
     /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
+    protected $fillable = [
+        'post_type',
+        'post_status',
+        'ping_status',
+        'post_author',
+        'post_title',
+        'post_content',
+        'post_excerpt',
+        'post_date',
+        'post_date_gmt',
+        'post_modified',
+        'post_modified_gmt'
+    ];
+
+    /**
      * The "booted" method of the model.
      *
      * @return void

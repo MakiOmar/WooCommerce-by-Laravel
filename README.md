@@ -236,6 +236,65 @@ return [
 - **Bootstrap 4 Classes**: Fully compatible with Bootstrap 4 styling
 - **Customizable**: Easy to modify and extend
 
+## Assets Configuration
+
+The package provides flexible control over external asset loading to avoid conflicts with existing CSS frameworks.
+
+### Bootstrap CSS Configuration
+
+By default, Bootstrap CSS is **disabled** to prevent conflicts with existing Bootstrap installations:
+
+```env
+# Enable Bootstrap CSS (disabled by default)
+WOO_BOOTSTRAP_CSS_ENABLED=false
+
+# Custom Bootstrap CSS URL (optional)
+WOO_BOOTSTRAP_CSS_URL=https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css
+```
+
+### Font Awesome Configuration
+
+Font Awesome is enabled by default but can be disabled if you have your own icon library:
+
+```env
+# Enable Font Awesome (enabled by default)
+WOO_FONTAWESOME_ENABLED=true
+
+# Custom Font Awesome URL (optional)
+WOO_FONTAWESOME_URL=https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css
+```
+
+### Usage Scenarios
+
+#### Scenario 1: Using Your Own Bootstrap
+If you already have Bootstrap CSS loaded in your application:
+
+```env
+WOO_BOOTSTRAP_CSS_ENABLED=false
+```
+
+#### Scenario 2: Using Package Bootstrap
+If you want to use the package's Bootstrap CSS:
+
+```env
+WOO_BOOTSTRAP_CSS_ENABLED=true
+```
+
+#### Scenario 3: Custom Bootstrap Version
+If you want to use a different Bootstrap version:
+
+```env
+WOO_BOOTSTRAP_CSS_ENABLED=true
+WOO_BOOTSTRAP_CSS_URL=https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css
+```
+
+### Benefits
+
+- **No Conflicts**: Prevents CSS conflicts with existing frameworks
+- **Flexible**: Choose which assets to load
+- **Customizable**: Use your own CDN URLs
+- **Performance**: Only load what you need
+
 ## Route Configuration
 
 The package provides clean, unprefixed routes for easy integration:
@@ -354,6 +413,12 @@ WOO_DB_DATABASE=your_woocommerce_db
 WOO_DB_USERNAME=your_username
 WOO_DB_PASSWORD=your_password
 WOO_DB_PREFIX=wp_
+
+# Assets Settings
+WOO_BOOTSTRAP_CSS_ENABLED=false
+WOO_BOOTSTRAP_CSS_URL=https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css
+WOO_FONTAWESOME_ENABLED=true
+WOO_FONTAWESOME_URL=https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css
 ```
 
 ## Status Management

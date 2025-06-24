@@ -139,10 +139,14 @@
 
 @section('styles')
 <link href="{{ asset('css/woo-order-dashboard.css') }}" rel="stylesheet">
+@if(config('woo-order-dashboard.assets.bootstrap_css_enabled', false))
 <!-- Bootstrap 4 and jQuery dependencies -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css">
+<link rel="stylesheet" href="{{ config('woo-order-dashboard.assets.bootstrap_css_url') }}">
+@endif
 <!-- Font Awesome -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+@if(config('woo-order-dashboard.assets.fontawesome_enabled', true))
+<link rel="stylesheet" href="{{ config('woo-order-dashboard.assets.fontawesome_url') }}">
+@endif
 <!-- SweetAlert2 -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>

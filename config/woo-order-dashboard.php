@@ -361,4 +361,26 @@ return [
         'failed'     => 'danger',
         'default'    => 'secondary', // Fallback color for any undefined status
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Assets Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configure external assets loading settings.
+    |
+    */
+    'assets' => [
+        // Enable/disable Bootstrap CSS loading
+        'bootstrap_css_enabled' => env('WOO_BOOTSTRAP_CSS_ENABLED', false),
+
+        // Bootstrap CSS CDN URL
+        'bootstrap_css_url' => env('WOO_BOOTSTRAP_CSS_URL', 'https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css'),
+
+        // Enable/disable Font Awesome loading
+        'fontawesome_enabled' => env('WOO_FONTAWESOME_ENABLED', true),
+
+        // Font Awesome CDN URL
+        'fontawesome_url' => env('WOO_FONTAWESOME_URL', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css'),
+    ],
 ]; 

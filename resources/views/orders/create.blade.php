@@ -100,10 +100,14 @@
                         <div class="form-group mb-2">
                             <label>Order status</label>
                             <select class="form-control" name="order_status">
-                                <option value="pending">Pending</option>
-                                <option value="processing" selected>Processing</option>
-                                <option value="completed">Completed</option>
-                                <option value="on-hold">On Hold</option>
+                                @php
+                                    $orderStatuses = \Makiomar\WooOrderDashboard\Helpers\Orders\StatusHelper::getAllStatuses();
+                                @endphp
+                                @foreach($orderStatuses as $statusKey => $statusLabel)
+                                    <option value="{{ $statusKey }}" {{ $statusKey === 'processing' ? 'selected' : '' }}>
+                                        {{ $statusLabel }}
+                                    </option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="form-group">

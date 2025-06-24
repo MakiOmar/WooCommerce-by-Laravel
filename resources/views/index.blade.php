@@ -120,7 +120,7 @@
                                         </td>
                                         <td class="align-middle">
                                             @php
-                                                $status_label = str_replace('wc-', '', $order->post_status);
+                                                $status_label = \Makiomar\WooOrderDashboard\Helpers\Orders\StatusHelper::removeStatusPrefix($order->post_status);
                                                 $status_class = 'default';
                                                 if (isset(config('woo-order-dashboard.status_colors')[$status_label])) {
                                                     $status_class = config('woo-order-dashboard.status_colors')[$status_label];

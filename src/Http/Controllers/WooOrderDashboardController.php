@@ -24,7 +24,7 @@ class WooOrderDashboardController extends Controller
                 $query->where('ID', $filters['order_id']);
             }
             if (!empty($filters['status'])) {
-                $query->where('post_status', $filters['status']);
+                $query->where('post_status', StatusHelper::getStatusWithPrefix($filters['status']));
             }
             if (!empty($filters['start_date'])) {
                 $query->whereDate('post_date_gmt', '>=', $filters['start_date']);

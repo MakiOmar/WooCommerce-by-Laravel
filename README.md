@@ -213,6 +213,13 @@ $databaseStatuses = StatusHelper::getDatabaseStatuses();
 // Get statuses with metadata (custom vs default, color classes)
 $statusesWithMetadata = StatusHelper::getAllStatusesWithMetadata();
 
+// Get statuses with wc- prefix for database queries
+$statusesWithPrefix = StatusHelper::getAllStatusesWithPrefix();
+
+// Prefix handling methods
+$statusWithPrefix = StatusHelper::getStatusWithPrefix('processing'); // Returns 'wc-processing'
+$statusWithoutPrefix = StatusHelper::removeStatusPrefix('wc-processing'); // Returns 'processing'
+
 // Get status label by key
 $label = StatusHelper::getStatusLabel('processing');
 
@@ -244,6 +251,23 @@ The package includes predefined default statuses that are always available:
 ### Custom Statuses
 
 Custom statuses are automatically detected from your WooCommerce database and merged with the default statuses. Database statuses take precedence over default statuses with the same key.
+
+### WooCommerce Status Prefix Handling
+
+WooCommerce stores order statuses in the database with a `wc-` prefix (e.g., `wc-processing`, `wc-completed`). The StatusHelper provides methods to handle this prefix automatically:
+
+```php
+// Add wc- prefix for database queries
+$statusWithPrefix = StatusHelper::getStatusWithPrefix('processing'); // Returns 'wc-processing'
+
+// Remove wc- prefix for display
+$statusWithoutPrefix = StatusHelper::removeStatusPrefix('wc-processing'); // Returns 'processing'
+
+// Get all statuses with wc- prefix for database operations
+$statusesWithPrefix = StatusHelper::getAllStatusesWithPrefix();
+```
+
+This ensures consistent handling of WooCommerce status prefixes throughout your application.
 
 ### Status Metadata
 

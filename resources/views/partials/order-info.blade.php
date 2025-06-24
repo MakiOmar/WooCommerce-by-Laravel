@@ -4,7 +4,7 @@
             <i class="fas fa-info-circle mr-2"></i>Order Information
         </h5>
         @php
-            $status_label = str_replace('wc-', '', $order->post_status);
+            $status_label = \Makiomar\WooOrderDashboard\Helpers\Orders\StatusHelper::removeStatusPrefix($order->post_status);
             $status_class = 'secondary'; // default
             if (isset(config('woo-order-dashboard.status_colors')[$status_label])) {
                 $status_class = config('woo-order-dashboard.status_colors')[$status_label];

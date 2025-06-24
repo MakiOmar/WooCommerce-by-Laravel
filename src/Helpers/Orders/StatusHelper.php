@@ -43,6 +43,45 @@ class StatusHelper extends BaseHelper
     }
 
     /**
+     * Get all statuses with wc- prefix for database queries
+     *
+     * @return array
+     */
+    public static function getAllStatusesWithPrefix()
+    {
+        $statuses = self::getAllStatuses();
+        $statusesWithPrefix = [];
+        
+        foreach ($statuses as $key => $label) {
+            $statusesWithPrefix['wc-' . $key] = $label;
+        }
+        
+        return $statusesWithPrefix;
+    }
+
+    /**
+     * Get status key with wc- prefix
+     *
+     * @param string $statusKey
+     * @return string
+     */
+    public static function getStatusWithPrefix($statusKey)
+    {
+        return 'wc-' . $statusKey;
+    }
+
+    /**
+     * Remove wc- prefix from status key
+     *
+     * @param string $statusKey
+     * @return string
+     */
+    public static function removeStatusPrefix($statusKey)
+    {
+        return str_replace('wc-', '', $statusKey);
+    }
+
+    /**
      * Get predefined default order statuses from config
      *
      * @return array

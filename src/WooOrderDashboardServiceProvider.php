@@ -52,6 +52,11 @@ class WooOrderDashboardServiceProvider extends ServiceProvider
             __DIR__.'/../resources/views' => resource_path('views/vendor/woo-order-dashboard'),
         ], 'views');
 
+        // Publish pagination views
+        $this->publishes([
+            __DIR__.'/../resources/views/vendor/pagination' => resource_path('views/vendor/pagination'),
+        ], 'pagination');
+
         // Publish assets
         $this->publishes([
             __DIR__.'/../resources/assets' => public_path('vendor/woo-order-dashboard'),
@@ -61,6 +66,7 @@ class WooOrderDashboardServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../config/woo-order-dashboard.php' => config_path('woo-order-dashboard.php'),
             __DIR__.'/../resources/views' => resource_path('views/vendor/woo-order-dashboard'),
+            __DIR__.'/../resources/views/vendor/pagination' => resource_path('views/vendor/pagination'),
             __DIR__.'/../resources/assets' => public_path('vendor/woo-order-dashboard'),
             __DIR__.'/../database/migrations/optional' => database_path('migrations/optional'),
         ], 'woo-order-dashboard');

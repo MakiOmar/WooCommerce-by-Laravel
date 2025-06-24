@@ -71,6 +71,7 @@ php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashbo
 php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="assets"
 php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="migrations"
 php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="routes"
+php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="pagination"
 ```
 
 ### Using Tag-Based Commands (Alternative)
@@ -116,6 +117,12 @@ php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashbo
 ```
 Publishes routes file to `routes/woo-dashboard.php` for customization
 
+### Pagination
+```bash
+php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="pagination"
+```
+Publishes Bootstrap 4 pagination views to `resources/views/vendor/pagination/` for customization
+
 ### All Assets
 ```bash
 php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider"
@@ -128,6 +135,7 @@ Publishes all package assets (config, views, assets, migrations)
 - `assets` - CSS and JavaScript files
 - `migrations` - Optional database migrations
 - `routes` - Routes file for customization
+- `pagination` - Bootstrap 4 pagination views
 - No tag - All assets (recommended for first-time setup)
 
 ## Configuration
@@ -164,6 +172,69 @@ WOO_DB_USERNAME=your_username
 WOO_DB_PASSWORD=your_password
 WOO_DB_PREFIX=wp_
 ```
+
+## Bootstrap 4 Pagination
+
+The package includes Bootstrap 4 pagination views that are automatically used when you call `{{ $orders->links() }}` or any other pagination links.
+
+### Available Pagination Views
+
+1. **Default Bootstrap 4 Pagination** (`bootstrap-4.blade.php`)
+   - Full pagination with page numbers
+   - Previous/Next buttons with icons
+   - Results count display
+   - Centered layout
+
+2. **Simple Bootstrap 4 Pagination** (`simple-bootstrap-4.blade.php`)
+   - Previous/Next buttons only
+   - Page count display
+   - Compact layout
+
+### Using Different Pagination Styles
+
+To use a specific pagination style, you can specify it in your Blade templates:
+
+```php
+{{-- Use default Bootstrap 4 pagination --}}
+{{ $orders->links() }}
+
+{{-- Use simple pagination --}}
+{{ $orders->links('vendor.pagination.simple-bootstrap-4') }}
+
+{{-- Use custom pagination view --}}
+{{ $orders->links('vendor.pagination.custom-view') }}
+```
+
+### Customizing Pagination
+
+After publishing the pagination views, you can customize them:
+
+```bash
+# Publish pagination views
+php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="pagination"
+```
+
+The pagination views will be published to `resources/views/vendor/pagination/` where you can modify them to match your design requirements.
+
+### Pagination Configuration
+
+You can configure pagination settings in your Laravel application:
+
+```php
+// In config/pagination.php
+return [
+    'default' => 'bootstrap-4',
+    'path' => resource_path('views/vendor/pagination'),
+];
+```
+
+### Features
+
+- **Responsive Design**: Works on all screen sizes
+- **Accessibility**: Includes proper ARIA labels and semantic HTML
+- **FontAwesome Icons**: Uses chevron icons for navigation
+- **Bootstrap 4 Classes**: Fully compatible with Bootstrap 4 styling
+- **Customizable**: Easy to modify and extend
 
 ## Route Configuration
 

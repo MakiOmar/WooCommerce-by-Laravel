@@ -31,6 +31,7 @@
                             <div class="input-group-append">
                                 <button class="btn btn-primary" type="button">Advanced search</button>
                                 <button class="btn btn-primary ml-2" type="button">Products history</button>
+                                <button class="btn btn-info ml-2" type="button" id="test-add-product">Test Add Product</button>
                             </div>
                         </div>
                         <div id="product_search_dropdown" class="list-group position-absolute w-100" style="z-index:1000; display:none; max-height: 300px; overflow-y: auto;"></div>
@@ -46,6 +47,12 @@
                             </thead>
                             <tbody>
                                 <!-- Products will be added here dynamically -->
+                                <tr id="no-products-row">
+                                    <td colspan="5" class="text-center text-muted py-4">
+                                        <i class="fas fa-shopping-cart fa-2x mb-2"></i>
+                                        <p class="mb-0">No products added yet. Search for products above to add them to your order.</p>
+                                    </td>
+                                </tr>
                             </tbody>
                         </table>
                         <input type="hidden" name="order_items" id="order_items">
@@ -327,6 +334,9 @@ $(document).ready(function() {
         $prodDropdown.hide();
         $prodInput.val('');
         recalcSummary();
+        
+        // Hide the "no products" row when products are added
+        $('#no-products-row').hide();
     });
 
     $prodTable.on('input', '.order-qty', function() {
@@ -385,23 +395,68 @@ $(document).ready(function() {
     $(document).on('click', '.remove-item', function() {
         $(this).closest('tr').remove();
         recalcSummary();
+        
+        // Show the "no products" row if no products remain
+        if ($('#products-table tbody tr').not('#no-products-row').length === 0) {
+            $('#no-products-row').show();
+        }
+    });
+
+    // Test button to add a sample product
+    $('#test-add-product').on('click', function() {
+        var testProduct = {
+            productId: 1,
+            variationId: 0,
+            name: 'Test Product',
+            price: 29.99,
+            sku: 'TEST-001',
+            attributes: {}
+        };
+        
+        var row = $('<tr></tr>')
+            .attr('data-row-id', testProduct.productId)
+            .attr('data-product-id', testProduct.productId)
+            .attr('data-variation-id', testProduct.variationId)
+            .data('attributes', testProduct.attributes)
+            .html(
+                '<td><strong>'+testProduct.name+'</strong></td>' +
+                '<td class="order-price">'+testProduct.price.toFixed(2)+'</td>' +
+                '<td><input type="number" class="form-control form-control-sm order-qty" value="1" min="1" style="width:70px;"></td>' +
+                '<td class="line-item-total">'+testProduct.price.toFixed(2)+'</td>' +
+                '<td><button type="button" class="btn btn-sm btn-danger remove-item">&times;</button></td>'
+            );
+
+        $prodTable.append(row);
+        $('#no-products-row').hide();
+        recalcSummary();
+        
+        console.log('Test product added:', testProduct);
     });
 
     // On form submit, serialize order items and customer id
     $('#order-create-form').on('submit', function(e) {
+        console.log('Form submission started');
+        
         var items = [];
         $('#products-table tbody tr').each(function() {
             var $row = $(this);
-            items.push({
+            var item = {
                 product_id: $row.data('product-id'),
                 variation_id: $row.data('variation-id'),
                 name: $row.find('td:first-child strong').text(),
                 price: parseFloat($row.find('.order-price').text()) || 0,
                 qty: parseInt($row.find('.order-qty').val()) || 1,
                 attributes: $row.data('attributes') || {}
-            });
+            };
+            items.push(item);
+            console.log('Added item:', item);
         });
-        $('#order_items').val(JSON.stringify(items));
+        
+        var itemsJson = JSON.stringify(items);
+        $('#order_items').val(itemsJson);
+        
+        console.log('Order items JSON:', itemsJson);
+        console.log('Form data before submit:', $(this).serialize());
         
         // Validate that we have at least one item
         if (items.length === 0) {
@@ -409,6 +464,11 @@ $(document).ready(function() {
             alert('Please add at least one product to the order.');
             return false;
         }
+        
+        // Show loading state
+        $('button[type="submit"]').prop('disabled', true).text('Creating Order...');
+        
+        console.log('Form submission proceeding...');
     });
 });
 </script>

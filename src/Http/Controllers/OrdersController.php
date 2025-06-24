@@ -91,6 +91,9 @@ class OrdersController extends Controller
 
     public function store(Request $request)
     {
+        // Debug: Log the incoming request data
+        \Log::info('Order creation request:', $request->all());
+        
         $data = $request->validate([
             'order_items' => 'required|string',
             'customer_id' => 'nullable|integer',
@@ -103,7 +106,18 @@ class OrdersController extends Controller
             'taxes' => 'nullable|numeric',
         ]);
 
+        // Debug: Log the validated data
+        \Log::info('Validated order data:', $data);
+
         $items = json_decode($data['order_items'], true);
+        
+        // Debug: Log the decoded items
+        \Log::info('Decoded order items:', $items);
+
+        // Validate that we have items
+        if (empty($items)) {
+            return back()->with('error', 'No order items found. Please add at least one product to the order.');
+        }
 
         DB::connection('woocommerce')->beginTransaction();
         try {

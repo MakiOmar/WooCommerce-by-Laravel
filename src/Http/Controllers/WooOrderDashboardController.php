@@ -47,9 +47,9 @@ class WooOrderDashboardController extends Controller
     {
         $cacheKey = 'woo_order_' . $id;
         
-        // Load all data needed for all tabs
+        // Only load data needed for first tab initially
         $order = Cache::remember($cacheKey, config('woo-order-dashboard.cache.ttl.order', 60), function () use ($id) {
-            return Order::with(['meta', 'items.meta', 'comments'])->find($id);
+            return Order::with(['meta', 'items.meta'])->find($id);
         });
 
         if (!$order) {
@@ -60,6 +60,38 @@ class WooOrderDashboardController extends Controller
         $orderStatuses = StatusHelper::getAllStatuses();
 
         return view('woo-order-dashboard::orders.show', compact('order', 'orderStatuses'));
+    }
+
+    /**
+     * Get tab content via AJAX using partials
+     */
+    public function getTabContent($id, Request $request)
+    {
+        $tab = $request->get('tab');
+        
+        $order = Order::find($id);
+        if (!$order) {
+            return response()->json(['error' => 'Order not found'], 404);
+        }
+
+        switch ($tab) {
+            case 'customer-info':
+                // Load customer data and return partial
+                $order->load(['meta']);
+                $html = view('woo-order-dashboard::partials.order-customer-info', compact('order'))->render();
+                break;
+                
+            case 'order-notes':
+                // Load comments/notes data and return partial
+                $order->load(['comments']);
+                $html = view('woo-order-dashboard::partials.order-notes', compact('order'))->render();
+                break;
+                
+            default:
+                return response()->json(['error' => 'Invalid tab'], 400);
+        }
+
+        return response()->json(['html' => $html]);
     }
 
     protected function validateFilters(Request $request)

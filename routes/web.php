@@ -9,6 +9,7 @@ Route::group(['middleware' => ['web', 'auth:admin']], function() {
     // Main Order Dashboard
     Route::get('/orders', [WooOrderDashboardController::class, 'index'])->name('orders.index');
     Route::get('/orders/{id}', [WooOrderDashboardController::class, 'show'])->name('orders.show');
+    Route::get('/orders/{id}/tab-content', [WooOrderDashboardController::class, 'getTabContent'])->name('orders.tab-content');
     
     // Order Creation & Actions
     Route::get('/orders/create', [OrdersController::class, 'create'])->name('orders.create');

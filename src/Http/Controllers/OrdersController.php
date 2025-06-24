@@ -121,13 +121,8 @@ class OrdersController extends Controller
 
         DB::connection('woocommerce')->beginTransaction();
         try {
-            // 1. Create the main order record in 'posts'
-            $subtotal = collect($items)->sum(function ($item) {
-                return ($item['price'] * $item['qty']);
-            });
-            $total = $subtotal - ($data['discount'] ?? 0) + ($data['shipping'] ?? 0) + ($data['taxes'] ?? 0);
-
-            $order = Order::create([
+            // Debug: Log the order data we're about to create
+            $orderData = [
                 'post_type' => 'shop_order',
                 'post_status' => $data['order_status'] ?? 'wc-processing',
                 'ping_status' => 'closed',
@@ -139,7 +134,21 @@ class OrdersController extends Controller
                 'post_date_gmt' => now()->utc(),
                 'post_modified' => now(),
                 'post_modified_gmt' => now()->utc(),
-            ]);
+            ];
+            
+            \Log::info('Creating order with data:', $orderData);
+            
+            // 1. Create the main order record in 'posts'
+            $subtotal = collect($items)->sum(function ($item) {
+                return ($item['price'] * $item['qty']);
+            });
+            $total = $subtotal - ($data['discount'] ?? 0) + ($data['shipping'] ?? 0) + ($data['taxes'] ?? 0);
+            
+            \Log::info('Calculated totals:', ['subtotal' => $subtotal, 'total' => $total]);
+
+            $order = Order::create($orderData);
+            
+            \Log::info('Order created successfully:', ['order_id' => $order->ID]);
 
             // 2. Add meta data to the order
             $metaData = [
@@ -153,21 +162,30 @@ class OrdersController extends Controller
                 ['_order_tax', $data['taxes'] ?? '0'],
             ];
 
+            \Log::info('Creating meta data:', $metaData);
+
             foreach ($metaData as $meta) {
-                PostMeta::create([
+                $postMeta = PostMeta::create([
                     'post_id' => $order->ID,
                     'meta_key' => $meta[0],
                     'meta_value' => $meta[1],
                 ]);
+                \Log::info('Created meta:', ['key' => $meta[0], 'value' => $meta[1], 'id' => $postMeta->meta_id]);
             }
 
             // 3. Create order items and their meta
+            \Log::info('Creating order items:', $items);
+            
             foreach ($items as $itemData) {
+                \Log::info('Creating order item:', $itemData);
+                
                 $orderItem = OrderItem::create([
                     'order_item_name' => $itemData['name'],
                     'order_item_type' => 'line_item',
                     'order_id' => $order->ID,
                 ]);
+                
+                \Log::info('Created order item:', ['item_id' => $orderItem->order_item_id]);
 
                 $orderItemMeta = [
                     ['_product_id', $itemData['product_id']],
@@ -182,23 +200,32 @@ class OrdersController extends Controller
                 ];
                 
                 foreach ($orderItemMeta as $meta) {
-                    OrderItemMeta::create([
+                    $itemMeta = OrderItemMeta::create([
                         'order_item_id' => $orderItem->order_item_id,
                         'meta_key' => $meta[0],
                         'meta_value' => $meta[1],
                     ]);
+                    \Log::info('Created item meta:', ['key' => $meta[0], 'value' => $meta[1], 'id' => $itemMeta->meta_id]);
                 }
             }
             
             DB::connection('woocommerce')->commit();
+            \Log::info('Database transaction committed successfully');
 
             // Clear cache after successful order creation
             CacheHelper::clearCacheOnOrderCreate();
+            \Log::info('Cache cleared successfully');
 
             return redirect()->route('orders.index')->with('success', 'Order created successfully. Order ID: ' . $order->ID);
 
         } catch (\Exception $e) {
             DB::connection('woocommerce')->rollBack();
+            \Log::error('Order creation failed with exception:', [
+                'message' => $e->getMessage(),
+                'file' => $e->getFile(),
+                'line' => $e->getLine(),
+                'trace' => $e->getTraceAsString()
+            ]);
             return back()->with('error', 'Order creation failed: ' . $e->getMessage());
         }
     }

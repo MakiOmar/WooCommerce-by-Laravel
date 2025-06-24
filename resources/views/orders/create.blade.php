@@ -438,7 +438,7 @@ $(document).ready(function() {
         console.log('Form submission started');
         
         var items = [];
-        $('#products-table tbody tr').each(function() {
+        $('#products-table tbody tr').not('#no-products-row').each(function() {
             var $row = $(this);
             var item = {
                 product_id: $row.data('product-id'),
@@ -448,8 +448,14 @@ $(document).ready(function() {
                 qty: parseInt($row.find('.order-qty').val()) || 1,
                 attributes: $row.data('attributes') || {}
             };
-            items.push(item);
-            console.log('Added item:', item);
+            
+            // Only add items that have a valid name and product_id
+            if (item.name && item.name.trim() !== '' && item.product_id) {
+                items.push(item);
+                console.log('Added item:', item);
+            } else {
+                console.log('Skipped invalid item:', item);
+            }
         });
         
         var itemsJson = JSON.stringify(items);

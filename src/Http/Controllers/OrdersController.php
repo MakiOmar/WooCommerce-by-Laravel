@@ -118,18 +118,9 @@ class OrdersController extends Controller
                     $processedVariations->push($variation->ID);
                 }
             } else {
-                // For SKU search or simple products, include the main product
-                $results->push([
-                    'product_id' => $product->ID,
-                    'variation_id' => 0,
-                    'name' => $product->post_title,
-                    'sku' => $meta->get('_sku'),
-                    'price' => $meta->get('_price'),
-                    'attributes' => [],
-                ]);
-                
-                // If it's a variable product and we're searching by SKU, also get its variations
+                // For SKU search or simple products
                 if ($productType === 'variable') {
+                    // For variable products in SKU search, only return variations (not the main product)
                     $variations = Product::with('meta')
                         ->where('post_status', 'publish')
                         ->where('post_type', 'product_variation')
@@ -160,6 +151,16 @@ class OrdersController extends Controller
                         // Mark this variation as processed
                         $processedVariations->push($variation->ID);
                     }
+                } else {
+                    // For simple products, include the main product
+                    $results->push([
+                        'product_id' => $product->ID,
+                        'variation_id' => 0,
+                        'name' => $product->post_title,
+                        'sku' => $meta->get('_sku'),
+                        'price' => $meta->get('_price'),
+                        'attributes' => [],
+                    ]);
                 }
             }
         }

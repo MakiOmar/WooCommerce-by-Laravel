@@ -512,6 +512,84 @@ class OrdersController extends Controller
 
         $orderIds = $request->input('order_ids');
         
+        // Check if WooCommerce API is enabled for deletion
+        if (config('woo-order-dashboard.api.enabled', false)) {
+            return $this->deleteOrdersViaApi($orderIds);
+        } else {
+            return $this->deleteOrdersViaDatabase($orderIds);
+        }
+    }
+
+    /**
+     * Delete orders via WooCommerce REST API
+     *
+     * @param array $orderIds
+     * @return \Illuminate\Http\JsonResponse
+     */
+    protected function deleteOrdersViaApi(array $orderIds)
+    {
+        try {
+            $apiService = new WooCommerceApiService();
+            
+            // Test API connection first
+            if (!$apiService->testConnection()) {
+                \Log::error('WooCommerce API connection failed during deletion');
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Unable to connect to WooCommerce API. Please check your API configuration.'
+                ], 500);
+            }
+
+            // Delete orders via API
+            $results = $apiService->deleteOrders($orderIds);
+            
+            $successCount = count($results['success']);
+            $failedCount = count($results['failed']);
+            
+            if ($failedCount === 0) {
+                // All orders deleted successfully
+                \Log::info('All orders deleted successfully via API', ['order_ids' => $orderIds]);
+                return response()->json([
+                    'success' => true,
+                    'message' => "Successfully deleted {$successCount} orders via WooCommerce API."
+                ]);
+            } elseif ($successCount > 0) {
+                // Some orders deleted, some failed
+                \Log::warning('Partial deletion via API', [
+                    'successful' => $results['success'],
+                    'failed' => $results['failed']
+                ]);
+                return response()->json([
+                    'success' => true,
+                    'message' => "Deleted {$successCount} orders via API. {$failedCount} orders failed to delete.",
+                    'failed_orders' => $results['failed']
+                ]);
+            } else {
+                // All orders failed to delete
+                \Log::error('All orders failed to delete via API', ['failed_orders' => $results['failed']]);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to delete any orders via API.'
+                ], 500);
+            }
+                
+        } catch (\Exception $e) {
+            \Log::error('Failed to delete orders via API', ['error' => $e->getMessage()]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to delete orders via API: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete orders via direct database queries (default method)
+     *
+     * @param array $orderIds
+     * @return \Illuminate\Http\JsonResponse
+     */
+    protected function deleteOrdersViaDatabase(array $orderIds)
+    {
         DB::connection('woocommerce')->beginTransaction();
         try {
             // Get order item IDs before deleting them
@@ -534,15 +612,18 @@ class OrdersController extends Controller
             // Clear cache after successful bulk deletion
             CacheHelper::clearCacheOnOrderDelete($orderIds);
 
+            \Log::info('Orders deleted successfully via database', ['order_ids' => $orderIds]);
+
             return response()->json([
                 'success' => true,
-                'message' => 'Successfully deleted ' . count($orderIds) . ' orders.'
+                'message' => 'Successfully deleted ' . count($orderIds) . ' orders via database.'
             ]);
         } catch (\Exception $e) {
             DB::connection('woocommerce')->rollBack();
+            \Log::error('Failed to delete orders via database', ['error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to delete orders: ' . $e->getMessage()
+                'message' => 'Failed to delete orders via database: ' . $e->getMessage()
             ], 500);
         }
     }

@@ -219,18 +219,26 @@ php artisan woo:test-api
 ### Usage Modes
 
 #### Database Method (Default)
-By default, orders are created using direct database insertion:
+By default, orders are created and deleted using direct database insertion:
 ```env
 WOO_API_ENABLED=false
 ```
 
 #### API Method
-To use the WooCommerce REST API for order creation:
+To use the WooCommerce REST API for order creation and deletion:
 ```env
 WOO_API_ENABLED=true
 ```
 
 **Note**: Payment method and order status are taken from the form submission, not from environment variables. This ensures that users can select the appropriate payment method and order status for each order.
+
+### Supported Operations
+
+The API integration supports the following operations:
+
+- **Order Creation**: Create new orders via WooCommerce REST API
+- **Order Deletion**: Delete orders via WooCommerce REST API (including bulk deletion)
+- **Connection Testing**: Test API connectivity before operations
 
 ### Benefits
 

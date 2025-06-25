@@ -272,6 +272,75 @@ class WooCommerceApiService
     }
 
     /**
+     * Delete an order via WooCommerce REST API
+     *
+     * @param int $orderId
+     * @return bool
+     * @throws Exception
+     */
+    public function deleteOrder(int $orderId): bool
+    {
+        try {
+            Log::info('Deleting order via WooCommerce API', ['order_id' => $orderId]);
+
+            // Make the API request to delete the order
+            $response = $this->makeApiRequest("orders/{$orderId}", 'DELETE');
+
+            if ($response->successful()) {
+                Log::info('Order deleted successfully via API', ['order_id' => $orderId]);
+                return true;
+            } else {
+                $error = $response->json();
+                Log::error('Failed to delete order via API', [
+                    'order_id' => $orderId,
+                    'status' => $response->status(),
+                    'error' => $error
+                ]);
+                throw new Exception('Failed to delete order via API: ' . ($error['message'] ?? 'Unknown error'));
+            }
+        } catch (Exception $e) {
+            Log::error('Exception while deleting order via API', [
+                'order_id' => $orderId,
+                'error' => $e->getMessage()
+            ]);
+            throw $e;
+        }
+    }
+
+    /**
+     * Delete multiple orders via WooCommerce REST API
+     *
+     * @param array $orderIds
+     * @return array
+     * @throws Exception
+     */
+    public function deleteOrders(array $orderIds): array
+    {
+        $results = [
+            'success' => [],
+            'failed' => []
+        ];
+
+        foreach ($orderIds as $orderId) {
+            try {
+                if ($this->deleteOrder($orderId)) {
+                    $results['success'][] = $orderId;
+                } else {
+                    $results['failed'][] = $orderId;
+                }
+            } catch (Exception $e) {
+                Log::error('Failed to delete order', [
+                    'order_id' => $orderId,
+                    'error' => $e->getMessage()
+                ]);
+                $results['failed'][] = $orderId;
+            }
+        }
+
+        return $results;
+    }
+
+    /**
      * Test API connection
      *
      * @return bool

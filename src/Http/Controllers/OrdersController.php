@@ -62,6 +62,22 @@ class OrdersController extends Controller
             $meta = $product->meta->pluck('meta_value', 'meta_key');
             $productType = $meta->get('_product_type', 'simple');
             
+            // If _product_type is not set, check for variable product indicators
+            if ($productType === 'simple') {
+                $productAttributes = $meta->get('_product_attributes');
+                if ($productAttributes && !empty($productAttributes)) {
+                    $attributes = maybe_unserialize($productAttributes);
+                    if (is_array($attributes)) {
+                        foreach ($attributes as $attribute) {
+                            if (isset($attribute['is_variation']) && $attribute['is_variation'] == 1) {
+                                $productType = 'variable';
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            
             \Log::info("Processing product ID: {$product->ID}, Type: {$productType}, Title: {$product->post_title}");
             \Log::info("Meta fields for product {$product->ID}: " . json_encode($meta->toArray()));
             

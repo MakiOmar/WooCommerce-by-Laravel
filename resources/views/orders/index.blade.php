@@ -203,7 +203,7 @@
 
                     @if(isset($orders['data']) && $orders['data']->hasPages())
                         <div class="card-footer bg-light">
-                            {{ $orders['data']->links() }}
+                            {{ $orders['data']->links('woo-order-dashboard::vendor.pagination.bootstrap-4') }}
                         </div>
                     @endif
                 </div>

@@ -101,12 +101,18 @@
                             <input type="date" class="form-control mb-1" name="order_date">
                             <div class="d-flex">
                                 <select class="form-control mr-2" style="width: 70px;" name="order_hour">
-                                    <option>19</option>
-                                    <!-- More hours -->
+                                    @for ($h = 0; $h < 24; $h++)
+                                        @php
+                                            $ampm = $h == 0 ? '12 AM' : ($h < 12 ? $h . ' AM' : ($h == 12 ? '12 PM' : ($h-12) . ' PM'));
+                                            $label = sprintf('%02d', $h) . ' (' . $ampm . ')';
+                                        @endphp
+                                        <option value="{{ $h }}">{{ $label }}</option>
+                                    @endfor
                                 </select>
                                 <select class="form-control" style="width: 70px;" name="order_minute">
-                                    <option>25</option>
-                                    <!-- More minutes -->
+                                    @for ($m = 0; $m < 60; $m++)
+                                        <option value="{{ $m }}">{{ sprintf('%02d', $m) }}</option>
+                                    @endfor
                                 </select>
                             </div>
                         </div>

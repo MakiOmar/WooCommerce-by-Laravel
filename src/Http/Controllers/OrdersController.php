@@ -63,6 +63,7 @@ class OrdersController extends Controller
             $productType = $meta->get('_product_type', 'simple');
             
             \Log::info("Processing product ID: {$product->ID}, Type: {$productType}, Title: {$product->post_title}");
+            \Log::info("Meta fields for product {$product->ID}: " . json_encode($meta->toArray()));
             
             // If searching by title and it's a variable product, skip the parent and only include variations
             if ($searchType === 'title' && $productType === 'variable') {

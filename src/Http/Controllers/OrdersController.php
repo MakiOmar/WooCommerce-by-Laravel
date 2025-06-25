@@ -46,6 +46,7 @@ class OrdersController extends Controller
             ->get();
 
         $results = collect();
+        $processedVariations = collect(); // Track which variations we've already processed
 
         foreach ($products as $product) {
             $meta = $product->meta->pluck('meta_value', 'meta_key');
@@ -87,6 +88,9 @@ class OrdersController extends Controller
                         'price' => $variationMeta->get('_price'),
                         'attributes' => $attributes,
                     ]);
+                    
+                    // Mark this variation as processed
+                    $processedVariations->push($variation->ID);
                 }
             }
         }
@@ -105,6 +109,11 @@ class OrdersController extends Controller
             ->get();
 
         foreach ($variations as $variation) {
+            // Skip if we've already processed this variation
+            if ($processedVariations->contains($variation->ID)) {
+                continue;
+            }
+            
             $variationMeta = $variation->meta->pluck('meta_value', 'meta_key');
             
             // Get parent product info
@@ -134,12 +143,8 @@ class OrdersController extends Controller
             }
         }
 
-        // Remove duplicates and limit results
-        $uniqueResults = $results->unique(function ($item) {
-            return $item['product_id'] . '_' . $item['variation_id'];
-        })->take(20);
-
-        return response()->json($uniqueResults->values());
+        // Limit results to 20
+        return response()->json($results->take(20)->values());
     }
 
     public function customersSearch(Request $request)

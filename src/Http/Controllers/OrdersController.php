@@ -33,6 +33,9 @@ class OrdersController extends Controller
         $searchType = $request->get('search_type', 'sku'); // 'sku' or 'title', default to 'sku'
         $prefix = DB::getDatabaseName() . '.';
         
+        // Debug logging
+        \Log::info("Product search - Query: {$q}, Search Type: {$searchType}");
+        
         // First, search for regular products (simple and variable)
         $products = Product::with('meta')
             ->where('post_status', 'publish')
@@ -50,12 +53,16 @@ class OrdersController extends Controller
             ->limit(20)
             ->get();
 
+        \Log::info("Found " . $products->count() . " products");
+
         $results = collect();
         $processedVariations = collect(); // Track which variations we've already processed
 
         foreach ($products as $product) {
             $meta = $product->meta->pluck('meta_value', 'meta_key');
             $productType = $meta->get('_product_type', 'simple');
+            
+            \Log::info("Processing product ID: {$product->ID}, Type: {$productType}, Title: {$product->post_title}");
             
             // If searching by title and it's a variable product, skip the parent and only include variations
             if ($searchType === 'title' && $productType === 'variable') {
@@ -64,6 +71,8 @@ class OrdersController extends Controller
                     ->where('post_type', 'product_variation')
                     ->where('post_parent', $product->ID)
                     ->get();
+                
+                \Log::info("Found " . $variations->count() . " variations for variable product {$product->ID}");
                 
                 foreach ($variations as $variation) {
                     $variationMeta = $variation->meta->pluck('meta_value', 'meta_key');
@@ -99,12 +108,14 @@ class OrdersController extends Controller
                 ]);
                 
                 // If it's a variable product and we're searching by SKU, also get its variations
-                if ($searchType === 'sku' && $productType === 'variable') {
+                if ($productType === 'variable') {
                     $variations = Product::with('meta')
                         ->where('post_status', 'publish')
                         ->where('post_type', 'product_variation')
                         ->where('post_parent', $product->ID)
                         ->get();
+                    
+                    \Log::info("Found " . $variations->count() . " variations for variable product {$product->ID} (SKU search)");
                     
                     foreach ($variations as $variation) {
                         $variationMeta = $variation->meta->pluck('meta_value', 'meta_key');
@@ -149,6 +160,8 @@ class OrdersController extends Controller
             ->limit(10)
             ->get();
 
+        \Log::info("Found " . $variations->count() . " variations directly");
+
         foreach ($variations as $variation) {
             // Skip if we've already processed this variation
             if ($processedVariations->contains($variation->ID)) {
@@ -183,6 +196,8 @@ class OrdersController extends Controller
                 }
             }
         }
+
+        \Log::info("Total results: " . $results->count());
 
         // Limit results to 20
         return response()->json($results->take(20)->values());

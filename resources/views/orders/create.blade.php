@@ -28,10 +28,20 @@
                         </div>
                         <div class="form-group mb-3">
                             <label for="product_search">Search Products</label>
-                            <div class="search-input-container">
-                                <input type="text" class="form-control" id="product_search" placeholder="Search for products..." autocomplete="off">
-                                <div class="loading-indicator">
-                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <select class="form-control" id="search_type">
+                                        <option value="sku" selected>Search by SKU</option>
+                                        <option value="title">Search by Title</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-9">
+                                    <div class="search-input-container">
+                                        <input type="text" class="form-control" id="product_search" placeholder="Search for products..." autocomplete="off">
+                                        <div class="loading-indicator">
+                                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div id="product_search_dropdown" class="list-group position-absolute w-100" style="z-index:1000; display:none;"></div>
@@ -267,6 +277,7 @@ $(document).ready(function() {
 
     $prodInput.on('input', function() {
         var q = $(this).val();
+        var searchType = $('#search_type').val(); // Get the selected search type
         if (q.length < 2) { 
             $prodDropdown.hide(); 
             return; 
@@ -275,7 +286,7 @@ $(document).ready(function() {
         // Show loading indicator
         loadingManager.showInputLoading('#product_search');
         
-        $.getJSON("{{ route('products.search') }}", {q: q}, function(data) {
+        $.getJSON("{{ route('products.search') }}", {q: q, search_type: searchType}, function(data) {
             $prodDropdown.empty().show();
             if (data.length === 0) {
                 $prodDropdown.append('<div class="list-group-item">No products found</div>');

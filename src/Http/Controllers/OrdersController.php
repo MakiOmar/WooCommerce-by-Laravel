@@ -30,17 +30,22 @@ class OrdersController extends Controller
     public function searchProducts(Request $request)
     {
         $q = $request->get('q');
+        $searchType = $request->get('search_type', 'sku'); // 'sku' or 'title', default to 'sku'
         $prefix = DB::getDatabaseName() . '.';
         
         // First, search for regular products (simple and variable)
         $products = Product::with('meta')
             ->where('post_status', 'publish')
             ->where('post_type', 'product')
-            ->where(function ($query) use ($q) {
-                $query->where('post_title', 'LIKE', "%{$q}%")
-                      ->orWhereHas('meta', function ($subQuery) use ($q) {
-                          $subQuery->where('meta_key', '_sku')->where('meta_value', 'LIKE', "%{$q}%");
-                      });
+            ->where(function ($query) use ($q, $searchType) {
+                if ($searchType === 'title') {
+                    $query->where('post_title', 'LIKE', "%{$q}%");
+                } else {
+                    // Default to SKU search
+                    $query->whereHas('meta', function ($subQuery) use ($q) {
+                        $subQuery->where('meta_key', '_sku')->where('meta_value', 'LIKE', "%{$q}%");
+                    });
+                }
             })
             ->limit(20)
             ->get();
@@ -52,18 +57,8 @@ class OrdersController extends Controller
             $meta = $product->meta->pluck('meta_value', 'meta_key');
             $productType = $meta->get('_product_type', 'simple');
             
-            // Add the main product
-            $results->push([
-                'product_id' => $product->ID,
-                'variation_id' => 0,
-                'name' => $product->post_title,
-                'sku' => $meta->get('_sku'),
-                'price' => $meta->get('_price'),
-                'attributes' => [],
-            ]);
-            
-            // If it's a variable product, get its variations
-            if ($productType === 'variable') {
+            // If searching by title and it's a variable product, skip the parent and only include variations
+            if ($searchType === 'title' && $productType === 'variable') {
                 $variations = Product::with('meta')
                     ->where('post_status', 'publish')
                     ->where('post_type', 'product_variation')
@@ -92,6 +87,48 @@ class OrdersController extends Controller
                     // Mark this variation as processed
                     $processedVariations->push($variation->ID);
                 }
+            } else {
+                // For SKU search or simple products, include the main product
+                $results->push([
+                    'product_id' => $product->ID,
+                    'variation_id' => 0,
+                    'name' => $product->post_title,
+                    'sku' => $meta->get('_sku'),
+                    'price' => $meta->get('_price'),
+                    'attributes' => [],
+                ]);
+                
+                // If it's a variable product and we're searching by SKU, also get its variations
+                if ($searchType === 'sku' && $productType === 'variable') {
+                    $variations = Product::with('meta')
+                        ->where('post_status', 'publish')
+                        ->where('post_type', 'product_variation')
+                        ->where('post_parent', $product->ID)
+                        ->get();
+                    
+                    foreach ($variations as $variation) {
+                        $variationMeta = $variation->meta->pluck('meta_value', 'meta_key');
+                        
+                        $attributes = [];
+                        foreach ($variationMeta as $key => $value) {
+                            if (strpos($key, 'attribute_') === 0) {
+                                $attributes[$key] = $value;
+                            }
+                        }
+                        
+                        $results->push([
+                            'product_id' => $product->ID,
+                            'variation_id' => $variation->ID,
+                            'name' => $product->post_title,
+                            'sku' => $variationMeta->get('_sku'),
+                            'price' => $variationMeta->get('_price'),
+                            'attributes' => $attributes,
+                        ]);
+                        
+                        // Mark this variation as processed
+                        $processedVariations->push($variation->ID);
+                    }
+                }
             }
         }
 
@@ -99,11 +136,15 @@ class OrdersController extends Controller
         $variations = Product::with('meta')
             ->where('post_status', 'publish')
             ->where('post_type', 'product_variation')
-            ->where(function ($query) use ($q) {
-                $query->where('post_title', 'LIKE', "%{$q}%")
-                      ->orWhereHas('meta', function ($subQuery) use ($q) {
-                          $subQuery->where('meta_key', '_sku')->where('meta_value', 'LIKE', "%{$q}%");
-                      });
+            ->where(function ($query) use ($q, $searchType) {
+                if ($searchType === 'title') {
+                    $query->where('post_title', 'LIKE', "%{$q}%");
+                } else {
+                    // Default to SKU search
+                    $query->whereHas('meta', function ($subQuery) use ($q) {
+                        $subQuery->where('meta_key', '_sku')->where('meta_value', 'LIKE', "%{$q}%");
+                    });
+                }
             })
             ->limit(10)
             ->get();

@@ -32,8 +32,10 @@ class OrdersController extends Controller
         $q = $request->get('q');
         $prefix = DB::getDatabaseName() . '.';
         
+        // First, search for regular products (simple and variable)
         $products = Product::with('meta')
             ->where('post_status', 'publish')
+            ->where('post_type', 'product')
             ->where(function ($query) use ($q) {
                 $query->where('post_title', 'LIKE', "%{$q}%")
                       ->orWhereHas('meta', function ($subQuery) use ($q) {
@@ -43,29 +45,101 @@ class OrdersController extends Controller
             ->limit(20)
             ->get();
 
-        $results = $products->map(function ($product) {
-            $meta = $product->meta->pluck('meta_value', 'meta_key');
-            
-            $attributes = [];
-            if ($product->post_type === 'product_variation') {
-                foreach ($meta as $key => $value) {
-                    if (strpos($key, 'attribute_') === 0) {
-                        $attributes[$key] = $value;
-                    }
-                }
-            }
+        $results = collect();
 
-            return [
-                'product_id' => $product->post_type === 'product_variation' ? $product->post_parent : $product->ID,
-                'variation_id' => $product->post_type === 'product_variation' ? $product->ID : 0,
+        foreach ($products as $product) {
+            $meta = $product->meta->pluck('meta_value', 'meta_key');
+            $productType = $meta->get('_product_type', 'simple');
+            
+            // Add the main product
+            $results->push([
+                'product_id' => $product->ID,
+                'variation_id' => 0,
                 'name' => $product->post_title,
                 'sku' => $meta->get('_sku'),
                 'price' => $meta->get('_price'),
-                'attributes' => $attributes,
-            ];
-        });
+                'attributes' => [],
+            ]);
+            
+            // If it's a variable product, get its variations
+            if ($productType === 'variable') {
+                $variations = Product::with('meta')
+                    ->where('post_status', 'publish')
+                    ->where('post_type', 'product_variation')
+                    ->where('post_parent', $product->ID)
+                    ->get();
+                
+                foreach ($variations as $variation) {
+                    $variationMeta = $variation->meta->pluck('meta_value', 'meta_key');
+                    
+                    $attributes = [];
+                    foreach ($variationMeta as $key => $value) {
+                        if (strpos($key, 'attribute_') === 0) {
+                            $attributes[$key] = $value;
+                        }
+                    }
+                    
+                    $results->push([
+                        'product_id' => $product->ID,
+                        'variation_id' => $variation->ID,
+                        'name' => $product->post_title,
+                        'sku' => $variationMeta->get('_sku'),
+                        'price' => $variationMeta->get('_price'),
+                        'attributes' => $attributes,
+                    ]);
+                }
+            }
+        }
 
-        return response()->json($results);
+        // Also search for variations directly (in case someone searches by variation SKU or name)
+        $variations = Product::with('meta')
+            ->where('post_status', 'publish')
+            ->where('post_type', 'product_variation')
+            ->where(function ($query) use ($q) {
+                $query->where('post_title', 'LIKE', "%{$q}%")
+                      ->orWhereHas('meta', function ($subQuery) use ($q) {
+                          $subQuery->where('meta_key', '_sku')->where('meta_value', 'LIKE', "%{$q}%");
+                      });
+            })
+            ->limit(10)
+            ->get();
+
+        foreach ($variations as $variation) {
+            $variationMeta = $variation->meta->pluck('meta_value', 'meta_key');
+            
+            // Get parent product info
+            $parentProduct = Product::with('meta')->find($variation->post_parent);
+            if ($parentProduct) {
+                $parentMeta = $parentProduct->meta->pluck('meta_value', 'meta_key');
+                $parentProductType = $parentMeta->get('_product_type', 'simple');
+                
+                // Only include if parent is a variable product
+                if ($parentProductType === 'variable') {
+                    $attributes = [];
+                    foreach ($variationMeta as $key => $value) {
+                        if (strpos($key, 'attribute_') === 0) {
+                            $attributes[$key] = $value;
+                        }
+                    }
+                    
+                    $results->push([
+                        'product_id' => $parentProduct->ID,
+                        'variation_id' => $variation->ID,
+                        'name' => $parentProduct->post_title,
+                        'sku' => $variationMeta->get('_sku'),
+                        'price' => $variationMeta->get('_price'),
+                        'attributes' => $attributes,
+                    ]);
+                }
+            }
+        }
+
+        // Remove duplicates and limit results
+        $uniqueResults = $results->unique(function ($item) {
+            return $item['product_id'] . '_' . $item['variation_id'];
+        })->take(20);
+
+        return response()->json($uniqueResults->values());
     }
 
     public function customersSearch(Request $request)

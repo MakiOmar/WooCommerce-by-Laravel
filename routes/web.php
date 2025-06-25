@@ -11,7 +11,7 @@ Route::group(['middleware' => ['web', 'auth:admin']], function() {
     
     // Loading Demo
     Route::get('/loading-demo', function() {
-        return view('loading-demo');
+        return view('woo-order-dashboard::loading-demo');
     })->name('loading.demo');
     
     // Order Creation & Actions (specific routes first)

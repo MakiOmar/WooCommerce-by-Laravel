@@ -46,14 +46,14 @@
                             <!-- Start Date -->
                             <div class="form-group col-md-3">
                                 <label for="start_date" class="font-weight-bold">Start Date</label>
-                                <input type="date" name="start_date" id="start_date" value="{{ request('start_date') }}" 
+                                <input type="text" name="start_date" id="start_date" value="{{ request('start_date') }}" 
                                        class="form-control">
                             </div>
 
                             <!-- End Date -->
                             <div class="form-group col-md-3">
                                 <label for="end_date" class="font-weight-bold">End Date</label>
-                                <input type="date" name="end_date" id="end_date" value="{{ request('end_date') }}" 
+                                <input type="text" name="end_date" id="end_date" value="{{ request('end_date') }}" 
                                        class="form-control">
                             </div>
 
@@ -308,6 +308,7 @@
 
 @section('styles')
 <link href="{{ asset('vendor/woo-order-dashboard/css/woo-order-dashboard.css') }}" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 @endsection
 
@@ -315,6 +316,7 @@
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
 <script src="{{ asset('vendor/woo-order-dashboard/js/loading-utils.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
     $(document).ready(function() {
         // Filter form loading state
@@ -416,6 +418,17 @@
                     $('#bulkDeleteModal').modal('hide');
                 }
             });
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        flatpickr('#start_date', {
+            dateFormat: "Y-m-d",
+            allowInput: true
+        });
+        flatpickr('#end_date', {
+            dateFormat: "Y-m-d",
+            allowInput: true
         });
     });
 </script>

@@ -25,13 +25,13 @@
                             <div class="col-md-3">
                                 <div class="form-group">
                                     <label for="start_date" class="font-weight-bold">Start Date</label>
-                                    <input type="date" class="form-control" id="start_date" name="start_date" value="{{ request('start_date') }}">
+                                    <input type="text" class="form-control" id="start_date" name="start_date" value="{{ request('start_date') }}">
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group">
                                     <label for="end_date" class="font-weight-bold">End Date</label>
-                                    <input type="date" class="form-control" id="end_date" name="end_date" value="{{ request('end_date') }}">
+                                    <input type="text" class="form-control" id="end_date" name="end_date" value="{{ request('end_date') }}">
                                 </div>
                             </div>
                             <div class="col-md-3">
@@ -243,11 +243,13 @@
 @endsection
 
 @section('styles')
+<link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
 <link href="{{ asset('vendor/woo-order-dashboard/css/woo-order-dashboard.css') }}" rel="stylesheet">
 @endsection
 
 @section('scripts')
 <script src="{{ asset('vendor/woo-order-dashboard/js/loading-utils.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
     $(document).ready(function() {
         // Filter form loading state
@@ -381,6 +383,17 @@
                     $('#bulkDeleteModal').modal('hide');
                 }
             });
+        });
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        flatpickr('#start_date', {
+            dateFormat: "Y-m-d",
+            allowInput: true
+        });
+        flatpickr('#end_date', {
+            dateFormat: "Y-m-d",
+            allowInput: true
         });
     });
 </script>

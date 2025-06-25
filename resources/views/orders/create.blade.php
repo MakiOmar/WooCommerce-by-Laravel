@@ -98,9 +98,9 @@
                     <div class="card-body">
                         <div class="form-group mb-2">
                             <label>Order date</label>
-                            <input type="date" class="form-control mb-1" name="order_date">
+                            <input type="text" class="form-control mb-1" name="order_date">
                             <div class="d-flex">
-                                <select class="form-control mr-2" style="width: 70px;" name="order_hour">
+                                <select class="form-control mr-2" style="width: 125px;" name="order_hour">
                                     @for ($h = 0; $h < 24; $h++)
                                         @php
                                             $ampm = $h == 0 ? '12 AM' : ($h < 12 ? $h . ' AM' : ($h == 12 ? '12 PM' : ($h-12) . ' PM'));
@@ -109,7 +109,7 @@
                                         <option value="{{ $h }}">{{ $label }}</option>
                                     @endfor
                                 </select>
-                                <select class="form-control" style="width: 70px;" name="order_minute">
+                                <select class="form-control" style="width: 125px;" name="order_minute">
                                     @for ($m = 0; $m < 60; $m++)
                                         <option value="{{ $m }}">{{ sprintf('%02d', $m) }}</option>
                                     @endfor
@@ -214,11 +214,13 @@
 @endsection
 
 @section('styles')
+<link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
 <link href="{{ asset('vendor/woo-order-dashboard/css/woo-order-dashboard.css') }}" rel="stylesheet">
 @endsection
 
 @section('scripts')
 <script src="{{ asset('vendor/woo-order-dashboard/js/loading-utils.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
 $(document).ready(function() {
     // Product search dropdown - define variables inside document ready
@@ -514,6 +516,13 @@ $(document).ready(function() {
         loadingManager.showButtonLoading('button[type="submit"]', 'Creating Order...');
         
         console.log('Form submission proceeding...');
+    });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        flatpickr('input[name="order_date"]', {
+            dateFormat: "Y-m-d",
+            allowInput: true
+        });
     });
 });
 </script>

@@ -98,7 +98,7 @@
                     <div class="card-body">
                         <div class="form-group mb-2">
                             <label>Order date</label>
-                            <input type="text" class="form-control mb-1" name="order_date">
+                            <input type="text" class="form-control mb-1" name="order_date" value="{{ old('order_date', $defaultOrderDate ?? '') }}">
                             <div class="d-flex">
                                 <select class="form-control mr-2" style="width: 125px;" name="order_hour">
                                     @for ($h = 0; $h < 24; $h++)
@@ -106,12 +106,12 @@
                                             $ampm = $h == 0 ? '12 AM' : ($h < 12 ? $h . ' AM' : ($h == 12 ? '12 PM' : ($h-12) . ' PM'));
                                             $label = sprintf('%02d', $h) . ' (' . $ampm . ')';
                                         @endphp
-                                        <option value="{{ $h }}">{{ $label }}</option>
+                                        <option value="{{ $h }}" {{ (old('order_hour', $defaultOrderHour ?? '') == $h) ? 'selected' : '' }}>{{ $label }}</option>
                                     @endfor
                                 </select>
-                                <select class="form-control" style="width: 125px;" name="order_minute">
+                                <select class="form-control" style="width: 70px;" name="order_minute">
                                     @for ($m = 0; $m < 60; $m++)
-                                        <option value="{{ $m }}">{{ sprintf('%02d', $m) }}</option>
+                                        <option value="{{ $m }}" {{ (old('order_minute', $defaultOrderMinute ?? '') == $m) ? 'selected' : '' }}>{{ sprintf('%02d', $m) }}</option>
                                     @endfor
                                 </select>
                             </div>
@@ -517,12 +517,11 @@ $(document).ready(function() {
         
         console.log('Form submission proceeding...');
     });
-
-    document.addEventListener('DOMContentLoaded', function() {
-        flatpickr('input[name="order_date"]', {
-            dateFormat: "Y-m-d",
-            allowInput: true
-        });
+});
+document.addEventListener('DOMContentLoaded', function() {
+    flatpickr('input[name="order_date"]', {
+        dateFormat: "Y-m-d",
+        allowInput: true
     });
 });
 </script>

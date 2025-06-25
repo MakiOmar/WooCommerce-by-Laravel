@@ -397,6 +397,23 @@ class OrdersController extends Controller
 
             CacheHelper::clearCacheOnOrderCreate();
 
+            // Store private note as an order comment if provided
+            if (!empty($data['private_note'])) {
+                Comment::create([
+                    'comment_post_ID' => $order->ID,
+                    'comment_author' => auth()->user()->name ?? 'System',
+                    'comment_author_email' => auth()->user()->email ?? '',
+                    'comment_author_url' => '',
+                    'comment_content' => $data['private_note'],
+                    'comment_type' => 'order_note',
+                    'comment_approved' => 1,
+                    'user_id' => auth()->id() ?? 1,
+                    'is_customer_note' => 0,
+                    'comment_date' => now(),
+                    'comment_date_gmt' => now()->utc(),
+                ]);
+            }
+
             try {
                 DB::connection('woocommerce')->table('options')->where('option_name', 'like', '_transient_wc_order_%')->delete();
                 DB::connection('woocommerce')->table('options')->where('option_name', 'like', '_transient_timeout_wc_order_%')->delete();

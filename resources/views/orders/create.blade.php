@@ -35,13 +35,18 @@
                                         <option value="title">Search by Title</option>
                                     </select>
                                 </div>
-                                <div class="col-md-9">
+                                <div class="col-md-7">
                                     <div class="search-input-container">
                                         <input type="text" class="form-control" id="product_search" placeholder="Search for products..." autocomplete="off">
                                         <div class="loading-indicator">
                                             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                                         </div>
                                     </div>
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-primary w-100" id="search_btn">
+                                        <i class="fas fa-search"></i> Search
+                                    </button>
                                 </div>
                             </div>
                             <div id="product_search_dropdown" class="list-group position-absolute w-100" style="z-index:1000; display:none;"></div>
@@ -275,9 +280,11 @@ $(document).ready(function() {
         return parseFloat(amount).toFixed(2);
     }
 
-    $prodInput.on('input', function() {
-        var q = $(this).val();
+    // Function to perform product search
+    function performProductSearch() {
+        var q = $prodInput.val().trim();
         var searchType = $('#search_type').val(); // Get the selected search type
+        
         if (q.length < 2) { 
             $prodDropdown.hide(); 
             return; 
@@ -327,6 +334,26 @@ $(document).ready(function() {
             // Hide loading indicator
             loadingManager.hideInputLoading('#product_search');
         });
+    }
+
+    // Search button click
+    $('#search_btn').on('click', function() {
+        performProductSearch();
+    });
+
+    // Enter key press in search input
+    $prodInput.on('keypress', function(e) {
+        if (e.which === 13) { // Enter key
+            e.preventDefault();
+            performProductSearch();
+        }
+    });
+
+    // Clear dropdown when input is cleared
+    $prodInput.on('input', function() {
+        if ($(this).val().length === 0) {
+            $prodDropdown.hide();
+        }
     });
 
     $(document).on('click', '.prod-item', function(e) {

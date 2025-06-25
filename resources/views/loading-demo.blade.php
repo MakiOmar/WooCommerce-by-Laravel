@@ -215,7 +215,11 @@ loadingManager.hideRowLoading('#row-1');</code></pre>
 @endsection
 
 @section('scripts')
-<script src="{{ asset('vendor/woo-order-dashboard/js/loading-utils.js') }}"></script>
+@if(config('woo-order-dashboard.js_mode', 'inline'))
+    @include('woo-order-dashboard::partials.woo-order-dashboard-inline-js')
+@else
+    <script src="{{ asset('vendor/woo-order-dashboard/js/loading-utils.js') }}"></script>
+@endif
 <script>
 $(document).ready(function() {
     // Input loading demo

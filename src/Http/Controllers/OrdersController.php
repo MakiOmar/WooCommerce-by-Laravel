@@ -20,7 +20,11 @@ class OrdersController extends Controller
     public function create()
     {
         $prefix = DB::getDatabaseName() . '.';
-        return view('woo-order-dashboard::orders.create', compact('prefix'));
+        $now = now();
+        $defaultOrderDate = $now->format('Y-m-d');
+        $defaultOrderHour = $now->format('H');
+        $defaultOrderMinute = $now->format('i');
+        return view('woo-order-dashboard::orders.create', compact('prefix', 'defaultOrderDate', 'defaultOrderHour', 'defaultOrderMinute'));
     }
 
     public function searchProducts(Request $request)
@@ -92,9 +96,6 @@ class OrdersController extends Controller
 
     public function store(Request $request)
     {
-        // Debug: Log the incoming request data
-        \Log::info('Order creation request:', $request->all());
-        
         $data = $request->validate([
             'order_items' => 'required|string',
             'customer_id' => 'nullable|integer',
@@ -107,20 +108,12 @@ class OrdersController extends Controller
             'taxes' => 'nullable|numeric',
         ]);
 
-        // Debug: Log the validated data
-        \Log::info('Validated order data:', $data);
-
         $items = json_decode($data['order_items'], true);
         
-        // Debug: Log the decoded items
-        \Log::info('Decoded order items:', $items);
-
-        // Validate that we have items
         if (empty($items)) {
             return back()->with('error', 'No order items found. Please add at least one product to the order.');
         }
 
-        // Check if WooCommerce API is enabled
         if (config('woo-order-dashboard.api.enabled', false)) {
             return $this->createOrderViaApi($data);
         } else {
@@ -139,22 +132,16 @@ class OrdersController extends Controller
         try {
             $apiService = new WooCommerceApiService();
             
-            // Test API connection first
             if (!$apiService->testConnection()) {
-                \Log::error('WooCommerce API connection failed');
                 return back()->with('error', 'Unable to connect to WooCommerce API. Please check your API configuration.');
             }
 
-            // Create order via API
             $order = $apiService->createOrder($data);
-            
-            \Log::info('Order created successfully via API', ['order_id' => $order['id']]);
             
             return redirect()->route('orders.show', $order['id'])
                 ->with('success', 'Order #' . $order['id'] . ' created successfully via WooCommerce API!');
                 
         } catch (\Exception $e) {
-            \Log::error('Failed to create order via API', ['error' => $e->getMessage()]);
             return back()->with('error', 'Failed to create order via API: ' . $e->getMessage());
         }
     }
@@ -167,12 +154,10 @@ class OrdersController extends Controller
      */
     protected function createOrderViaDatabase(array $data)
     {
-        // Decode order items from the data
         $items = json_decode($data['order_items'], true);
         
         DB::connection('woocommerce')->beginTransaction();
         try {
-            // Debug: Log the order data we're about to create
             $orderStatus = $data['order_status'] ?? 'processing';
             $wcOrderStatus = strpos($orderStatus, 'wc-') === 0 ? $orderStatus : 'wc-' . $orderStatus;
             
@@ -197,37 +182,15 @@ class OrdersController extends Controller
                 'guid' => '',
             ];
             
-            \Log::info('Creating order with data:', $orderData);
-            \Log::info('Order status:', ['original' => $orderStatus, 'wc_formatted' => $wcOrderStatus]);
-            
-            // 1. Create the main order record in 'posts'
             $subtotal = collect($items)->sum(function ($item) {
                 return ($item['price'] * $item['qty']);
             });
             $total = $subtotal - ($data['discount'] ?? 0) + ($data['shipping'] ?? 0) + ($data['taxes'] ?? 0);
             
-            \Log::info('Calculated totals:', ['subtotal' => $subtotal, 'total' => $total]);
-
             $order = Order::create($orderData);
             
-            \Log::info('Order created successfully:', ['order_id' => $order->ID]);
-            
-            // Verify the order exists in the database
-            $verificationOrder = DB::connection('woocommerce')->table('posts')->where('ID', $order->ID)->first();
-            \Log::info('Order verification:', ['exists' => $verificationOrder ? 'yes' : 'no', 'post_type' => $verificationOrder->post_type ?? 'N/A', 'post_status' => $verificationOrder->post_status ?? 'N/A']);
-
-            // Check existing WooCommerce orders for comparison
-            $existingOrders = DB::connection('woocommerce')->table('posts')
-                ->where('post_type', 'shop_order')
-                ->orderBy('ID', 'desc')
-                ->limit(5)
-                ->get(['ID', 'post_status', 'post_title']);
-            \Log::info('Existing WooCommerce orders:', $existingOrders->toArray());
-
-            // 2. Add meta data to the order
             $customerInfo = [];
             if (!empty($data['customer_id'])) {
-                // Fetch customer information
                 $customer = Customer::find($data['customer_id']);
                 if ($customer) {
                     $customerMeta = $customer->meta->pluck('meta_value', 'meta_key');
@@ -257,13 +220,12 @@ class OrdersController extends Controller
             $metaData = [
                 ['_customer_user', $data['customer_id'] ?? '0'],
                 ['_order_total', $total],
-                ['_order_currency', 'USD'], // Consider making this dynamic from config
+                ['_order_currency', 'USD'],
                 ['_payment_method', $data['payment_method'] ?? ''],
                 ['_payment_method_title', $data['payment_method'] ? ucwords(str_replace('_', ' ', $data['payment_method'])) : ''],
                 ['_cart_discount', $data['discount'] ?? '0'],
                 ['_order_shipping', $data['shipping'] ?? '0'],
                 ['_order_tax', $data['taxes'] ?? '0'],
-                // Add billing and shipping meta fields (use customer info if available, otherwise empty)
                 ['_billing_first_name', $customerInfo['_billing_first_name'] ?? ''],
                 ['_billing_last_name', $customerInfo['_billing_last_name'] ?? ''],
                 ['_billing_email', $customerInfo['_billing_email'] ?? ''],
@@ -282,7 +244,6 @@ class OrdersController extends Controller
                 ['_shipping_state', $customerInfo['_shipping_state'] ?? ''],
                 ['_shipping_postcode', $customerInfo['_shipping_postcode'] ?? ''],
                 ['_shipping_country', $customerInfo['_shipping_country'] ?? ''],
-                // Additional WooCommerce meta fields
                 ['_order_key', 'wc_' . uniqid()],
                 ['_order_version', '7.0.0'],
                 ['_prices_include_tax', 'no'],
@@ -299,30 +260,20 @@ class OrdersController extends Controller
                 ['_cart_hash', ''],
             ];
 
-            \Log::info('Creating meta data:', $metaData);
-
             foreach ($metaData as $meta) {
                 $postMeta = PostMeta::create([
                     'post_id' => $order->ID,
                     'meta_key' => $meta[0],
                     'meta_value' => $meta[1],
                 ]);
-                \Log::info('Created meta:', ['key' => $meta[0], 'value' => $meta[1], 'id' => $postMeta->meta_id]);
             }
 
-            // 3. Create order items and their meta
-            \Log::info('Creating order items:', $items);
-            
             foreach ($items as $itemData) {
-                \Log::info('Creating order item:', $itemData);
-                
                 $orderItem = OrderItem::create([
                     'order_item_name' => $itemData['name'],
                     'order_item_type' => 'line_item',
                     'order_id' => $order->ID,
                 ]);
-                
-                \Log::info('Created order item:', ['item_id' => $orderItem->order_item_id]);
 
                 $orderItemMeta = [
                     ['_product_id', $itemData['product_id']],
@@ -342,15 +293,10 @@ class OrdersController extends Controller
                         'meta_key' => $meta[0],
                         'meta_value' => $meta[1],
                     ]);
-                    \Log::info('Created item meta:', ['key' => $meta[0], 'value' => $meta[1], 'id' => $itemMeta->meta_id]);
                 }
             }
             
-            // 4. Add WooCommerce lookup table entries
-            \Log::info('Adding WooCommerce lookup table entries');
-            
             try {
-                // Add to wc_order_stats table
                 DB::connection('woocommerce')->table('wc_order_stats')->insert([
                     'order_id' => $order->ID,
                     'parent_id' => 0,
@@ -367,9 +313,6 @@ class OrdersController extends Controller
                     'status' => $wcOrderStatus,
                 ]);
                 
-                \Log::info('Added to wc_order_stats table');
-                
-                // Add to wc_order_product_lookup table for each product
                 foreach ($items as $itemData) {
                     DB::connection('woocommerce')->table('wc_order_product_lookup')->insert([
                         'order_id' => $order->ID,
@@ -387,22 +330,10 @@ class OrdersController extends Controller
                     ]);
                 }
                 
-                \Log::info('Added to wc_order_product_lookup table');
-                
-                // Verify lookup table entries
-                $statsEntry = DB::connection('woocommerce')->table('wc_order_stats')->where('order_id', $order->ID)->first();
-                $productEntry = DB::connection('woocommerce')->table('wc_order_product_lookup')->where('order_id', $order->ID)->first();
-                
-                \Log::info('Lookup table verification:', [
-                    'wc_order_stats_exists' => $statsEntry ? 'yes' : 'no',
-                    'wc_order_product_lookup_exists' => $productEntry ? 'yes' : 'no'
-                ]);
-                
-                // Add to wc_order_tax_lookup table
                 if (($data['taxes'] ?? 0) > 0) {
                     DB::connection('woocommerce')->table('wc_order_tax_lookup')->insert([
                         'order_id' => $order->ID,
-                        'tax_rate_id' => 1, // Default tax rate
+                        'tax_rate_id' => 1,
                         'date_created' => now(),
                         'shipping_tax' => 0,
                         'order_tax' => $data['taxes'] ?? 0,
@@ -410,10 +341,6 @@ class OrdersController extends Controller
                     ]);
                 }
                 
-                // Add to wc_order_coupon_lookup table (empty for now)
-                // This table is used for coupon tracking
-                
-                // Add to wc_order_operational_data table (WooCommerce 7.0+)
                 try {
                     DB::connection('woocommerce')->table('wc_order_operational_data')->insert([
                         'order_id' => $order->ID,
@@ -458,34 +385,25 @@ class OrdersController extends Controller
                         'cart_hash' => '',
                     ]);
                     
-                    \Log::info('Added to wc_order_operational_data table');
                 } catch (\Exception $e) {
                     \Log::info('wc_order_operational_data table not available or failed: ' . $e->getMessage());
                 }
                 
             } catch (\Exception $e) {
                 \Log::warning('Failed to add WooCommerce lookup table entries: ' . $e->getMessage());
-                // Continue with order creation even if lookup tables fail
             }
             
             DB::connection('woocommerce')->commit();
-            \Log::info('Database transaction committed successfully');
 
-            // Clear cache after successful order creation
             CacheHelper::clearCacheOnOrderCreate();
-            \Log::info('Cache cleared successfully');
 
-            // Clear WooCommerce cache to ensure order appears in admin
             try {
-                // Clear WooCommerce transients
                 DB::connection('woocommerce')->table('options')->where('option_name', 'like', '_transient_wc_order_%')->delete();
                 DB::connection('woocommerce')->table('options')->where('option_name', 'like', '_transient_timeout_wc_order_%')->delete();
                 
-                // Clear WooCommerce cache
                 DB::connection('woocommerce')->table('options')->where('option_name', 'like', '_transient_wc_%')->delete();
                 DB::connection('woocommerce')->table('options')->where('option_name', 'like', '_transient_timeout_wc_%')->delete();
                 
-                \Log::info('WooCommerce cache cleared successfully');
             } catch (\Exception $e) {
                 \Log::warning('Failed to clear WooCommerce cache: ' . $e->getMessage());
             }
@@ -494,12 +412,6 @@ class OrdersController extends Controller
 
         } catch (\Exception $e) {
             DB::connection('woocommerce')->rollBack();
-            \Log::error('Order creation failed with exception:', [
-                'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
-                'trace' => $e->getTraceAsString()
-            ]);
             return back()->with('error', 'Order creation failed: ' . $e->getMessage());
         }
     }
@@ -512,7 +424,6 @@ class OrdersController extends Controller
 
         $orderIds = $request->input('order_ids');
         
-        // Check if WooCommerce API is enabled for deletion
         if (config('woo-order-dashboard.api.enabled', false)) {
             return $this->deleteOrdersViaApi($orderIds);
         } else {
@@ -531,42 +442,30 @@ class OrdersController extends Controller
         try {
             $apiService = new WooCommerceApiService();
             
-            // Test API connection first
             if (!$apiService->testConnection()) {
-                \Log::error('WooCommerce API connection failed during deletion');
                 return response()->json([
                     'success' => false,
                     'message' => 'Unable to connect to WooCommerce API. Please check your API configuration.'
                 ], 500);
             }
 
-            // Delete orders via API
             $results = $apiService->deleteOrders($orderIds);
             
             $successCount = count($results['success']);
             $failedCount = count($results['failed']);
             
             if ($failedCount === 0) {
-                // All orders deleted successfully
-                \Log::info('All orders deleted successfully via API', ['order_ids' => $orderIds]);
                 return response()->json([
                     'success' => true,
                     'message' => "Successfully deleted {$successCount} orders via WooCommerce API."
                 ]);
             } elseif ($successCount > 0) {
-                // Some orders deleted, some failed
-                \Log::warning('Partial deletion via API', [
-                    'successful' => $results['success'],
-                    'failed' => $results['failed']
-                ]);
                 return response()->json([
                     'success' => true,
                     'message' => "Deleted {$successCount} orders via API. {$failedCount} orders failed to delete.",
                     'failed_orders' => $results['failed']
                 ]);
             } else {
-                // All orders failed to delete
-                \Log::error('All orders failed to delete via API', ['failed_orders' => $results['failed']]);
                 return response()->json([
                     'success' => false,
                     'message' => 'Failed to delete any orders via API.'
@@ -574,7 +473,6 @@ class OrdersController extends Controller
             }
                 
         } catch (\Exception $e) {
-            \Log::error('Failed to delete orders via API', ['error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete orders via API: ' . $e->getMessage()
@@ -592,27 +490,19 @@ class OrdersController extends Controller
     {
         DB::connection('woocommerce')->beginTransaction();
         try {
-            // Get order item IDs before deleting them
             $orderItemIds = OrderItem::whereIn('order_id', $orderIds)->pluck('order_item_id');
 
-            // Delete meta for the order items
             OrderItemMeta::whereIn('order_item_id', $orderItemIds)->delete();
             
-            // Delete the order items themselves
             OrderItem::whereIn('order_id', $orderIds)->delete();
 
-            // Delete post meta for the orders
             PostMeta::whereIn('post_id', $orderIds)->delete();
 
-            // Delete the orders from the posts table
             Order::whereIn('ID', $orderIds)->delete();
 
             DB::connection('woocommerce')->commit();
 
-            // Clear cache after successful bulk deletion
             CacheHelper::clearCacheOnOrderDelete($orderIds);
-
-            \Log::info('Orders deleted successfully via database', ['order_ids' => $orderIds]);
 
             return response()->json([
                 'success' => true,
@@ -620,7 +510,6 @@ class OrdersController extends Controller
             ]);
         } catch (\Exception $e) {
             DB::connection('woocommerce')->rollBack();
-            \Log::error('Failed to delete orders via database', ['error' => $e->getMessage()]);
             return response()->json([
                 'success' => false,
                 'message' => 'Failed to delete orders via database: ' . $e->getMessage()
@@ -647,7 +536,6 @@ class OrdersController extends Controller
 
         DB::connection('woocommerce')->beginTransaction();
         try {
-            // Update order fields
             if (isset($data['order_status'])) {
                 $order->post_status = $data['order_status'];
             }
@@ -659,7 +547,6 @@ class OrdersController extends Controller
             $order->post_modified_gmt = now()->utc();
             $order->save();
 
-            // Update meta if provided
             if (isset($data['payment_method'])) {
                 PostMeta::updateOrCreate(
                     ['post_id' => $order->ID, 'meta_key' => '_payment_method'],
@@ -674,7 +561,6 @@ class OrdersController extends Controller
 
             DB::connection('woocommerce')->commit();
 
-            // Clear cache after successful order update
             CacheHelper::clearCacheOnOrderUpdate($order->ID);
 
             return response()->json([
@@ -713,7 +599,6 @@ class OrdersController extends Controller
             $order->post_modified_gmt = now()->utc();
             $order->save();
 
-            // Add order note about status change
             if ($oldStatus !== $data['status']) {
                 $comment = Comment::create([
                     'comment_post_ID' => $order->ID,
@@ -728,7 +613,6 @@ class OrdersController extends Controller
 
             DB::connection('woocommerce')->commit();
 
-            // Clear cache after status change
             CacheHelper::clearCacheOnOrderStatusChange($order->ID);
 
             return response()->json([

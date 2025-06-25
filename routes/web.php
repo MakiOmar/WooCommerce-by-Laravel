@@ -9,6 +9,11 @@ Route::group(['middleware' => ['web', 'auth:admin']], function() {
     // Main Order Dashboard
     Route::get('/orders', [WooOrderDashboardController::class, 'index'])->name('orders.index');
     
+    // Loading Demo
+    Route::get('/loading-demo', function() {
+        return view('loading-demo');
+    })->name('loading.demo');
+    
     // Order Creation & Actions (specific routes first)
     Route::get('/orders/create', [OrdersController::class, 'create'])->name('orders.create');
     Route::post('/orders', [OrdersController::class, 'store'])->name('orders.store');

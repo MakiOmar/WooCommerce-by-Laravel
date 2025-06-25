@@ -84,7 +84,7 @@
                                 <div class="form-group">
                                     <label class="font-weight-bold">&nbsp;</label>
                                     <div>
-                                        <button type="submit" class="btn btn-primary">
+                                        <button type="submit" class="btn btn-primary" id="filter-btn">
                                             <i class="fas fa-search mr-1"></i> Filter
                                         </button>
                                         <a href="{{ route('orders.index') }}" class="btn btn-secondary">
@@ -247,8 +247,14 @@
 @endsection
 
 @section('scripts')
+<script src="{{ asset('vendor/woo-order-dashboard/js/loading-utils.js') }}"></script>
 <script>
     $(document).ready(function() {
+        // Filter form loading state
+        $('form[action="{{ route("orders.index") }}"]').on('submit', function() {
+            loadingManager.showButtonLoading('#filter-btn', 'Filtering...');
+        });
+
         // Date range picker initialization
         $('#start_date, #end_date').on('change', function() {
             var startDate = $('#start_date').val();
@@ -334,9 +340,9 @@
         // Confirm bulk delete
         $('#confirm-bulk-delete').on('click', function() {
             var button = $(this);
-            var originalText = button.html();
             
-            button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i>Deleting...');
+            // Show loading state using loading manager
+            loadingManager.showButtonLoading('#confirm-bulk-delete', 'Deleting Orders...');
             
             $.ajax({
                 url: '{{ route("orders.bulk-delete") }}',
@@ -370,7 +376,8 @@
                     alert('Error: ' + message);
                 },
                 complete: function() {
-                    button.prop('disabled', false).html(originalText);
+                    // Hide loading state
+                    loadingManager.hideButtonLoading('#confirm-bulk-delete');
                     $('#bulkDeleteModal').modal('hide');
                 }
             });

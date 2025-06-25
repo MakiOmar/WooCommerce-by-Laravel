@@ -142,7 +142,7 @@
 
                         <div class="row">
                             <div class="col-12 text-right">
-                                <button type="submit" class="btn btn-primary">
+                                <button type="submit" class="btn btn-primary" id="filter-btn">
                                     <i class="fas fa-filter mr-1"></i> Apply Filters
                                 </button>
                                 <a href="{{ route('orders.index') }}" class="btn btn-light">
@@ -314,8 +314,14 @@
 @section('scripts')
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js" integrity="sha384-9/reFTGAW83EW2RDu2S0VKaIzap3H66lZH81PoYlFhbGU+6BZp6G7niu735Sk7lN" crossorigin="anonymous"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js" integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8shuf57BaghqFfPlYxofvL8/KUEfYiJOMMV+rV" crossorigin="anonymous"></script>
+<script src="{{ asset('vendor/woo-order-dashboard/js/loading-utils.js') }}"></script>
 <script>
     $(document).ready(function() {
+        // Filter form loading state
+        $('form[action="{{ route("orders.index") }}"]').on('submit', function() {
+            loadingManager.showButtonLoading('#filter-btn', 'Filtering...');
+        });
+
         // Ensure all checkboxes are unchecked on page load
         $('.order-checkbox, #select-all').prop('checked', false);
 
@@ -383,9 +389,9 @@
 
         $('#confirm-bulk-delete').on('click', function() {
             var button = $(this);
-            var originalText = button.html();
             
-            button.prop('disabled', true).html('<i class="fas fa-spinner fa-spin mr-1"></i>Deleting...');
+            // Show loading state using loading manager
+            loadingManager.showButtonLoading('#confirm-bulk-delete', 'Deleting Orders...');
             
             $.ajax({
                 url: '{{ route("orders.bulk-delete") }}',
@@ -403,7 +409,8 @@
                         message = xhr.responseJSON.message;
                     }
                     alert('Error: ' + message);
-                    button.prop('disabled', false).html(originalText);
+                    // Hide loading state on error
+                    loadingManager.hideButtonLoading('#confirm-bulk-delete');
                 },
                 complete: function() {
                     $('#bulkDeleteModal').modal('hide');

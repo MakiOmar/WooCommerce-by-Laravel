@@ -26,15 +26,16 @@
                                 <button class="btn btn-link" type="button">Create custom product</button>
                             </div>
                         </div>
-                        <div class="input-group mb-3">
-                            <input type="text" class="form-control" placeholder="Find products..." id="product_search">
-                            <div class="input-group-append">
-                                <button class="btn btn-primary" type="button">Advanced search</button>
-                                <button class="btn btn-primary ml-2" type="button">Products history</button>
-                                <button class="btn btn-info ml-2" type="button" id="test-add-product">Test Add Product</button>
+                        <div class="form-group mb-3">
+                            <label for="product_search">Search Products</label>
+                            <div class="search-input-container">
+                                <input type="text" class="form-control" id="product_search" placeholder="Search for products..." autocomplete="off">
+                                <div class="loading-indicator">
+                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                </div>
                             </div>
+                            <div id="product_search_dropdown" class="list-group position-absolute w-100" style="z-index:1000; display:none;"></div>
                         </div>
-                        <div id="product_search_dropdown" class="list-group position-absolute w-100" style="z-index:1000; display:none; max-height: 300px; overflow-y: auto;"></div>
                         <table class="table" id="products-table">
                             <thead>
                                 <tr>
@@ -73,7 +74,12 @@
                         <h6>Find or create a customer <button type="button" class="close" aria-label="Close"><span aria-hidden="true">&times;</span></button></h6>
                         <div class="form-group mb-2">
                             <a href="#">New customer</a>
-                            <input type="text" class="form-control" id="customer-search" placeholder="Guest" autocomplete="off">
+                            <div class="search-input-container">
+                                <input type="text" class="form-control" id="customer-search" placeholder="Guest" autocomplete="off">
+                                <div class="loading-indicator">
+                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                </div>
+                            </div>
                         </div>
                         <input type="hidden" name="customer_id" id="customer_id">
                         <div id="customer-details" class="mt-2" style="display:none;"></div>
@@ -202,6 +208,7 @@
 @endsection
 
 @section('scripts')
+<script src="{{ asset('vendor/woo-order-dashboard/js/loading-utils.js') }}"></script>
 <script>
 $(document).ready(function() {
     // Product search dropdown - define variables inside document ready
@@ -245,6 +252,9 @@ $(document).ready(function() {
             return; 
         }
         
+        // Show loading indicator
+        loadingManager.showInputLoading('#product_search');
+        
         $.getJSON("{{ route('products.search') }}", {q: q}, function(data) {
             $prodDropdown.empty().show();
             if (data.length === 0) {
@@ -282,6 +292,9 @@ $(document).ready(function() {
         }).fail(function(xhr, status, error) {
             console.error('Search failed:', error);
             $prodDropdown.empty().show().append('<div class="list-group-item text-danger">Search failed: ' + error + '</div>');
+        }).always(function() {
+            // Hide loading indicator
+            loadingManager.hideInputLoading('#product_search');
         });
     });
 
@@ -355,7 +368,14 @@ $(document).ready(function() {
     var $custDetails = $('#customer-details');
     $custInput.on('input', function() {
         var q = $(this).val();
-        if (q.length < 2) { if ($custDropdown) $custDropdown.remove(); return; }
+        if (q.length < 2) { 
+            if ($custDropdown) $custDropdown.remove(); 
+            return; 
+        }
+        
+        // Show loading indicator
+        loadingManager.showInputLoading('#customer-search');
+        
         $.getJSON("{{ route('customers.search') }}", {q: q}, function(customers) {
             if ($custDropdown) $custDropdown.remove();
             $custDropdown = $('<div class="list-group position-absolute w-100" style="z-index:1000;"></div>');
@@ -367,6 +387,15 @@ $(document).ready(function() {
                 });
             }
             $custInput.after($custDropdown);
+        }).fail(function(xhr, status, error) {
+            console.error('Customer search failed:', error);
+            if ($custDropdown) $custDropdown.remove();
+            $custDropdown = $('<div class="list-group position-absolute w-100" style="z-index:1000;"></div>');
+            $custDropdown.append('<div class="list-group-item text-danger">Search failed: ' + error + '</div>');
+            $custInput.after($custDropdown);
+        }).always(function() {
+            // Hide loading indicator
+            loadingManager.hideInputLoading('#customer-search');
         });
     });
     $(document).on('click', '.cust-item', function() {
@@ -471,8 +500,8 @@ $(document).ready(function() {
             return false;
         }
         
-        // Show loading state
-        $('button[type="submit"]').prop('disabled', true).text('Creating Order...');
+        // Show loading state using loading manager
+        loadingManager.showButtonLoading('button[type="submit"]', 'Creating Order...');
         
         console.log('Form submission proceeding...');
     });

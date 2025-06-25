@@ -22,6 +22,7 @@ A powerful Laravel package that provides a clean and efficient dashboard for man
 - **Status Change**: Change order status directly from the order detail page
 - **Performance Optimized**: Cached queries and optimized database operations
 - **Responsive Design**: Bootstrap 4 based responsive interface
+- **Loading Indicators**: Comprehensive loading state management for AJAX operations
 
 ## Requirements
 
@@ -746,6 +747,187 @@ The package provides dynamic status management with the ability to change order 
 - **Page Refresh**: Ensures all data is updated after status change
 
 ### AJAX Tab Loading
+
+## Loading Indicators
+
+The package includes a comprehensive loading state management system for AJAX operations, providing visual feedback to users during data loading and form submissions.
+
+### Features
+
+- **Input Loading**: Spinning indicators for search inputs during AJAX requests
+- **Button Loading**: Loading states for buttons during form submissions
+- **Overlay Loading**: Full-page overlay for major operations
+- **Row Loading**: Individual table row loading states
+- **Automatic Management**: Centralized loading state management
+- **Error Handling**: Proper cleanup on errors
+
+### Demo Page
+
+Visit `/loading-demo` to see all loading indicators in action and test their functionality.
+
+### Usage
+
+#### 1. Include the Loading Utilities
+
+Add the loading utilities script to your views:
+
+```html
+<script src="{{ asset('vendor/woo-order-dashboard/js/loading-utils.js') }}"></script>
+```
+
+#### 2. HTML Structure
+
+For input loading indicators:
+
+```html
+<div class="search-input-container">
+    <input type="text" class="form-control" id="product-search" placeholder="Search...">
+    <div class="loading-indicator">
+        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+    </div>
+</div>
+```
+
+For buttons (no special HTML required):
+
+```html
+<button type="button" class="btn btn-primary" id="submit-btn">
+    <i class="fas fa-save"></i> Save
+</button>
+```
+
+#### 3. JavaScript Usage
+
+```javascript
+// Show input loading
+loadingManager.showInputLoading('#product-search');
+
+// Hide input loading
+loadingManager.hideInputLoading('#product-search');
+
+// Show button loading
+loadingManager.showButtonLoading('#submit-btn', 'Saving...');
+
+// Hide button loading
+loadingManager.hideButtonLoading('#submit-btn');
+
+// Show overlay
+loadingManager.showOverlay('Processing data...');
+
+// Hide overlay
+loadingManager.hideOverlay();
+
+// Show row loading
+loadingManager.showRowLoading('#row-1');
+
+// Hide row loading
+loadingManager.hideRowLoading('#row-1');
+
+// Hide all active loaders
+loadingManager.hideAll();
+```
+
+#### 4. AJAX Integration Example
+
+```javascript
+// Product search with loading indicator
+$('#product-search').on('input', function() {
+    var query = $(this).val();
+    if (query.length < 2) return;
+    
+    // Show loading
+    loadingManager.showInputLoading('#product-search');
+    
+    $.getJSON('/products/search', {q: query})
+        .done(function(data) {
+            // Handle results
+        })
+        .fail(function(xhr, status, error) {
+            // Handle errors
+        })
+        .always(function() {
+            // Hide loading
+            loadingManager.hideInputLoading('#product-search');
+        });
+});
+
+// Form submission with button loading
+$('#order-form').on('submit', function(e) {
+    // Show button loading
+    loadingManager.showButtonLoading('#submit-btn', 'Creating Order...');
+    
+    $.post('/orders', $(this).serialize())
+        .done(function(response) {
+            // Handle success
+        })
+        .fail(function(xhr) {
+            // Handle errors
+        })
+        .always(function() {
+            // Hide button loading
+            loadingManager.hideButtonLoading('#submit-btn');
+        });
+});
+```
+
+### Available Methods
+
+#### Input Loading
+- `showInputLoading(selector, options)` - Show loading for input field
+- `hideInputLoading(selector)` - Hide loading for input field
+
+#### Button Loading
+- `showButtonLoading(selector, loadingText)` - Show loading for button
+- `hideButtonLoading(selector)` - Hide loading for button
+
+#### Overlay Loading
+- `showOverlay(message)` - Show full-page overlay
+- `hideOverlay()` - Hide overlay
+
+#### Row Loading
+- `showRowLoading(selector)` - Show loading for table row
+- `hideRowLoading(selector)` - Hide loading for table row
+
+#### Utility Methods
+- `hideAll()` - Hide all active loaders
+- `getActiveCount()` - Get number of active loaders
+
+### CSS Classes
+
+The loading system uses the following CSS classes:
+
+- `.loading-indicator` - Base loading indicator container
+- `.loading-indicator.show` - Shows the indicator
+- `.input-loading` - Applied to inputs during loading
+- `.btn-loading` - Applied to buttons during loading
+- `.table-row-loading` - Applied to table rows during loading
+- `.loading-overlay` - Full-page overlay container
+- `.loading-overlay.show` - Shows the overlay
+
+### Integration Points
+
+The loading indicators are already integrated into:
+
+1. **Product Search**: Shows loading during product search AJAX requests
+2. **Customer Search**: Shows loading during customer search AJAX requests
+3. **Order Creation**: Shows button loading during form submission
+4. **Bulk Delete**: Shows button loading during bulk operations
+5. **Filter Forms**: Shows button loading during filter submissions
+
+### Customization
+
+You can customize the loading indicators by modifying the CSS in `resources/assets/css/woo-order-dashboard.css`:
+
+```css
+/* Custom loading indicator styles */
+.loading-indicator {
+    /* Your custom styles */
+}
+
+.loading-indicator .spinner-border {
+    /* Custom spinner styles */
+}
+```
 
 ## Views and Assets
 

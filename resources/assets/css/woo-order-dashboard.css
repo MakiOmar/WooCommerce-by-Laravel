@@ -196,4 +196,164 @@ body {
 /* Better spacing for form controls */
 .form-control-sm {
     padding: 0.35rem 0.75rem;
+}
+
+/* Loading Indicators */
+.loading-indicator {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: none;
+    z-index: 10;
+}
+
+.loading-indicator.show {
+    display: block;
+}
+
+.loading-indicator .spinner-border {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.15em;
+}
+
+.input-group .loading-indicator {
+    right: 15px;
+}
+
+/* Input states during loading */
+.input-loading {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+}
+
+.input-loading:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Disable input during loading */
+.input-loading:disabled {
+    background-color: #e9ecef;
+    opacity: 0.65;
+}
+
+/* Search input specific styles */
+.search-input-container {
+    position: relative;
+}
+
+.search-input-container .form-control {
+    padding-right: 40px;
+}
+
+.search-input-container .loading-indicator {
+    right: 12px;
+}
+
+/* Dropdown loading state */
+.dropdown-loading {
+    position: relative;
+    min-height: 60px;
+}
+
+.dropdown-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 20px;
+    height: 20px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Button loading state */
+.btn-loading {
+    position: relative;
+    pointer-events: none;
+}
+
+.btn-loading .btn-text {
+    opacity: 0;
+}
+
+.btn-loading .loading-indicator {
+    position: static;
+    transform: none;
+    display: inline-block;
+    margin-right: 5px;
+}
+
+/* Form submission loading */
+.form-loading {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.form-loading .btn {
+    pointer-events: none;
+}
+
+/* Table row loading */
+.table-row-loading {
+    position: relative;
+}
+
+.table-row-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 16px;
+    height: 16px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Overlay loading for full page operations */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.8);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.loading-overlay.show {
+    display: flex;
+}
+
+.loading-overlay .spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Inline loading text */
+.loading-text {
+    color: #6c757d;
+    font-style: italic;
+}
+
+.loading-text .spinner-border {
+    width: 0.875rem;
+    height: 0.875rem;
+    margin-right: 5px;
 } 

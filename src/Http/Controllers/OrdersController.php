@@ -66,14 +66,18 @@ class OrdersController extends Controller
             if ($productType === 'simple') {
                 $productAttributes = $meta->get('_product_attributes');
                 if ($productAttributes && !empty($productAttributes)) {
-                    $attributes = maybe_unserialize($productAttributes);
-                    if (is_array($attributes)) {
-                        foreach ($attributes as $attribute) {
-                            if (isset($attribute['is_variation']) && $attribute['is_variation'] == 1) {
-                                $productType = 'variable';
-                                break;
+                    try {
+                        $attributes = unserialize($productAttributes);
+                        if (is_array($attributes)) {
+                            foreach ($attributes as $attribute) {
+                                if (isset($attribute['is_variation']) && $attribute['is_variation'] == 1) {
+                                    $productType = 'variable';
+                                    break;
+                                }
                             }
                         }
+                    } catch (\Exception $e) {
+                        \Log::warning("Failed to unserialize product attributes for product {$product->ID}: " . $e->getMessage());
                     }
                 }
             }

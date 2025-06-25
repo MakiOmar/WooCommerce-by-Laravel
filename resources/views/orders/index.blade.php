@@ -243,7 +243,7 @@
 @endsection
 
 @section('styles')
-<link href="{{ asset('css/woo-order-dashboard.css') }}" rel="stylesheet">
+<link href="{{ asset('vendor/woo-order-dashboard/css/woo-order-dashboard.css') }}" rel="stylesheet">
 @endsection
 
 @section('scripts')

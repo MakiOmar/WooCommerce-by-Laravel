@@ -133,7 +133,7 @@
 @endsection
 
 @section('styles')
-<link href="{{ asset('css/woo-order-dashboard.css') }}" rel="stylesheet">
+<link href="{{ asset('vendor/woo-order-dashboard/css/woo-order-dashboard.css') }}" rel="stylesheet">
 @if(config('woo-order-dashboard.assets.bootstrap_css_enabled', false))
 <!-- Bootstrap 4 and jQuery dependencies -->
 <link rel="stylesheet" href="{{ config('woo-order-dashboard.assets.bootstrap_css_url') }}">

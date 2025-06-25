@@ -207,6 +207,10 @@
 </form>
 @endsection
 
+@section('styles')
+<link href="{{ asset('vendor/woo-order-dashboard/css/woo-order-dashboard.css') }}" rel="stylesheet">
+@endsection
+
 @section('scripts')
 <script src="{{ asset('vendor/woo-order-dashboard/js/loading-utils.js') }}"></script>
 <script>

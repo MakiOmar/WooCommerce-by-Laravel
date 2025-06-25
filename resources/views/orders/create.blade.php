@@ -223,7 +223,11 @@
 @endsection
 
 @section('scripts')
-<script src="{{ asset('vendor/woo-order-dashboard/js/loading-utils.js') }}"></script>
+@if(config('woo-order-dashboard.js_mode', 'inline'))
+    @include('woo-order-dashboard::partials.woo-order-dashboard-inline-js')
+@else
+    <script src="{{ asset('vendor/woo-order-dashboard/js/loading-utils.js') }}"></script>
+@endif
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
 $(document).ready(function() {

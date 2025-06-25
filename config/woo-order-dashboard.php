@@ -431,4 +431,12 @@ return [
     | Choose how to load the package CSS: 'inline' (embed in <style>) or 'external' (link tag)
     */
     'css_mode' => env('WOO_ORDER_DASHBOARD_CSS_MODE', 'inline'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | JS Loading Mode
+    |--------------------------------------------------------------------------
+    | Choose how to load the package JS: 'inline' (embed in <script>) or 'external' (script tag)
+    */
+    'js_mode' => env('WOO_ORDER_DASHBOARD_JS_MODE', 'inline'),
 ]; 

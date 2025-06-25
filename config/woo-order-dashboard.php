@@ -423,4 +423,12 @@ return [
         // Font Awesome CDN URL
         'fontawesome_url' => env('WOO_FONTAWESOME_URL', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css'),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | CSS Loading Mode
+    |--------------------------------------------------------------------------
+    | Choose how to load the package CSS: 'inline' (embed in <style>) or 'external' (link tag)
+    */
+    'css_mode' => env('WOO_ORDER_DASHBOARD_CSS_MODE', 'inline'),
 ]; 

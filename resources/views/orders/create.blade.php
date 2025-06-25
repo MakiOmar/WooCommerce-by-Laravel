@@ -215,7 +215,11 @@
 
 @section('styles')
 <link href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" rel="stylesheet">
-<link href="{{ asset('vendor/woo-order-dashboard/css/woo-order-dashboard.css') }}" rel="stylesheet">
+@if(config('woo-order-dashboard.css_mode', 'inline'))
+    @include('woo-order-dashboard::partials.woo-order-dashboard-inline-css')
+@else
+    <link href="{{ asset('vendor/woo-order-dashboard/css/woo-order-dashboard.css') }}" rel="stylesheet">
+@endif
 @endsection
 
 @section('scripts')

@@ -244,6 +244,23 @@
 @else
     <link href="{{ asset('vendor/woo-order-dashboard/css/woo-order-dashboard.css') }}" rel="stylesheet">
 @endif
+<style>
+/* Fix dropdown z-index issues */
+#product_search_dropdown,
+.customer-search-dropdown {
+    z-index: 3000 !important;
+    position: absolute !important;
+    max-height: 300px;
+    overflow-y: auto;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid #ddd;
+    background: white;
+}
+
+.search-input-container {
+    position: relative;
+}
+</style>
 @endsection
 
 @section('scripts')
@@ -303,7 +320,7 @@ $(document).ready(function() {
         loadingManager.showInputLoading('#product_search');
         
         $.getJSON("{{ route('products.search') }}", {q: q, search_type: searchType}, function(data) {
-            $prodDropdown.empty().show();
+            $prodDropdown.empty().show().css('z-index', '3000');
             if (data.length === 0) {
                 $prodDropdown.append('<div class="list-group-item">No products found</div>');
             } else {
@@ -447,7 +464,7 @@ $(document).ready(function() {
         
         $.getJSON("{{ route('customers.search') }}", {q: q}, function(customers) {
             if ($custDropdown) $custDropdown.remove();
-            $custDropdown = $('<div class="list-group position-absolute w-100" style="z-index:1000;"></div>');
+            $custDropdown = $('<div class="list-group customer-search-dropdown position-absolute w-100"></div>');
             if (customers.length === 0) {
                 $custDropdown.append('<div class="list-group-item">No customers found. <a href="#" class="text-primary add-new-customer">Create new</a></div>');
             } else {
@@ -459,7 +476,7 @@ $(document).ready(function() {
         }).fail(function(xhr, status, error) {
             console.error('Customer search failed:', error);
             if ($custDropdown) $custDropdown.remove();
-            $custDropdown = $('<div class="list-group position-absolute w-100" style="z-index:1000;"></div>');
+            $custDropdown = $('<div class="list-group customer-search-dropdown position-absolute w-100"></div>');
             $custDropdown.append('<div class="list-group-item text-danger">Search failed: ' + error + '</div>');
             $custInput.after($custDropdown);
         }).always(function() {

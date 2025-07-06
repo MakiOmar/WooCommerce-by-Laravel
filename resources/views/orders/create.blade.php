@@ -45,7 +45,7 @@
                                 </div>
                                 <div class="col-md-2">
                                     <button type="button" class="btn btn-primary w-100" id="search_btn">
-                                        <i class="fas fa-search"></i> Search
+                                        <i class="fas fa-search"></i>
                                     </button>
                                 </div>
                             </div>

@@ -257,18 +257,33 @@ class OrdersController extends Controller
 
     public function getShippingMethods(Request $request)
     {
+        $firstZone = \DB::connection('woocommerce')
+            ->table('woocommerce_shipping_zones')
+            ->first();
+        \Log::debug('First row of woocommerce_shipping_zones', (array) $firstZone);
+
+        $firstMethod = \DB::connection('woocommerce')
+            ->table('woocommerce_shipping_zone_methods')
+            ->first();
+        \Log::debug('First row of woocommerce_shipping_zone_methods', (array) $firstMethod);
+
+        $firstOption = \DB::connection('woocommerce')
+            ->table('options')
+            ->first();
+        \Log::debug('First row of options', (array) $firstOption);
+
         \Log::debug('getShippingMethods called');
         $methods = ShippingHelper::getAllShippingMethods();
         \Log::debug('Shipping methods fetched', ['method_count' => count($methods)]);
         $availableMethods = [];
         foreach ($methods as $method) {
-            if ($method['method_status'] === 'مفعلة') {
+            if (isset($method['method_status']) ? $method['method_status'] === 'مفعلة' : true) {
                 $availableMethods[] = [
                     'id' => $method['instance_id'],
                     'title' => $method['method_title'] ?? ucfirst(str_replace('_', ' ', $method['method_id'])),
                     'description' => $method['zone_name'],
                     'cost' => $method['method_cost'] ?? '0.00',
-                    'status' => $method['method_status'],
+                    'status' => $method['method_status'] ?? null,
                 ];
             }
         }

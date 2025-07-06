@@ -3,7 +3,7 @@
 @section('content')
 <form action="{{ route('orders.store') }}" method="POST" id="order-create-form">
     @csrf
-    <div class="container-fluid">
+    <div class="container-fluid rtl">
         <div class="row mb-4">
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center">
@@ -249,33 +249,89 @@
     <link href="{{ asset('vendor/woo-order-dashboard/css/woo-order-dashboard.css') }}" rel="stylesheet">
 @endif
 <style>
-/* Fix dropdown z-index issues */
-#product_search_dropdown,
-.customer-search-dropdown,
-#shipping-methods-dropdown {
-    z-index: 3000 !important;
-    position: absolute !important;
-    max-height: 300px;
-    overflow-y: auto;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    border: 1px solid #ddd;
-    background: white;
+/* RTL Support */
+.rtl, .rtl * {
+    direction: rtl;
+    text-align: right;
+}
+.rtl .input-group {
+    flex-direction: row-reverse;
+}
+.rtl .input-group .form-control {
+    border-radius: 0 .375rem .375rem 0;
+}
+.rtl .input-group .input-group-text, .rtl .input-group .btn {
+    border-radius: .375rem 0 0 .375rem;
+}
+.rtl .order-summary-label {
+    text-align: right;
+    float: right;
 }
 
-.search-input-container {
-    position: relative;
+/* Improved Order Summary Styling */
+.card.order-summary {
+    border-radius: 1rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+    background: #fff;
+    padding: 1.5rem 1.25rem;
 }
-
-/* Shipping methods button styling */
+.card.order-summary .card-header {
+    background: #f9fafb;
+    border-radius: 1rem 1rem 0 0;
+    border-bottom: 1px solid #eee;
+    text-align: right;
+}
+.card.order-summary .card-title {
+    color: #6c47e5;
+    font-size: 1.2rem;
+    font-weight: 700;
+}
+.card.order-summary .input-group {
+    margin-bottom: 0.5rem;
+}
+.card.order-summary .input-group .form-control {
+    min-width: 60px;
+    text-align: right;
+}
+.card.order-summary .input-group .input-group-text, .card.order-summary .input-group .btn {
+    min-width: 40px;
+    text-align: center;
+}
+.card.order-summary .order-summary-label {
+    font-size: 0.95rem;
+    color: #888;
+    margin-bottom: 0.2rem;
+}
+.card.order-summary .order-grand-total {
+    font-size: 1.3rem;
+    font-weight: bold;
+}
 #shipping-methods-btn {
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
+    background: #f3f4f6;
+    color: #6c47e5;
+    border: 1px solid #e5e7eb;
+    transition: background 0.2s, color 0.2s;
 }
-
 #shipping-methods-btn:hover {
-    background-color: #6c757d;
-    border-color: #6c757d;
-    color: white;
+    background: #6c47e5;
+    color: #fff;
+}
+#shipping-methods-dropdown {
+    right: 0;
+    left: auto;
+    min-width: 220px;
+    border-radius: 0.5rem;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    font-size: 0.97rem;
+}
+#shipping-methods-dropdown .list-group-item {
+    cursor: pointer;
+    transition: background 0.15s;
+}
+#shipping-methods-dropdown .list-group-item:hover {
+    background: #f3f4f6;
 }
 </style>
 @endsection

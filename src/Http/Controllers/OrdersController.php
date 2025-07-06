@@ -257,7 +257,9 @@ class OrdersController extends Controller
 
     public function getShippingMethods(Request $request)
     {
+        \Log::debug('getShippingMethods called');
         $zones = ShippingHelper::getAllShippingMethods();
+        \Log::debug('Shipping zones fetched', ['zone_count' => count($zones)]);
         $availableMethods = [];
         foreach ($zones as $zone) {
             foreach ($zone['methods'] as $method) {
@@ -272,6 +274,7 @@ class OrdersController extends Controller
                 }
             }
         }
+        \Log::debug('Available shipping methods', ['method_count' => count($availableMethods), 'methods' => $availableMethods]);
         return response()->json(['methods' => $availableMethods]);
     }
 

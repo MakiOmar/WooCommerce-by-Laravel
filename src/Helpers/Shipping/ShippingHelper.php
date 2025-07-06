@@ -14,15 +14,15 @@ class ShippingHelper extends BaseHelper
     public static function getAllShippingMethods()
     {
         $rows = self::getConnection()
-            ->table('woocommerce_shipping_zones as zones')
-            ->join('woocommerce_shipping_zone_methods as methods', 'zones.zone_id', '=', 'methods.zone_id')
-            ->leftJoin('options as options', \DB::raw("options.option_name"), '=', \DB::raw("CONCAT('woocommerce_', methods.method_id, '_', methods.instance_id, '_settings')"))
+            ->table('wpb3_woocommerce_shipping_zones as zones')
+            ->join('wpb3_woocommerce_shipping_zone_methods as methods', 'zones.zone_id', '=', 'methods.zone_id')
+            ->leftJoin('wpb3_options as options', \DB::raw("options.option_name"), '=', \DB::raw("CONCAT('woocommerce_', methods.method_id, '_', methods.instance_id, '_settings')"))
             ->select([
                 'zones.zone_id',
                 'zones.zone_name',
-                'methods.zone_method_id',
-                'methods.method_id',
                 'methods.instance_id',
+                'methods.method_id',
+                'methods.method_order',
                 \DB::raw("CASE methods.is_enabled WHEN 1 THEN 'مفعلة' ELSE 'غير مفعلة' END AS method_status"),
                 \DB::raw("JSON_UNQUOTE(JSON_EXTRACT(options.option_value, '$.title')) AS method_title"),
                 \DB::raw("JSON_UNQUOTE(JSON_EXTRACT(options.option_value, '$.cost')) AS method_cost"),
@@ -36,9 +36,9 @@ class ShippingHelper extends BaseHelper
             $methods[] = [
                 'zone_id' => $row->zone_id,
                 'zone_name' => $row->zone_name,
-                'zone_method_id' => $row->zone_method_id,
-                'method_id' => $row->method_id,
                 'instance_id' => $row->instance_id,
+                'method_id' => $row->method_id,
+                'method_order' => $row->method_order,
                 'method_status' => $row->method_status,
                 'method_title' => $row->method_title,
                 'method_cost' => $row->method_cost,

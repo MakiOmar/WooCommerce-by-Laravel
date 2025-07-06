@@ -258,20 +258,18 @@ class OrdersController extends Controller
     public function getShippingMethods(Request $request)
     {
         \Log::debug('getShippingMethods called');
-        $zones = ShippingHelper::getAllShippingMethods();
-        \Log::debug('Shipping zones fetched', ['zone_count' => count($zones)]);
+        $methods = ShippingHelper::getAllShippingMethods();
+        \Log::debug('Shipping methods fetched', ['method_count' => count($methods)]);
         $availableMethods = [];
-        foreach ($zones as $zone) {
-            foreach ($zone['methods'] as $method) {
-                if ($method['is_enabled']) {
-                    $availableMethods[] = [
-                        'id' => $method['zone_method_id'],
-                        'title' => $method['meta']['title'] ?? ucfirst(str_replace('_', ' ', $method['method_id'])),
-                        'description' => $method['meta']['description'] ?? $zone['zone_name'],
-                        'cost' => $method['meta']['cost'] ?? '0.00',
-                        'zone' => $zone['zone_name'],
-                    ];
-                }
+        foreach ($methods as $method) {
+            if ($method['method_status'] === 'مفعلة') {
+                $availableMethods[] = [
+                    'id' => $method['instance_id'],
+                    'title' => $method['method_title'] ?? ucfirst(str_replace('_', ' ', $method['method_id'])),
+                    'description' => $method['zone_name'],
+                    'cost' => $method['method_cost'] ?? '0.00',
+                    'status' => $method['method_status'],
+                ];
             }
         }
         \Log::debug('Available shipping methods', ['method_count' => count($availableMethods), 'methods' => $availableMethods]);

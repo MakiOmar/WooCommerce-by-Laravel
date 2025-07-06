@@ -407,12 +407,9 @@ $(document).ready(function() {
                         attributes: p.attributes || {}
                     };
 
-                    var attrs = '';
-                    if (p.variation_id && p.attributes && Object.keys(p.attributes).length > 0) {
-                        attrs = '<br><small class="text-info">' + Object.entries(p.attributes).map(function([k, v]) {
-                            return k.replace('attribute_', '') + ': ' + v;
-                        }).join(', ') + '</small>';
-                    }
+                    var attrs = '<br><small class="text-info">' + Object.entries(p.attributes).map(function([k, v]) {
+                        return k + ': ' + v;
+                    }).join(', ') + '</small>';
                     
                     var skuInfo = p.sku ? ' (SKU: ' + p.sku + ')' : '';
                     var buttonHtml = '<div class="d-flex justify-content-between align-items-start">' +
@@ -481,7 +478,7 @@ $(document).ready(function() {
             var attrHtml = '';
             if (Object.keys(attributes).length > 0) {
                 attrHtml = '<br><small class="text-info">' + Object.entries(attributes).map(function([k, v]) {
-                    return k.replace('attribute_', '') + ': ' + v;
+                    return k + ': ' + v;
                 }).join(', ') + '</small>';
             }
             

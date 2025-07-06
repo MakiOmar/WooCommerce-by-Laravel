@@ -16,48 +16,34 @@ class ShippingHelper extends BaseHelper
         $rows = self::getConnection()
             ->table('woocommerce_shipping_zones as zones')
             ->join('woocommerce_shipping_zone_methods as methods', 'zones.zone_id', '=', 'methods.zone_id')
-            ->leftJoin('woocommerce_shipping_zone_methodmeta as methodmeta', 'methods.zone_method_id', '=', 'methodmeta.zone_method_id')
+            ->leftJoin('options as options', \DB::raw("options.option_name"), '=', \DB::raw("CONCAT('woocommerce_', methods.method_id, '_', methods.instance_id, '_settings')"))
             ->select([
                 'zones.zone_id',
                 'zones.zone_name',
                 'methods.zone_method_id',
                 'methods.method_id',
-                'methods.method_order',
-                'methods.is_enabled',
-                'methodmeta.meta_key',
-                'methodmeta.meta_value',
+                'methods.instance_id',
+                \DB::raw("CASE methods.is_enabled WHEN 1 THEN 'مفعلة' ELSE 'غير مفعلة' END AS method_status"),
+                \DB::raw("JSON_UNQUOTE(JSON_EXTRACT(options.option_value, '$.title')) AS method_title"),
+                \DB::raw("JSON_UNQUOTE(JSON_EXTRACT(options.option_value, '$.cost')) AS method_cost"),
             ])
             ->orderBy('zones.zone_id')
             ->orderBy('methods.method_order')
             ->get();
 
-        $zones = [];
+        $methods = [];
         foreach ($rows as $row) {
-            if (!isset($zones[$row->zone_id])) {
-                $zones[$row->zone_id] = [
-                    'zone_id' => $row->zone_id,
-                    'zone_name' => $row->zone_name,
-                    'methods' => [],
-                ];
-            }
-            $methodKey = $row->zone_method_id;
-            if (!isset($zones[$row->zone_id]['methods'][$methodKey])) {
-                $zones[$row->zone_id]['methods'][$methodKey] = [
-                    'zone_method_id' => $row->zone_method_id,
-                    'method_id' => $row->method_id,
-                    'method_order' => $row->method_order,
-                    'is_enabled' => $row->is_enabled,
-                    'meta' => [],
-                ];
-            }
-            if ($row->meta_key !== null) {
-                $zones[$row->zone_id]['methods'][$methodKey]['meta'][$row->meta_key] = $row->meta_value;
-            }
+            $methods[] = [
+                'zone_id' => $row->zone_id,
+                'zone_name' => $row->zone_name,
+                'zone_method_id' => $row->zone_method_id,
+                'method_id' => $row->method_id,
+                'instance_id' => $row->instance_id,
+                'method_status' => $row->method_status,
+                'method_title' => $row->method_title,
+                'method_cost' => $row->method_cost,
+            ];
         }
-        // Re-index methods as array
-        foreach ($zones as &$zone) {
-            $zone['methods'] = array_values($zone['methods']);
-        }
-        return array_values($zones);
+        return $methods;
     }
 } 

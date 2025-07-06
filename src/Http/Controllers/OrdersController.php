@@ -14,6 +14,7 @@ use Makiomar\WooOrderDashboard\Models\PostMeta;
 use Makiomar\WooOrderDashboard\Helpers\CacheHelper;
 use Makiomar\WooOrderDashboard\Models\Comment;
 use Makiomar\WooOrderDashboard\Services\WooCommerceApiService;
+use Makiomar\WooOrderDashboard\Helpers\Terms\TaxonomyHelper;
 
 class OrdersController extends Controller
 {
@@ -101,7 +102,11 @@ class OrdersController extends Controller
                     $attributes = [];
                     foreach ($variationMeta as $key => $value) {
                         if (strpos($key, 'attribute_') === 0) {
-                            $attributes[$key] = $value;
+                            $taxonomy = str_replace('attribute_', '', $key);
+                            $attrLabel = TaxonomyHelper::getTaxonomyLabel($taxonomy);
+                            $term = TaxonomyHelper::getTermBySlug($taxonomy, $value);
+                            $valueLabel = $term ? $term['name'] : $value;
+                            $attributes[$attrLabel] = $valueLabel;
                         }
                     }
                     
@@ -135,7 +140,11 @@ class OrdersController extends Controller
                         $attributes = [];
                         foreach ($variationMeta as $key => $value) {
                             if (strpos($key, 'attribute_') === 0) {
-                                $attributes[$key] = $value;
+                                $taxonomy = str_replace('attribute_', '', $key);
+                                $attrLabel = TaxonomyHelper::getTaxonomyLabel($taxonomy);
+                                $term = TaxonomyHelper::getTermBySlug($taxonomy, $value);
+                                $valueLabel = $term ? $term['name'] : $value;
+                                $attributes[$attrLabel] = $valueLabel;
                             }
                         }
                         
@@ -203,7 +212,11 @@ class OrdersController extends Controller
                     $attributes = [];
                     foreach ($variationMeta as $key => $value) {
                         if (strpos($key, 'attribute_') === 0) {
-                            $attributes[$key] = $value;
+                            $taxonomy = str_replace('attribute_', '', $key);
+                            $attrLabel = TaxonomyHelper::getTaxonomyLabel($taxonomy);
+                            $term = TaxonomyHelper::getTermBySlug($taxonomy, $value);
+                            $valueLabel = $term ? $term['name'] : $value;
+                            $attributes[$attrLabel] = $valueLabel;
                         }
                     }
                     

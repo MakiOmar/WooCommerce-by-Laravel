@@ -89,10 +89,19 @@
                         <h6>Find or create a customer <button type="button" class="close" aria-label="Close"><span aria-hidden="true">&times;</span></button></h6>
                         <div class="form-group mb-2">
                             <a href="#">New customer</a>
-                            <div class="search-input-container">
-                                <input type="text" class="form-control" id="customer-search" placeholder="Guest" autocomplete="off">
-                                <div class="loading-indicator">
-                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            <div class="row">
+                                <div class="col-md-9">
+                                    <div class="search-input-container">
+                                        <input type="text" class="form-control" id="customer-search" placeholder="Guest" autocomplete="off">
+                                        <div class="loading-indicator">
+                                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <button type="button" class="btn btn-primary w-100" id="customer_search_btn">
+                                        <i class="fas fa-search"></i>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -424,8 +433,10 @@ $(document).ready(function() {
     var $custInput = $('#customer-search');
     var $custDropdown;
     var $custDetails = $('#customer-details');
-    $custInput.on('input', function() {
-        var q = $(this).val();
+    
+    // Function to perform customer search
+    function performCustomerSearch() {
+        var q = $custInput.val().trim();
         if (q.length < 2) { 
             if ($custDropdown) $custDropdown.remove(); 
             return; 
@@ -455,7 +466,28 @@ $(document).ready(function() {
             // Hide loading indicator
             loadingManager.hideInputLoading('#customer-search');
         });
+    }
+    
+    // Customer search button click
+    $('#customer_search_btn').on('click', function() {
+        performCustomerSearch();
     });
+    
+    // Enter key press in customer search input
+    $custInput.on('keypress', function(e) {
+        if (e.which === 13) { // Enter key
+            e.preventDefault();
+            performCustomerSearch();
+        }
+    });
+    
+    // Clear dropdown when input is cleared
+    $custInput.on('input', function() {
+        if ($(this).val().length === 0) {
+            if ($custDropdown) $custDropdown.remove();
+        }
+    });
+
     $(document).on('click', '.cust-item', function() {
         var name = $(this).data('name');
         var email = $(this).data('email');

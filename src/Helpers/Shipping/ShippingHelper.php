@@ -14,22 +14,22 @@ class ShippingHelper extends BaseHelper
     public static function getAllShippingMethods()
     {
         $rows = self::getConnection()
-            ->table('woocommerce_shipping_zones as zones')
-            ->join('woocommerce_shipping_zone_methods as methods', 'zones.zone_id', '=', 'methods.zone_id')
-            ->leftJoin('options as options', \DB::raw("options.option_name"), '=', \DB::raw("CONCAT('woocommerce_', methods.method_id, '_', methods.instance_id, '_settings')"))
+            ->table('woocommerce_shipping_zones')
+            ->join('woocommerce_shipping_zone_methods', 'woocommerce_shipping_zones.zone_id', '=', 'woocommerce_shipping_zone_methods.zone_id')
+            ->leftJoin('options', \DB::raw("options.option_name"), '=', \DB::raw("CONCAT('woocommerce_', woocommerce_shipping_zone_methods.method_id, '_', woocommerce_shipping_zone_methods.instance_id, '_settings')"))
             ->select([
-                'zones.zone_id',
-                'zones.zone_name',
-                'methods.instance_id',
-                'methods.method_id',
-                'methods.method_order',
-                'methods.is_enabled',
-                \DB::raw("CASE methods.is_enabled WHEN 1 THEN 'مفعلة' ELSE 'غير مفعلة' END AS method_status"),
+                'woocommerce_shipping_zones.zone_id',
+                'woocommerce_shipping_zones.zone_name',
+                'woocommerce_shipping_zone_methods.instance_id',
+                'woocommerce_shipping_zone_methods.method_id',
+                'woocommerce_shipping_zone_methods.method_order',
+                'woocommerce_shipping_zone_methods.is_enabled',
+                \DB::raw("CASE woocommerce_shipping_zone_methods.is_enabled WHEN 1 THEN 'مفعلة' ELSE 'غير مفعلة' END AS method_status"),
                 \DB::raw("JSON_UNQUOTE(JSON_EXTRACT(options.option_value, '$.title')) AS method_title"),
                 \DB::raw("JSON_UNQUOTE(JSON_EXTRACT(options.option_value, '$.cost')) AS method_cost"),
             ])
-            ->orderBy('zones.zone_id')
-            ->orderBy('methods.method_order')
+            ->orderBy('woocommerce_shipping_zones.zone_id')
+            ->orderBy('woocommerce_shipping_zone_methods.method_order')
             ->get();
 
         $methods = [];

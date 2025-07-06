@@ -28,4 +28,5 @@ Route::group(['middleware' => ['web', 'auth:admin']], function() {
     // Ajax Search Routes
     Route::get('/products/search', [OrdersController::class, 'searchProducts'])->name('products.search');
     Route::get('/customers/search', [OrdersController::class, 'customersSearch'])->name('customers.search');
+    Route::post('/shipping/methods', [OrdersController::class, 'getShippingMethods'])->name('shipping.methods');
 }); 

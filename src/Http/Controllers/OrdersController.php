@@ -228,27 +228,87 @@ class OrdersController extends Controller
     public function customersSearch(Request $request)
     {
         $q = $request->get('q');
+        $prefix = DB::getDatabaseName() . '.';
         
-        $customers = Customer::where('user_email', 'LIKE', "%{$q}%")
-            ->orWhere('display_name', 'LIKE', "%{$q}%")
-            ->orWhereHas('meta', function ($query) use ($q) {
-                $query->whereIn('meta_key', ['first_name', 'last_name'])
-                      ->where('meta_value', 'LIKE', "%{$q}%");
+        $customers = Customer::where('user_status', 0)
+            ->where(function ($query) use ($q) {
+                $query->where('display_name', 'LIKE', "%{$q}%")
+                      ->orWhere('user_email', 'LIKE', "%{$q}%");
             })
             ->limit(10)
-            ->get();
+            ->get(['ID as id', 'display_name as name', 'user_email as email']);
+        
+        return response()->json($customers);
+    }
 
-        $results = $customers->map(function ($customer) {
-            $firstName = $customer->meta->where('meta_key', 'first_name')->first()->meta_value ?? '';
-            $lastName = $customer->meta->where('meta_key', 'last_name')->first()->meta_value ?? '';
-            return [
-                'id' => $customer->ID,
-                'name' => trim($firstName . ' ' . $lastName),
-                'email' => $customer->user_email,
+    public function getShippingMethods(Request $request)
+    {
+        $items = json_decode($request->input('items'), true);
+        
+        if (empty($items)) {
+            return response()->json(['methods' => []]);
+        }
+        
+        // Calculate total weight and value for shipping calculation
+        $totalWeight = 0;
+        $totalValue = 0;
+        
+        foreach ($items as $item) {
+            $product = Product::with('meta')->find($item['product_id']);
+            if ($product) {
+                $meta = $product->meta->pluck('meta_value', 'meta_key');
+                $weight = floatval($meta->get('_weight', 0));
+                $price = floatval($item['price']);
+                $qty = intval($item['qty']);
+                
+                $totalWeight += $weight * $qty;
+                $totalValue += $price * $qty;
+            }
+        }
+        
+        // Define available shipping methods based on weight and value
+        $shippingMethods = [];
+        
+        // Standard shipping (5-7 days)
+        $standardCost = max(10, $totalWeight * 2); // Base cost + weight factor
+        $shippingMethods[] = [
+            'id' => 'standard',
+            'title' => 'Standard Shipping',
+            'description' => '5-7 business days',
+            'cost' => number_format($standardCost, 2)
+        ];
+        
+        // Express shipping (2-3 days)
+        $expressCost = max(20, $totalWeight * 3); // Higher base cost
+        $shippingMethods[] = [
+            'id' => 'express',
+            'title' => 'Express Shipping',
+            'description' => '2-3 business days',
+            'cost' => number_format($expressCost, 2)
+        ];
+        
+        // Free shipping for orders over 500
+        if ($totalValue >= 500) {
+            $shippingMethods[] = [
+                'id' => 'free',
+                'title' => 'Free Shipping',
+                'description' => 'Free for orders over 500 ج.م',
+                'cost' => '0.00'
             ];
-        });
-
-        return response()->json($results);
+        }
+        
+        // Overnight shipping for high-value orders
+        if ($totalValue >= 1000) {
+            $overnightCost = max(50, $totalWeight * 5);
+            $shippingMethods[] = [
+                'id' => 'overnight',
+                'title' => 'Overnight Shipping',
+                'description' => 'Next business day',
+                'cost' => number_format($overnightCost, 2)
+            ];
+        }
+        
+        return response()->json(['methods' => $shippingMethods]);
     }
 
     public function store(Request $request)

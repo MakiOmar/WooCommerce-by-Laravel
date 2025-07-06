@@ -204,7 +204,11 @@
                                         <div class="input-group">
                                             <span class="input-group-text">ج.م</span>
                                             <input type="number" class="form-control order-shipping" name="shipping" value="0" min="0" step="0.01">
+                                            <button type="button" class="btn btn-outline-secondary" id="shipping-methods-btn" style="display: none;">
+                                                <i class="fas fa-truck"></i>
+                                            </button>
                                         </div>
+                                        <div id="shipping-methods-dropdown" class="list-group position-absolute w-100" style="z-index:3000; display:none; max-height: 200px; overflow-y: auto;"></div>
                                     </div>
                                 </div>
 
@@ -247,7 +251,8 @@
 <style>
 /* Fix dropdown z-index issues */
 #product_search_dropdown,
-.customer-search-dropdown {
+.customer-search-dropdown,
+#shipping-methods-dropdown {
     z-index: 3000 !important;
     position: absolute !important;
     max-height: 300px;
@@ -259,6 +264,18 @@
 
 .search-input-container {
     position: relative;
+}
+
+/* Shipping methods button styling */
+#shipping-methods-btn {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+}
+
+#shipping-methods-btn:hover {
+    background-color: #6c757d;
+    border-color: #6c757d;
+    color: white;
 }
 </style>
 @endsection
@@ -612,6 +629,108 @@ $(document).ready(function() {
         
         console.log('Form submission proceeding...');
     });
+
+    // Shipping methods functionality
+    var $shippingBtn = $('#shipping-methods-btn');
+    var $shippingDropdown = $('#shipping-methods-dropdown');
+    
+    // Function to check if products are selected and show/hide shipping button
+    function updateShippingButtonVisibility() {
+        var hasProducts = $('#products-table tbody tr').not('#no-products-row').length > 0;
+        if (hasProducts) {
+            $shippingBtn.show();
+        } else {
+            $shippingBtn.hide();
+            $shippingDropdown.hide();
+        }
+    }
+    
+    // Function to fetch shipping methods
+    function fetchShippingMethods() {
+        // Get order items for shipping calculation
+        var items = [];
+        $('#products-table tbody tr').not('#no-products-row').each(function() {
+            var $row = $(this);
+            var item = {
+                product_id: $row.data('product-id'),
+                variation_id: $row.data('variation-id'),
+                qty: parseInt($row.find('.order-qty').val()) || 1,
+                price: parseFloat($row.find('.order-price').text()) || 0
+            };
+            items.push(item);
+        });
+        
+        if (items.length === 0) {
+            $shippingDropdown.html('<div class="list-group-item">No products selected</div>').show();
+            return;
+        }
+        
+        // Show loading
+        $shippingDropdown.html('<div class="list-group-item"><i class="fas fa-spinner fa-spin"></i> Loading shipping methods...</div>').show();
+        
+        // Fetch shipping methods from server
+        $.ajax({
+            url: "{{ route('shipping.methods') }}",
+            method: 'POST',
+            data: {
+                _token: '{{ csrf_token() }}',
+                items: JSON.stringify(items)
+            },
+            success: function(response) {
+                $shippingDropdown.empty();
+                if (response.methods && response.methods.length > 0) {
+                    response.methods.forEach(function(method) {
+                        var methodHtml = '<button type="button" class="list-group-item list-group-item-action shipping-method-item" ' +
+                            'data-id="' + method.id + '" data-cost="' + method.cost + '">' +
+                            '<div class="d-flex justify-content-between align-items-center">' +
+                            '<div><strong>' + method.title + '</strong><br><small class="text-muted">' + method.description + '</small></div>' +
+                            '<div class="text-right"><strong>ج.م ' + parseFloat(method.cost).toFixed(2) + '</strong></div>' +
+                            '</div></button>';
+                        $shippingDropdown.append(methodHtml);
+                    });
+                } else {
+                    $shippingDropdown.append('<div class="list-group-item">No shipping methods available</div>');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Shipping methods fetch failed:', error);
+                $shippingDropdown.html('<div class="list-group-item text-danger">Failed to load shipping methods</div>');
+            }
+        });
+    }
+    
+    // Shipping methods button click
+    $shippingBtn.on('click', function() {
+        fetchShippingMethods();
+    });
+    
+    // Shipping method selection
+    $(document).on('click', '.shipping-method-item', function() {
+        var cost = parseFloat($(this).data('cost')) || 0;
+        $('.order-shipping').val(cost.toFixed(2)).trigger('input');
+        $shippingDropdown.hide();
+    });
+    
+    // Hide shipping dropdown when clicking outside
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('#shipping-methods-btn, #shipping-methods-dropdown').length) {
+            $shippingDropdown.hide();
+        }
+    });
+    
+    // Update shipping button visibility when products are added/removed
+    $(document).on('click', '.prod-item', function() {
+        // Existing product selection code...
+        setTimeout(updateShippingButtonVisibility, 100);
+    });
+    
+    $(document).on('click', '.remove-item', function() {
+        // Existing remove item code...
+        setTimeout(updateShippingButtonVisibility, 100);
+    });
+    
+    // Initial check for shipping button visibility
+    updateShippingButtonVisibility();
 });
 document.addEventListener('DOMContentLoaded', function() {
     flatpickr('input[name="order_date"]', {

@@ -257,20 +257,16 @@ class OrdersController extends Controller
 
     public function getShippingMethods(Request $request)
     {
-        
         $methods = ShippingHelper::getAllShippingMethods();
         \Log::debug('Shipping methods fetched', ['method_count' => count($methods)]);
         $availableMethods = [];
         foreach ($methods as $method) {
-            if (isset($method['method_status']) ? $method['method_status'] === 'مفعلة' : true) {
-                $availableMethods[] = [
-                    'id' => $method['instance_id'],
-                    'title' => $method['method_title'] ?? ucfirst(str_replace('_', ' ', $method['method_id'])),
-                    'description' => $method['zone_name'],
-                    'cost' => $method['method_cost'] ?? '0.00',
-                    'status' => $method['method_status'] ?? null,
-                ];
-            }
+            $availableMethods[] = [
+                'id' => $method['instance_id'],
+                'title' => $method['method_title'] ?? ucfirst(str_replace('_', ' ', $method['method_id'])),
+                'description' => $method['zone_name'],
+                'cost' => $method['method_cost'] ?? '0.00',
+            ];
         }
         \Log::debug('Available shipping methods', ['method_count' => count($availableMethods), 'methods' => $availableMethods]);
         return response()->json(['methods' => $availableMethods]);

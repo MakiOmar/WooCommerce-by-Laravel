@@ -14,9 +14,9 @@ class ShippingHelper extends BaseHelper
     public static function getAllShippingMethods()
     {
         $rows = self::getConnection()
-            ->table('wpb3_woocommerce_shipping_zones as zones')
-            ->join('wpb3_woocommerce_shipping_zone_methods as methods', 'zones.zone_id', '=', 'methods.zone_id')
-            ->leftJoin('wpb3_options as options', \DB::raw("options.option_name"), '=', \DB::raw("CONCAT('woocommerce_', methods.method_id, '_', methods.instance_id, '_settings')"))
+            ->table('woocommerce_shipping_zones as zones')
+            ->join('woocommerce_shipping_zone_methods as methods', 'zones.zone_id', '=', 'methods.zone_id')
+            ->leftJoin('options as options', \DB::raw("options.option_name"), '=', \DB::raw("CONCAT('woocommerce_', methods.method_id, '_', methods.instance_id, '_settings')"))
             ->select([
                 'zones.zone_id',
                 'zones.zone_name',

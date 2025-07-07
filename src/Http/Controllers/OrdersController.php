@@ -276,10 +276,10 @@ class OrdersController extends Controller
             'postcode' => $request->input('postcode', ''),
         ];
         $cartItems = $request->input('items', []);
-
+        \Log::info("Cart items", $cartItems);
         $shippingService = new WooCommerceShippingService();
         $methods = $shippingService->getShippingMethods($destination, $cartItems);
-
+        \Log::info("methods", $methods);
         $availableMethods = [];
         foreach ($methods as $method) {
             $availableMethods[] = [

@@ -544,7 +544,7 @@ $(document).ready(function() {
                 $custDropdown.append('<div class="list-group-item">No customers found. <a href="#" class="text-primary add-new-customer">Create new</a></div>');
             } else {
                 customers.forEach(function(c) {
-                    $custDropdown.append('<button type="button" class="list-group-item list-group-item-action cust-item" data-id="'+c.id+'" data-name="'+c.name+'" data-email="'+c.email+'">'+c.name+' <small class="text-muted">('+c.email+')</small></button>');
+                    $custDropdown.append('<button type="button" class="list-group-item list-group-item-action cust-item" data-id="'+c.id+'" data-name="'+c.name+'" data-email="'+c.email+'" data-billing-country="'+(c.billing_country || '')+'" data-billing-state="'+(c.billing_state || '')+'" data-billing-postcode="'+(c.billing_postcode || '')+'">'+c.name+' <small class="text-muted">('+c.email+')</small></button>');
                 });
             }
             $custInput.after($custDropdown);
@@ -584,11 +584,20 @@ $(document).ready(function() {
         var name = $(this).data('name');
         var email = $(this).data('email');
         var id = $(this).data('id');
-        // Get shipping fields from data attributes if present
-        var customer = $(this).data();
-        selectedShippingCountry = customer.shipping_country || '';
-        selectedShippingState = customer.shipping_state || '';
-        selectedShippingPostcode = customer.shipping_postcode || '';
+        // Get billing fields from data attributes for shipping calculations
+        selectedShippingCountry = $(this).data('billing-country') || '';
+        selectedShippingState = $(this).data('billing-state') || '';
+        selectedShippingPostcode = $(this).data('billing-postcode') || '';
+        
+        console.log('Customer selected:', {
+            id: id,
+            name: name,
+            email: email,
+            billing_country: selectedShippingCountry,
+            billing_state: selectedShippingState,
+            billing_postcode: selectedShippingPostcode
+        });
+        
         $custInput.val(name);
         $('#customer_id').val(id);
         $custDetails.html('<div class="alert alert-info p-2">'+name+'<br><small>'+email+'</small></div>').show();
@@ -726,15 +735,19 @@ $(document).ready(function() {
     // Shipping methods button click
     $shippingBtn.on('click', function() {
         var cartItems = getCartItems();
+        var shippingData = {
+            country: selectedShippingCountry,
+            state: selectedShippingState,
+            postcode: selectedShippingPostcode,
+            items: cartItems
+        };
+        
+        console.log('Shipping methods request data:', shippingData);
+        
         $.ajax({
             url: '{{ route('shipping.methods') }}',
             method: 'POST',
-            data: {
-                country: selectedShippingCountry,
-                state: selectedShippingState,
-                postcode: selectedShippingPostcode,
-                items: cartItems
-            },
+            data: shippingData,
             success: function(response) {
                 // Render shipping methods as before
                 var $dropdown = $('#shipping-methods-dropdown');

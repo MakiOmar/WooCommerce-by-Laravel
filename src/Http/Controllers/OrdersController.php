@@ -259,9 +259,9 @@ class OrdersController extends Controller
                 'id' => $customer->ID,
                 'name' => $customer->display_name,
                 'email' => $customer->user_email,
-                'shipping_country' => $meta->get('shipping_country', ''),
-                'shipping_state' => $meta->get('shipping_state', ''),
-                'shipping_postcode' => $meta->get('shipping_postcode', ''),
+                'billing_country' => $meta->get('billing_country', ''),
+                'billing_state' => $meta->get('billing_state', ''),
+                'billing_postcode' => $meta->get('billing_postcode', ''),
             ];
         });
         

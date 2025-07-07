@@ -1,0 +1,2 @@
+# Include JSON data files in package distribution
+src/Data/continent-country.json -export-ignore 

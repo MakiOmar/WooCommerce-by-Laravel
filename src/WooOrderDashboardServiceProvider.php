@@ -66,6 +66,9 @@ class WooOrderDashboardServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/Data/continent-country.json' => storage_path('app/woo-order-dashboard/continent-country.json'),
         ], 'data');
+        
+        // Ensure the data file exists in storage
+        $this->ensureDataFileExists();
 
         // Publish all assets with main tag
         $this->publishes([
@@ -143,6 +146,28 @@ class WooOrderDashboardServiceProvider extends ServiceProvider
         });
     }
 
+    /**
+     * Ensure the continent-country.json file exists in storage
+     *
+     * @return void
+     */
+    protected function ensureDataFileExists()
+    {
+        $sourcePath = __DIR__ . '/Data/continent-country.json';
+        $targetDir = storage_path('app/woo-order-dashboard');
+        $targetPath = $targetDir . '/continent-country.json';
+        
+        // Create directory if it doesn't exist
+        if (!file_exists($targetDir)) {
+            mkdir($targetDir, 0755, true);
+        }
+        
+        // Copy file if it doesn't exist in target location
+        if (!file_exists($targetPath) && file_exists($sourcePath)) {
+            copy($sourcePath, $targetPath);
+        }
+    }
+    
     /**
      * Configure performance optimizations.
      *

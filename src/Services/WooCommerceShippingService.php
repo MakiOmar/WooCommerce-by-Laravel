@@ -16,7 +16,7 @@ class WooCommerceShippingService
     {
         // Find matching shipping zone
         $zoneId = $this->findShippingZone($destination);
-        \Log::info("zoneId", $zoneId);
+        \Log::info("zoneId", ['zoneId' => $zoneId]);
         if (!$zoneId) {
             return collect([]);
         }
@@ -47,7 +47,7 @@ class WooCommerceShippingService
         
         // Get continent code from JSON file
         $continent = $this->getContinentFromCountry($country);
-        \Log::info("continent", $continent);
+        \Log::info("continent", ['continent' => $continent]);
         // Build zone matching query
         $zoneId = DB::connection('woocommerce')->table('woocommerce_shipping_zones as zones')
             ->leftJoin('woocommerce_shipping_zone_locations as locations', function($join) {

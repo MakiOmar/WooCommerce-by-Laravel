@@ -16,7 +16,7 @@ use Makiomar\WooOrderDashboard\Models\Comment;
 use Makiomar\WooOrderDashboard\Services\WooCommerceApiService;
 use Makiomar\WooOrderDashboard\Helpers\Terms\TaxonomyHelper;
 use Makiomar\WooOrderDashboard\Helpers\Shipping\ShippingHelper;
-use App\Services\WooCommerceShippingService;
+use Makiomar\WooOrderDashboard\Services\WooCommerceShippingService;
 
 class OrdersController extends Controller
 {

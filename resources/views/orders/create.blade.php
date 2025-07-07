@@ -747,6 +747,9 @@ $(document).ready(function() {
         $.ajax({
             url: '{{ route('shipping.methods') }}',
             method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content') || $('input[name="_token"]').val()
+            },
             data: shippingData,
             success: function(response) {
                 // Render shipping methods as before

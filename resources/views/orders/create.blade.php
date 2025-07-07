@@ -521,6 +521,11 @@ $(document).ready(function() {
     var $custDropdown;
     var $custDetails = $('#customer-details');
     
+    // Store selected customer's shipping address
+    var selectedShippingCountry = '';
+    var selectedShippingState = '';
+    var selectedShippingPostcode = '';
+
     // Function to perform customer search
     function performCustomerSearch() {
         var q = $custInput.val().trim();
@@ -579,6 +584,11 @@ $(document).ready(function() {
         var name = $(this).data('name');
         var email = $(this).data('email');
         var id = $(this).data('id');
+        // Get shipping fields from data attributes if present
+        var customer = $(this).data();
+        selectedShippingCountry = customer.shipping_country || '';
+        selectedShippingState = customer.shipping_state || '';
+        selectedShippingPostcode = customer.shipping_postcode || '';
         $custInput.val(name);
         $('#customer_id').val(id);
         $custDetails.html('<div class="alert alert-info p-2">'+name+'<br><small>'+email+'</small></div>').show();
@@ -698,63 +708,54 @@ $(document).ready(function() {
         }
     }
     
-    // Function to fetch shipping methods
-    function fetchShippingMethods() {
-        // Get order items for shipping calculation
+    // Helper to collect cart items for shipping
+    function getCartItems() {
         var items = [];
         $('#products-table tbody tr').not('#no-products-row').each(function() {
             var $row = $(this);
-            var item = {
+            items.push({
                 product_id: $row.data('product-id'),
                 variation_id: $row.data('variation-id'),
                 qty: parseInt($row.find('.order-qty').val()) || 1,
                 price: parseFloat($row.find('.order-price').text()) || 0
-            };
-            items.push(item);
+            });
         });
-        
-        if (items.length === 0) {
-            $shippingDropdown.html('<div class="list-group-item">No products selected</div>').show();
-            return;
-        }
-        
-        // Show loading
-        $shippingDropdown.html('<div class="list-group-item"><i class="fas fa-spinner fa-spin"></i> Loading shipping methods...</div>').show();
-        
-        // Fetch shipping methods from server
+        return items;
+    }
+
+    // Shipping methods button click
+    $shippingBtn.on('click', function() {
+        var cartItems = getCartItems();
         $.ajax({
-            url: "{{ route('shipping.methods') }}",
+            url: '{{ route('shipping.methods') }}',
             method: 'POST',
             data: {
-                _token: '{{ csrf_token() }}',
-                items: JSON.stringify(items)
+                country: selectedShippingCountry,
+                state: selectedShippingState,
+                postcode: selectedShippingPostcode,
+                items: cartItems
             },
             success: function(response) {
-                $shippingDropdown.empty();
+                // Render shipping methods as before
+                var $dropdown = $('#shipping-methods-dropdown');
+                $dropdown.empty().show();
                 if (response.methods && response.methods.length > 0) {
                     response.methods.forEach(function(method) {
-                        var methodHtml = '<button type="button" class="list-group-item list-group-item-action shipping-method-item" ' +
-                            'data-id="' + method.id + '" data-cost="' + method.cost + '">' +
-                            '<div class="d-flex justify-content-between align-items-center">' +
-                            '<div><strong>' + method.title + '</strong><br><small class="text-muted">' + method.description + '</small></div>' +
-                            '<div class="text-right"><strong>ج.م ' + parseFloat(method.cost).toFixed(2) + '</strong></div>' +
+                        var html = '<button type="button" class="list-group-item list-group-item-action shipping-method-item" data-id="'+method.id+'" data-cost="'+method.cost+'">'+
+                            '<div class="d-flex justify-content-between align-items-center">'+
+                            '<div><strong>'+method.title+'</strong></div>'+
+                            '<div class="text-right"><strong>ج.م '+parseFloat(method.cost).toFixed(2)+'</strong></div>'+
                             '</div></button>';
-                        $shippingDropdown.append(methodHtml);
+                        $dropdown.append(html);
                     });
                 } else {
-                    $shippingDropdown.append('<div class="list-group-item">No shipping methods available</div>');
+                    $dropdown.append('<div class="list-group-item">No shipping methods available</div>');
                 }
             },
             error: function(xhr, status, error) {
-                console.error('Shipping methods fetch failed:', error);
-                $shippingDropdown.html('<div class="list-group-item text-danger">Failed to load shipping methods</div>');
+                $('#shipping-methods-dropdown').empty().show().append('<div class="list-group-item text-danger">Failed to load shipping methods</div>');
             }
         });
-    }
-    
-    // Shipping methods button click
-    $shippingBtn.on('click', function() {
-        fetchShippingMethods();
     });
     
     // Shipping method selection

@@ -16,6 +16,7 @@ use Makiomar\WooOrderDashboard\Models\Comment;
 use Makiomar\WooOrderDashboard\Services\WooCommerceApiService;
 use Makiomar\WooOrderDashboard\Helpers\Terms\TaxonomyHelper;
 use Makiomar\WooOrderDashboard\Helpers\Shipping\ShippingHelper;
+use App\Services\WooCommerceShippingService;
 
 class OrdersController extends Controller
 {
@@ -250,25 +251,44 @@ class OrdersController extends Controller
                       ->orWhere('user_email', 'LIKE', "%{$q}%");
             })
             ->limit(10)
-            ->get(['ID as id', 'display_name as name', 'user_email as email']);
+            ->get();
         
-        return response()->json($customers);
+        $results = $customers->map(function ($customer) {
+            $meta = $customer->meta->pluck('meta_value', 'meta_key');
+            return [
+                'id' => $customer->ID,
+                'name' => $customer->display_name,
+                'email' => $customer->user_email,
+                'shipping_country' => $meta->get('shipping_country', ''),
+                'shipping_state' => $meta->get('shipping_state', ''),
+                'shipping_postcode' => $meta->get('shipping_postcode', ''),
+            ];
+        });
+        
+        return response()->json($results);
     }
 
     public function getShippingMethods(Request $request)
     {
-        $methods = ShippingHelper::getAllShippingMethods();
-        \Log::debug('Shipping methods fetched', ['method_count' => count($methods)]);
+        $destination = [
+            'country' => $request->input('country', 'SA'),
+            'state' => $request->input('state', ''),
+            'postcode' => $request->input('postcode', ''),
+        ];
+        $cartItems = $request->input('items', []);
+
+        $shippingService = new WooCommerceShippingService();
+        $methods = $shippingService->getShippingMethods($destination, $cartItems);
+
         $availableMethods = [];
         foreach ($methods as $method) {
             $availableMethods[] = [
-                'id' => $method['instance_id'],
-                'title' => $method['method_title'] ?? ucfirst(str_replace('_', ' ', $method['method_id'])),
-                'description' => $method['zone_name'],
-                'cost' => $method['method_cost'] ?? '0.00',
+                'id' => $method['id'],
+                'title' => $method['title'],
+                'description' => '',
+                'cost' => $method['cost'],
             ];
         }
-        \Log::debug('Available shipping methods', ['method_count' => count($availableMethods), 'methods' => $availableMethods]);
         return response()->json(['methods' => $availableMethods]);
     }
 

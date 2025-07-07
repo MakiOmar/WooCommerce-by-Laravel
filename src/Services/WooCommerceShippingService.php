@@ -45,10 +45,8 @@ class WooCommerceShippingService
         $state = strtoupper($destination['state']);
         $postcode = $this->normalizePostcode($destination['postcode']);
         
-        // Get continent code
-        $continent = DB::connection('woocommerce')->table('woocommerce_countries')
-            ->where('country_code', $country)
-            ->value('continent');
+        // Get continent code from JSON file
+        $continent = $this->getContinentFromCountry($country);
         \Log::info("continent", $continent);
         // Build zone matching query
         $zoneId = DB::connection('woocommerce')->table('woocommerce_shipping_zones as zones')
@@ -247,6 +245,34 @@ class WooCommerceShippingService
         }
         
         return $classes;
+    }
+    
+    /**
+     * Get continent code from country code using JSON data
+     */
+    protected function getContinentFromCountry($countryCode)
+    {
+        static $continentData = null;
+        
+        if ($continentData === null) {
+            // Try package data file first
+            $jsonPath = __DIR__ . '/../Data/continent-country.json';
+            
+            // Fallback to published file
+            if (!file_exists($jsonPath)) {
+                $jsonPath = storage_path('app/woo-order-dashboard/continent-country.json');
+            }
+            
+            if (file_exists($jsonPath)) {
+                $jsonContent = file_get_contents($jsonPath);
+                $continentData = json_decode($jsonContent, true);
+            } else {
+                \Log::warning('Continent-country.json file not found. Tried: ' . __DIR__ . '/../Data/continent-country.json and ' . storage_path('app/woo-order-dashboard/continent-country.json'));
+                $continentData = [];
+            }
+        }
+        
+        return $continentData[$countryCode] ?? null;
     }
     
     /**

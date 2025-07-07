@@ -38,6 +38,9 @@
             ]
         }
     },
+    "include": [
+        "src/Data/continent-country.json"
+    ],
     "minimum-stability": "dev",
     "prefer-stable": true
 } 

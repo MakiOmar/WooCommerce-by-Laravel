@@ -125,6 +125,12 @@ php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashbo
 ```
 Publishes Bootstrap 4 pagination views to `resources/views/vendor/pagination/` for customization
 
+### Data Files
+```bash
+php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="data"
+```
+Publishes data files (like continent-country mapping) to `storage/app/woo-order-dashboard/` for customization
+
 ### All Assets
 ```bash
 php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider"
@@ -138,6 +144,7 @@ Publishes all package assets (config, views, assets, migrations)
 - `migrations` - Optional database migrations
 - `routes` - Routes file for customization
 - `pagination` - Bootstrap 4 pagination views
+- `data` - Data files (continent-country mapping)
 - No tag - All assets (recommended for first-time setup)
 
 ## Configuration

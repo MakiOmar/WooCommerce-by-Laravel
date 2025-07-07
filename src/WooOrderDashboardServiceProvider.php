@@ -62,6 +62,11 @@ class WooOrderDashboardServiceProvider extends ServiceProvider
             __DIR__.'/../resources/assets' => public_path('vendor/woo-order-dashboard'),
         ], 'assets');
 
+        // Publish data files
+        $this->publishes([
+            __DIR__.'/Data/continent-country.json' => storage_path('app/woo-order-dashboard/continent-country.json'),
+        ], 'data');
+
         // Publish all assets with main tag
         $this->publishes([
             __DIR__.'/../config/woo-order-dashboard.php' => config_path('woo-order-dashboard.php'),
@@ -69,6 +74,7 @@ class WooOrderDashboardServiceProvider extends ServiceProvider
             __DIR__.'/../resources/views/vendor/pagination' => resource_path('views/vendor/pagination'),
             __DIR__.'/../resources/assets' => public_path('vendor/woo-order-dashboard'),
             __DIR__.'/../database/migrations/optional' => database_path('migrations/optional'),
+            __DIR__.'/Data/continent-country.json' => storage_path('app/woo-order-dashboard/continent-country.json'),
         ], 'woo-order-dashboard');
 
         Blade::component('order.section', 'order-section');

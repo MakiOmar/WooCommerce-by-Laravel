@@ -30,6 +30,42 @@ class OrdersController extends Controller
         return view('woo-order-dashboard::orders.create', compact('prefix', 'defaultOrderDate', 'defaultOrderHour', 'defaultOrderMinute'));
     }
 
+    /**
+     * Calculate product price with sale and tax information
+     */
+    protected function calculateProductPrice($meta)
+    {
+        $regularPrice = floatval($meta->get('_regular_price', 0));
+        $salePrice = floatval($meta->get('_sale_price', 0));
+        $price = floatval($meta->get('_price', 0));
+        
+        // Determine if product is on sale
+        $isOnSale = false;
+        $currentPrice = $price;
+        
+        if ($salePrice > 0 && $salePrice < $regularPrice) {
+            $isOnSale = true;
+            $currentPrice = $salePrice;
+        } elseif ($regularPrice > 0) {
+            $currentPrice = $regularPrice;
+        }
+        
+        // Get tax rate from config (default 15%)
+        $taxRate = config('woo-order-dashboard.tax_rate', 0.15);
+        $taxAmount = $currentPrice * $taxRate;
+        $priceWithTax = $currentPrice + $taxAmount;
+        
+        return [
+            'regular_price' => $regularPrice,
+            'sale_price' => $salePrice,
+            'current_price' => $currentPrice,
+            'is_on_sale' => $isOnSale,
+            'tax_rate' => $taxRate,
+            'tax_amount' => $taxAmount,
+            'price_with_tax' => $priceWithTax,
+        ];
+    }
+    
     public function searchProducts(Request $request)
     {
         $q = $request->get('q');
@@ -112,12 +148,20 @@ class OrdersController extends Controller
                         }
                     }
                     
+                    $priceInfo = $this->calculateProductPrice($variationMeta);
+                    
                     $results->push([
                         'product_id' => $product->ID,
                         'variation_id' => $variation->ID,
                         'name' => $product->post_title,
                         'sku' => $variationMeta->get('_sku'),
-                        'price' => $variationMeta->get('_price'),
+                        'price' => $priceInfo['current_price'],
+                        'regular_price' => $priceInfo['regular_price'],
+                        'sale_price' => $priceInfo['sale_price'],
+                        'is_on_sale' => $priceInfo['is_on_sale'],
+                        'tax_rate' => $priceInfo['tax_rate'],
+                        'tax_amount' => $priceInfo['tax_amount'],
+                        'price_with_tax' => $priceInfo['price_with_tax'],
                         'attributes' => $attributes,
                     ]);
                     
@@ -150,12 +194,20 @@ class OrdersController extends Controller
                             }
                         }
                         
+                        $priceInfo = $this->calculateProductPrice($variationMeta);
+                        
                         $results->push([
                             'product_id' => $product->ID,
                             'variation_id' => $variation->ID,
                             'name' => $product->post_title,
                             'sku' => $variationMeta->get('_sku'),
-                            'price' => $variationMeta->get('_price'),
+                            'price' => $priceInfo['current_price'],
+                            'regular_price' => $priceInfo['regular_price'],
+                            'sale_price' => $priceInfo['sale_price'],
+                            'is_on_sale' => $priceInfo['is_on_sale'],
+                            'tax_rate' => $priceInfo['tax_rate'],
+                            'tax_amount' => $priceInfo['tax_amount'],
+                            'price_with_tax' => $priceInfo['price_with_tax'],
                             'attributes' => $attributes,
                         ]);
                         
@@ -164,12 +216,20 @@ class OrdersController extends Controller
                     }
                 } else {
                     // For simple products, include the main product
+                    $priceInfo = $this->calculateProductPrice($meta);
+                    
                     $results->push([
                         'product_id' => $product->ID,
                         'variation_id' => 0,
                         'name' => $product->post_title,
                         'sku' => $meta->get('_sku'),
-                        'price' => $meta->get('_price'),
+                        'price' => $priceInfo['current_price'],
+                        'regular_price' => $priceInfo['regular_price'],
+                        'sale_price' => $priceInfo['sale_price'],
+                        'is_on_sale' => $priceInfo['is_on_sale'],
+                        'tax_rate' => $priceInfo['tax_rate'],
+                        'tax_amount' => $priceInfo['tax_amount'],
+                        'price_with_tax' => $priceInfo['price_with_tax'],
                         'attributes' => [],
                     ]);
                 }
@@ -222,12 +282,20 @@ class OrdersController extends Controller
                         }
                     }
                     
+                    $priceInfo = $this->calculateProductPrice($variationMeta);
+                    
                     $results->push([
                         'product_id' => $parentProduct->ID,
                         'variation_id' => $variation->ID,
                         'name' => $parentProduct->post_title,
                         'sku' => $variationMeta->get('_sku'),
-                        'price' => $variationMeta->get('_price'),
+                        'price' => $priceInfo['current_price'],
+                        'regular_price' => $priceInfo['regular_price'],
+                        'sale_price' => $priceInfo['sale_price'],
+                        'is_on_sale' => $priceInfo['is_on_sale'],
+                        'tax_rate' => $priceInfo['tax_rate'],
+                        'tax_amount' => $priceInfo['tax_amount'],
+                        'price_with_tax' => $priceInfo['price_with_tax'],
                         'attributes' => $attributes,
                     ]);
                 }

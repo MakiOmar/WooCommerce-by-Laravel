@@ -394,6 +394,37 @@
 #shipping-methods-dropdown .list-group-item:hover {
     background: #f3f4f6;
 }
+
+/* Sale price styling */
+.text-decoration-line-through {
+    text-decoration: line-through;
+}
+.text-success {
+    color: #28a745 !important;
+}
+.text-info {
+    color: #17a2b8 !important;
+}
+.text-muted {
+    color: #6c757d !important;
+}
+
+/* Customer search dropdown styling */
+.customer-search-dropdown {
+    z-index: 20 !important;
+    max-height: 200px;
+    overflow-y: auto;
+    border-radius: 0.5rem;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    font-size: 0.97rem;
+}
+.customer-search-dropdown .list-group-item {
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.customer-search-dropdown .list-group-item:hover {
+    background: #f3f4f6;
+}
 </style>
 @endsection
 
@@ -464,6 +495,12 @@ $(document).ready(function() {
                         variationId: p.variation_id,
                         name: p.name,
                         price: p.price,
+                        priceWithTax: p.price_with_tax,
+                        regularPrice: p.regular_price,
+                        salePrice: p.sale_price,
+                        isOnSale: p.is_on_sale,
+                        taxRate: p.tax_rate,
+                        taxAmount: p.tax_amount,
                         sku: p.sku,
                         attributes: p.attributes || {}
                     };
@@ -473,9 +510,23 @@ $(document).ready(function() {
                     }).join(', ') + '</small>';
                     
                     var skuInfo = p.sku ? ' (SKU: ' + p.sku + ')' : '';
+                    
+                    // Build price display with sale and tax info
+                    var priceDisplay = '';
+                    if (p.is_on_sale && p.regular_price > 0) {
+                        priceDisplay += '<div class="text-decoration-line-through text-muted">$' + parseFloat(p.regular_price).toFixed(2) + '</div>';
+                        priceDisplay += '<div class="text-success"><strong>$' + parseFloat(p.price).toFixed(2) + '</strong></div>';
+                    } else {
+                        priceDisplay += '<div><strong>$' + parseFloat(p.price).toFixed(2) + '</strong></div>';
+                    }
+                    
+                    // Add tax info
+                    priceDisplay += '<small class="text-muted">+ Tax: $' + parseFloat(p.tax_amount).toFixed(2) + '</small>';
+                    priceDisplay += '<br><small class="text-info">Total: $' + parseFloat(p.price_with_tax).toFixed(2) + '</small>';
+                    
                     var buttonHtml = '<div class="d-flex justify-content-between align-items-start">' +
                         '<div><strong>'+p.name+'</strong>'+attrs+'<br><small class="text-muted">ID: '+p.product_id+(p.variation_id ? ' | Variation: '+p.variation_id : '')+skuInfo+'</small></div>' +
-                        '<div class="text-right"><strong>$'+(parseFloat(p.price) || 0).toFixed(2)+'</strong></div>' +
+                        '<div class="text-right">'+priceDisplay+'</div>' +
                         '</div>';
 
                     $('<button type="button" class="list-group-item list-group-item-action prod-item"></button>')
@@ -527,6 +578,7 @@ $(document).ready(function() {
         var variationId = product.variationId;
         var name = product.name;
         var price = parseFloat(product.price) || 0;
+        var priceWithTax = parseFloat(product.priceWithTax) || price;
         var attributes = product.attributes || {};
 
         var rowId = variationId > 0 ? variationId : productId;
@@ -548,11 +600,13 @@ $(document).ready(function() {
                 .attr('data-product-id', productId)
                 .attr('data-variation-id', variationId)
                 .data('attributes', attributes)
+                .data('price', price)
+                .data('priceWithTax', priceWithTax)
                 .html(
-                    '<td><strong>'+name+'</strong>'+attrHtml+'</td>' +
-                    '<td class="order-price">'+price.toFixed(2)+'</td>' +
+                    '<td><strong>'+name+'</strong>'+attrHtml+'<br><small class="text-muted">Base: $'+price.toFixed(2)+' | With Tax: $'+priceWithTax.toFixed(2)+'</small></td>' +
+                    '<td class="order-price">'+priceWithTax.toFixed(2)+'</td>' +
                     '<td><input type="number" class="form-control form-control-sm order-qty" value="1" min="1" style="width:70px;"></td>' +
-                    '<td class="line-item-total">'+price.toFixed(2)+'</td>' +
+                    '<td class="line-item-total">'+priceWithTax.toFixed(2)+'</td>' +
                     '<td><button type="button" class="btn btn-sm btn-danger remove-item">&times;</button></td>'
                 );
 

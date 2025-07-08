@@ -593,6 +593,8 @@ $(document).ready(function() {
             var attrHtml = '';
             if (Object.keys(attributes).length > 0) {
                 attrHtml = '<br><small class="text-info">' + Object.entries(attributes).map(function([k, v]) {
+                    try { k = decodeURIComponent(k); } catch (e) {}
+                    try { v = decodeURIComponent(v); } catch (e) {}
                     return k + ': ' + v;
                 }).join(', ') + '</small>';
             }

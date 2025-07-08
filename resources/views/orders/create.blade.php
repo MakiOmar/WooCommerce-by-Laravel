@@ -244,7 +244,7 @@
                                 <!-- Subtotal Row -->
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <span class="text-muted">Subtotal</span>
-                                    <span class="font-weight-bold">ج.م <span class="order-subtotal">0.00</span></span>
+                                    <span class="font-weight-bold">{{$wooCurrency}} <span class="order-subtotal">0.00</span></span>
                                 </div>
 
                                 <!-- Discount Row -->
@@ -252,7 +252,7 @@
                                     <div class="col-6">
                                         <label class="form-label text-muted">Discount</label>
                                         <div class="input-group">
-                                            <span class="input-group-text">ج.م</span>
+                                            <span class="input-group-text">{{$wooCurrency}}</span>
                                             <input type="number" class="form-control order-discount" name="discount" value="0" min="0" step="0.01">
                                         </div>
                                     </div>
@@ -263,7 +263,7 @@
                                     <div class="col-6">
                                         <label class="form-label text-muted">Shipping</label>
                                         <div class="input-group">
-                                            <span class="input-group-text">ج.م</span>
+                                            <span class="input-group-text">{{$wooCurrency}}</span>
                                             <input type="number" class="form-control order-shipping" name="shipping" value="0" min="0" step="0.01">
                                             <button type="button" class="btn btn-outline-secondary" id="shipping-methods-btn" style="display: none;">
                                                 <i class="fas fa-truck"></i>
@@ -278,7 +278,7 @@
                                     <div class="col-6">
                                         <label class="form-label text-muted">Tax</label>
                                         <div class="input-group">
-                                            <span class="input-group-text">ج.م</span>
+                                            <span class="input-group-text">{{$wooCurrency}}</span>
                                             <input type="number" class="form-control order-taxes" name="taxes" value="0" min="0" step="0.01">
                                         </div>
                                     </div>
@@ -289,7 +289,7 @@
                                 <!-- Total Row -->
                                 <div class="d-flex justify-content-between align-items-center">
                                     <h5 class="mb-0">Total</h5>
-                                    <h5 class="mb-0">ج.م <span class="order-grand-total">0.00</span></h5>
+                                    <h5 class="mb-0">{{$wooCurrency}} <span class="order-grand-total">0.00</span></h5>
                                 </div>
                             </div>
                         </div>
@@ -516,15 +516,15 @@ $(document).ready(function() {
                     // Build price display with sale and tax info
                     var priceDisplay = '';
                     if (p.is_on_sale && p.regular_price > 0) {
-                        priceDisplay += '<div class="text-decoration-line-through text-muted">$' + parseFloat(p.regular_price).toFixed(2) + '</div>';
-                        priceDisplay += '<div class="text-success"><strong>$' + parseFloat(p.price).toFixed(2) + '</strong></div>';
+                        priceDisplay += '<div class="text-decoration-line-through text-muted">' + window.wooCurrency + parseFloat(p.regular_price).toFixed(2) + '</div>';
+                        priceDisplay += '<div class="text-success"><strong>' + window.wooCurrency + parseFloat(p.price).toFixed(2) + '</strong></div>';
                     } else {
-                        priceDisplay += '<div><strong>$' + parseFloat(p.price).toFixed(2) + '</strong></div>';
+                        priceDisplay += '<div><strong>' + window.wooCurrency + parseFloat(p.price).toFixed(2) + '</strong></div>';
                     }
                     
                     // Add tax info
-                    priceDisplay += '<small class="text-muted">+ Tax: $' + parseFloat(p.tax_amount).toFixed(2) + '</small>';
-                    priceDisplay += '<br><small class="text-info">Total: $' + parseFloat(p.price_with_tax).toFixed(2) + '</small>';
+                    priceDisplay += '<small class="text-muted">+ Tax: ' + window.wooCurrency + parseFloat(p.tax_amount).toFixed(2) + '</small>';
+                    priceDisplay += '<br><small class="text-info">Total: ' + window.wooCurrency + parseFloat(p.price_with_tax).toFixed(2) + '</small>';
                     
                     var buttonHtml = '<div class="d-flex justify-content-between align-items-start">' +
                         '<div><strong>'+p.name+'</strong>'+attrs+'<br><small class="text-muted">ID: '+p.product_id+(p.variation_id ? ' | Variation: '+p.variation_id : '')+skuInfo+'</small></div>' +
@@ -607,7 +607,7 @@ $(document).ready(function() {
                 .data('price', price)
                 .data('priceWithTax', priceWithTax)
                 .html(
-                    '<td><strong>'+name+'</strong>'+attrHtml+'<br><small class="text-muted">Base: $'+price.toFixed(2)+' | With Tax: $'+priceWithTax.toFixed(2)+'</small></td>' +
+                    '<td><strong>'+name+'</strong>'+attrHtml+'<br><small class="text-muted">Base: ' + window.wooCurrency + price.toFixed(2) + ' | With Tax: ' + window.wooCurrency + priceWithTax.toFixed(2) + '</small></td>' +
                     '<td class="order-price">'+priceWithTax.toFixed(2)+'</td>' +
                     '<td><input type="number" class="form-control form-control-sm order-qty" value="1" min="1" style="width:70px;"></td>' +
                     '<td class="line-item-total">'+priceWithTax.toFixed(2)+'</td>' +
@@ -935,7 +935,7 @@ $(document).ready(function() {
                         var html = '<button type="button" class="list-group-item list-group-item-action shipping-method-item" data-id="'+method.id+'" data-cost="'+method.cost+'">'+
                             '<div class="d-flex justify-content-between align-items-center">'+
                             '<div><strong>'+method.title+'</strong></div>'+
-                            '<div class="text-right"><strong>ج.م '+parseFloat(method.cost).toFixed(2)+'</strong></div>'+
+                            '<div class="text-right"><strong>' + window.wooCurrency + parseFloat(method.cost).toFixed(2) + '</strong></div>'+
                             '</div></button>';
                         $dropdown.append(html);
                     });

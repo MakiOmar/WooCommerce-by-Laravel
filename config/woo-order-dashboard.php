@@ -196,6 +196,7 @@ return [
     |
     */
     'tax_rate' => env('WOO_TAX_RATE', 0.15), // 15% default tax rate
+    'currency' => env('WOO_CURRENCY', 'SAR'),
 
     /*
     |--------------------------------------------------------------------------

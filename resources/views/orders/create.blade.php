@@ -1,3 +1,6 @@
+@php
+    $wooCurrency = config('woo-order-dashboard.currency', 'SAR');
+@endphp
 @extends('layouts.admin')
 
 @section('content')

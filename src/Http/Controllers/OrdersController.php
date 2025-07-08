@@ -50,6 +50,11 @@ class OrdersController extends Controller
             $currentPrice = $regularPrice;
         }
         
+        // Check if product has a valid price (greater than 0)
+        if ($currentPrice <= 0) {
+            return null; // Return null to indicate invalid price
+        }
+        
         // Get tax rate from config (default 15%)
         $taxRate = config('woo-order-dashboard.tax_rate', 0.15);
         $taxAmount = $currentPrice * $taxRate;
@@ -150,6 +155,11 @@ class OrdersController extends Controller
                     
                     $priceInfo = $this->calculateProductPrice($variationMeta);
                     
+                    // Skip products with invalid prices
+                    if ($priceInfo === null) {
+                        continue;
+                    }
+                    
                     $results->push([
                         'product_id' => $product->ID,
                         'variation_id' => $variation->ID,
@@ -196,6 +206,11 @@ class OrdersController extends Controller
                         
                         $priceInfo = $this->calculateProductPrice($variationMeta);
                         
+                        // Skip products with invalid prices
+                        if ($priceInfo === null) {
+                            continue;
+                        }
+                        
                         $results->push([
                             'product_id' => $product->ID,
                             'variation_id' => $variation->ID,
@@ -217,6 +232,11 @@ class OrdersController extends Controller
                 } else {
                     // For simple products, include the main product
                     $priceInfo = $this->calculateProductPrice($meta);
+                    
+                    // Skip products with invalid prices
+                    if ($priceInfo === null) {
+                        continue;
+                    }
                     
                     $results->push([
                         'product_id' => $product->ID,
@@ -283,6 +303,11 @@ class OrdersController extends Controller
                     }
                     
                     $priceInfo = $this->calculateProductPrice($variationMeta);
+                    
+                    // Skip products with invalid prices
+                    if ($priceInfo === null) {
+                        continue;
+                    }
                     
                     $results->push([
                         'product_id' => $parentProduct->ID,

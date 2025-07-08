@@ -268,7 +268,7 @@
                                 <div class="row mb-3">
                                     <div class="col-6">
                                         <label class="form-label text-muted">Shipping</label>
-                                        <div class="input-group">
+                                        <div class="input-group shipping-input-group">
                                             <span class="input-group-text">{{$wooCurrency}}</span>
                                             <input type="number" class="form-control order-shipping" name="shipping" value="0" min="0" step="0.01">
                                             <button type="button" class="btn btn-outline-secondary" id="shipping-methods-btn" style="display: none;">
@@ -430,6 +430,13 @@
 }
 .customer-search-dropdown .list-group-item:hover {
     background: #f3f4f6;
+}
+.shipping-input-group .order-shipping {
+    min-width: 0;
+    flex: 1 1 80px;
+}
+.shipping-input-group #shipping-methods-btn {
+    flex: 0 0 auto;
 }
 </style>
 @endsection

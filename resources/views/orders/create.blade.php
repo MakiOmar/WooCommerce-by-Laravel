@@ -1,6 +1,9 @@
 @php
     $wooCurrency = config('woo-order-dashboard.currency', 'SAR');
 @endphp
+<script>
+    window.wooCurrency = @json($wooCurrency);
+</script>
 @extends('layouts.admin')
 
 @section('content')

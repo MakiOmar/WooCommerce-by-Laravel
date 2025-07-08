@@ -380,6 +380,10 @@
     color: #6c47e5;
     border: 1px solid #e5e7eb;
     transition: background 0.2s, color 0.2s;
+    position: absolute;
+    left: -70px;
+    border-radius: 0.375rem;
+    height: 38px;
 }
 #shipping-methods-btn:hover {
     background: #6c47e5;

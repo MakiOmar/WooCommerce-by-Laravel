@@ -109,12 +109,74 @@
                         <div id="customer-details" class="mt-2" style="display:none;"></div>
                         <div class="form-group mb-2">
                             <label>Billing Details</label>
-                            <span>Egypt</span>
-                            <a href="#" class="ml-2"><i class="fa fa-pencil"></i></a>
+                            <span id="billing-display">No customer selected</span>
+                            <a href="#" class="ml-2" id="edit-billing-btn" style="display:none;"><i class="fa fa-pencil"></i></a>
                         </div>
-                        <div class="form-check mb-2">
-                            <input class="form-check-input" type="checkbox" id="shipToDifferentAddress" name="ship_to_different_address">
-                            <label class="form-check-label" for="shipToDifferentAddress">Ship to a different address?</label>
+                        
+                        <!-- Hidden billing input fields -->
+                        <div id="billing-fields" style="display:none;">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group mb-2">
+                                        <label>First Name</label>
+                                        <input type="text" class="form-control" id="billing_first_name" name="billing_first_name">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group mb-2">
+                                        <label>Last Name</label>
+                                        <input type="text" class="form-control" id="billing_last_name" name="billing_last_name">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group mb-2">
+                                <label>Email</label>
+                                <input type="email" class="form-control" id="billing_email" name="billing_email">
+                            </div>
+                            <div class="form-group mb-2">
+                                <label>Phone</label>
+                                <input type="text" class="form-control" id="billing_phone" name="billing_phone">
+                            </div>
+                            <div class="form-group mb-2">
+                                <label>Address Line 1</label>
+                                <input type="text" class="form-control" id="billing_address_1" name="billing_address_1">
+                            </div>
+                            <div class="form-group mb-2">
+                                <label>Address Line 2</label>
+                                <input type="text" class="form-control" id="billing_address_2" name="billing_address_2">
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group mb-2">
+                                        <label>City</label>
+                                        <input type="text" class="form-control" id="billing_city" name="billing_city">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group mb-2">
+                                        <label>State</label>
+                                        <input type="text" class="form-control" id="billing_state" name="billing_state">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group mb-2">
+                                        <label>Postcode</label>
+                                        <input type="text" class="form-control" id="billing_postcode" name="billing_postcode">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group mb-2">
+                                        <label>Country</label>
+                                        <input type="text" class="form-control" id="billing_country" name="billing_country">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-group mb-2">
+                                <button type="button" class="btn btn-sm btn-secondary" id="save-billing-btn">Save Billing Details</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="cancel-billing-btn">Cancel</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -544,7 +606,7 @@ $(document).ready(function() {
                 $custDropdown.append('<div class="list-group-item">No customers found. <a href="#" class="text-primary add-new-customer">Create new</a></div>');
             } else {
                 customers.forEach(function(c) {
-                    $custDropdown.append('<button type="button" class="list-group-item list-group-item-action cust-item" data-id="'+c.id+'" data-name="'+c.name+'" data-email="'+c.email+'" data-billing-country="'+(c.billing_country || '')+'" data-billing-state="'+(c.billing_state || '')+'" data-billing-postcode="'+(c.billing_postcode || '')+'">'+c.name+' <small class="text-muted">('+c.email+')</small></button>');
+                    $custDropdown.append('<button type="button" class="list-group-item list-group-item-action cust-item" data-id="'+c.id+'" data-name="'+c.name+'" data-email="'+c.email+'" data-billing-first-name="'+(c.billing_first_name || '')+'" data-billing-last-name="'+(c.billing_last_name || '')+'" data-billing-phone="'+(c.billing_phone || '')+'" data-billing-address-1="'+(c.billing_address_1 || '')+'" data-billing-address-2="'+(c.billing_address_2 || '')+'" data-billing-city="'+(c.billing_city || '')+'" data-billing-state="'+(c.billing_state || '')+'" data-billing-postcode="'+(c.billing_postcode || '')+'" data-billing-country="'+(c.billing_country || '')+'">'+c.name+' <small class="text-muted">('+c.email+')</small></button>');
                 });
             }
             $custInput.after($custDropdown);
@@ -584,18 +646,50 @@ $(document).ready(function() {
         var name = $(this).data('name');
         var email = $(this).data('email');
         var id = $(this).data('id');
-        // Get billing fields from data attributes for shipping calculations
-        selectedShippingCountry = $(this).data('billing-country') || '';
-        selectedShippingState = $(this).data('billing-state') || '';
-        selectedShippingPostcode = $(this).data('billing-postcode') || '';
+        
+        // Get billing fields from data attributes
+        var billingData = {
+            first_name: $(this).data('billing-first-name') || '',
+            last_name: $(this).data('billing-last-name') || '',
+            phone: $(this).data('billing-phone') || '',
+            address_1: $(this).data('billing-address-1') || '',
+            address_2: $(this).data('billing-address-2') || '',
+            city: $(this).data('billing-city') || '',
+            state: $(this).data('billing-state') || '',
+            postcode: $(this).data('billing-postcode') || '',
+            country: $(this).data('billing-country') || ''
+        };
+        
+        // Update shipping variables for shipping calculations
+        selectedShippingCountry = billingData.country;
+        selectedShippingState = billingData.state;
+        selectedShippingPostcode = billingData.postcode;
+        
+        // Populate billing fields
+        $('#billing_first_name').val(billingData.first_name);
+        $('#billing_last_name').val(billingData.last_name);
+        $('#billing_email').val(email);
+        $('#billing_phone').val(billingData.phone);
+        $('#billing_address_1').val(billingData.address_1);
+        $('#billing_address_2').val(billingData.address_2);
+        $('#billing_city').val(billingData.city);
+        $('#billing_state').val(billingData.state);
+        $('#billing_postcode').val(billingData.postcode);
+        $('#billing_country').val(billingData.country);
+        
+        // Update billing display
+        var displayText = name;
+        if (billingData.city && billingData.country) {
+            displayText += ' - ' + billingData.city + ', ' + billingData.country;
+        }
+        $('#billing-display').text(displayText);
+        $('#edit-billing-btn').show();
         
         console.log('Customer selected:', {
             id: id,
             name: name,
             email: email,
-            billing_country: selectedShippingCountry,
-            billing_state: selectedShippingState,
-            billing_postcode: selectedShippingPostcode
+            billing_data: billingData
         });
         
         $custInput.val(name);
@@ -608,6 +702,45 @@ $(document).ready(function() {
         $('#customer_id').val('');
         $custDetails.html('<div class="alert alert-warning p-2">New customer will be created on order submit.</div>').show();
         if ($custDropdown) $custDropdown.remove();
+        
+        // Clear billing fields for new customer
+        $('#billing_first_name, #billing_last_name, #billing_email, #billing_phone, #billing_address_1, #billing_address_2, #billing_city, #billing_state, #billing_postcode, #billing_country').val('');
+        $('#billing-display').text('New customer');
+        $('#edit-billing-btn').show();
+    });
+    
+    // Billing fields toggle functionality
+    $('#edit-billing-btn').on('click', function(e) {
+        e.preventDefault();
+        $('#billing-fields').show();
+        $(this).hide();
+    });
+    
+    $('#save-billing-btn').on('click', function() {
+        // Update shipping variables from billing fields
+        selectedShippingCountry = $('#billing_country').val();
+        selectedShippingState = $('#billing_state').val();
+        selectedShippingPostcode = $('#billing_postcode').val();
+        
+        // Update billing display
+        var name = $('#billing_first_name').val() + ' ' + $('#billing_last_name').val();
+        var city = $('#billing_city').val();
+        var country = $('#billing_country').val();
+        
+        var displayText = name;
+        if (city && country) {
+            displayText += ' - ' + city + ', ' + country;
+        }
+        $('#billing-display').text(displayText);
+        
+        // Hide billing fields
+        $('#billing-fields').hide();
+        $('#edit-billing-btn').show();
+    });
+    
+    $('#cancel-billing-btn').on('click', function() {
+        $('#billing-fields').hide();
+        $('#edit-billing-btn').show();
     });
     $(document).on('click', function(e) {
         if (!$(e.target).closest('.list-group, #customer-search').length) {

@@ -259,9 +259,15 @@ class OrdersController extends Controller
                 'id' => $customer->ID,
                 'name' => $customer->display_name,
                 'email' => $customer->user_email,
-                'billing_country' => $meta->get('billing_country', ''),
+                'billing_first_name' => $meta->get('first_name', ''),
+                'billing_last_name' => $meta->get('last_name', ''),
+                'billing_phone' => $meta->get('billing_phone', ''),
+                'billing_address_1' => $meta->get('billing_address_1', ''),
+                'billing_address_2' => $meta->get('billing_address_2', ''),
+                'billing_city' => $meta->get('billing_city', ''),
                 'billing_state' => $meta->get('billing_state', ''),
                 'billing_postcode' => $meta->get('billing_postcode', ''),
+                'billing_country' => $meta->get('billing_country', ''),
             ];
         });
         

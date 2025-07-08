@@ -506,6 +506,8 @@ $(document).ready(function() {
                     };
 
                     var attrs = '<br><small class="text-info">' + Object.entries(p.attributes).map(function([k, v]) {
+                        try { k = decodeURIComponent(k); } catch (e) {}
+                        try { v = decodeURIComponent(v); } catch (e) {}
                         return k + ': ' + v;
                     }).join(', ') + '</small>';
                     

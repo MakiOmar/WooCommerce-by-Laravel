@@ -364,8 +364,8 @@ class WooCommerceShippingService
      */
     protected function safeEval($expression)
     {
-        // Remove potentially dangerous characters
-        $expression = preg_replace('/[^0-9+\-*/().]/', '', $expression);
+        // Remove potentially dangerous characters - escape special regex characters
+        $expression = preg_replace('/[^0-9+\-*\/\(\)\.]/', '', $expression);
         
         try {
             return eval("return $expression;");

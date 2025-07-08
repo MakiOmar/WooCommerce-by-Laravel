@@ -110,7 +110,7 @@
                         <div class="form-group mb-2">
                             <label>Billing Details</label>
                             <span id="billing-display">No customer selected</span>
-                            <a href="#" class="ml-2" id="edit-billing-btn" style="display:none;"><i class="fa fa-pencil"></i></a>
+                            <a href="#" class="ml-2" id="edit-billing-btn" style="display:none;"><i class="fa fa-pencil-alt"></i></a>
                         </div>
                         
                         <!-- Hidden billing input fields -->
@@ -174,8 +174,7 @@
                                 </div>
                             </div>
                             <div class="form-group mb-2">
-                                <button type="button" class="btn btn-sm btn-secondary" id="save-billing-btn">Save Billing Details</button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" id="cancel-billing-btn">Cancel</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="cancel-billing-btn">Close</button>
                             </div>
                         </div>
                     </div>
@@ -716,31 +715,16 @@ $(document).ready(function() {
         $(this).hide();
     });
     
-    $('#save-billing-btn').on('click', function() {
-        // Update shipping variables from billing fields
-        selectedShippingCountry = $('#billing_country').val();
-        selectedShippingState = $('#billing_state').val();
-        selectedShippingPostcode = $('#billing_postcode').val();
-        
-        // Update billing display
-        var name = $('#billing_first_name').val() + ' ' + $('#billing_last_name').val();
-        var city = $('#billing_city').val();
-        var country = $('#billing_country').val();
-        
-        var displayText = name;
-        if (city && country) {
-            displayText += ' - ' + city + ', ' + country;
-        }
-        $('#billing-display').text(displayText);
-        
-        // Hide billing fields
+    $('#cancel-billing-btn').on('click', function() {
         $('#billing-fields').hide();
         $('#edit-billing-btn').show();
     });
     
-    $('#cancel-billing-btn').on('click', function() {
-        $('#billing-fields').hide();
-        $('#edit-billing-btn').show();
+    // Update shipping variables when billing fields change
+    $('#billing_country, #billing_state, #billing_postcode').on('change keyup', function() {
+        selectedShippingCountry = $('#billing_country').val();
+        selectedShippingState = $('#billing_state').val();
+        selectedShippingPostcode = $('#billing_postcode').val();
     });
     $(document).on('click', function(e) {
         if (!$(e.target).closest('.list-group, #customer-search').length) {

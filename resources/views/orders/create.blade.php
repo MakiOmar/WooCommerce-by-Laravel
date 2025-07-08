@@ -968,9 +968,10 @@ $(document).ready(function() {
     
     // Shipping method selection
     $(document).on('click', '.shipping-method-item', function() {
-        var cost = parseFloat($(this).data('cost')) || 0;
-        $('.order-shipping').val(cost.toFixed(2)).trigger('input');
-        $shippingDropdown.hide();
+        var cost = $(this).data('cost');
+        $('.order-shipping').val(cost);
+        $('#shipping-methods-dropdown').hide();
+        recalcSummary(); // Recalculate totals after selecting shipping method
     });
     
     // Hide shipping dropdown when clicking outside

@@ -289,8 +289,18 @@ class WooCommerceShippingService
      */
     protected function calculateFreeShipping($method, $settings, $cartItems)
     {
-        $subtotal = collect($cartItems)->sum('line_total');
+        $subtotal = collect($cartItems)->sum(function($item) {
+            return ($item['price'] ?? 0) * ($item['qty'] ?? 1);
+        });
         $minAmount = floatval($settings['min_amount'] ?? 0);
+        
+        \Log::info("Free shipping calculation", [
+            'method_id' => $method->method_id,
+            'instance_id' => $method->instance_id,
+            'subtotal' => $subtotal,
+            'min_amount' => $minAmount,
+            'qualifies' => $subtotal >= $minAmount
+        ]);
         
         if ($subtotal >= $minAmount) {
             return [
@@ -356,8 +366,10 @@ class WooCommerceShippingService
      */
     protected function evaluateCost($costString, $cartItems)
     {
-        $totalQty = collect($cartItems)->sum('quantity');
-        $totalCost = collect($cartItems)->sum('line_total');
+        $totalQty = collect($cartItems)->sum('qty');
+        $totalCost = collect($cartItems)->sum(function($item) {
+            return ($item['price'] ?? 0) * ($item['qty'] ?? 1);
+        });
         
         $costString = str_replace('[qty]', $totalQty, $costString);
         $costString = str_replace('[cost]', $totalCost, $costString);
@@ -398,8 +410,8 @@ class WooCommerceShippingService
                 ];
             }
             $classes[$classId]['items'][] = $item;
-            $classes[$classId]['quantity'] += $item['quantity'];
-            $classes[$classId]['cost'] += $item['line_total'];
+            $classes[$classId]['quantity'] += $item['qty'] ?? 1;
+            $classes[$classId]['cost'] += ($item['price'] ?? 0) * ($item['qty'] ?? 1);
         }
         
         return $classes;

@@ -29,4 +29,16 @@ Route::group(['middleware' => ['web', 'auth:admin', 'woo.language']], function()
     Route::get('/products/search', [OrdersController::class, 'searchProducts'])->name('products.search');
     Route::get('/customers/search', [OrdersController::class, 'customersSearch'])->name('customers.search');
     Route::post('/shipping/methods', [OrdersController::class, 'getShippingMethods'])->name('shipping.methods');
+    
+    // Language test route
+    Route::get('/test-language', function() {
+        return response()->json([
+            'current_language' => \Makiomar\WooOrderDashboard\Helpers\LanguageHelper::getCurrentLanguage(),
+            'is_rtl' => \Makiomar\WooOrderDashboard\Helpers\LanguageHelper::isRTL(),
+            'session_language' => session('woo_language'),
+            'app_locale' => app()->getLocale(),
+            'config_default' => config('woo-order-dashboard.language.default'),
+            'available_languages' => config('woo-order-dashboard.language.available'),
+        ]);
+    })->name('test.language');
 }); 

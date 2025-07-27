@@ -22,12 +22,20 @@ class LanguageHelper
     {
         $availableLanguages = config('woo-order-dashboard.language.available', ['ar', 'en']);
         
+        \Log::info('LanguageHelper::setLanguage', [
+            'requested_language' => $language,
+            'available_languages' => $availableLanguages,
+            'is_valid' => in_array($language, $availableLanguages),
+        ]);
+        
         if (in_array($language, $availableLanguages)) {
             Session::put('woo_language', $language);
             App::setLocale($language);
+            \Log::info('Language set successfully', ['language' => $language]);
             return true;
         }
         
+        \Log::warning('Invalid language requested', ['language' => $language]);
         return false;
     }
 
@@ -121,11 +129,19 @@ class LanguageHelper
     {
         $requestedLanguage = request()->get('lang');
         
+        \Log::info('LanguageHelper::initializeLanguage', [
+            'requested_language' => $requestedLanguage,
+            'session_language' => session('woo_language'),
+            'default_language' => config('woo-order-dashboard.language.default', 'ar'),
+        ]);
+        
         if ($requestedLanguage) {
-            self::setLanguage($requestedLanguage);
+            $result = self::setLanguage($requestedLanguage);
+            \Log::info('Language set result', ['result' => $result]);
         } else {
             $currentLanguage = self::getCurrentLanguage();
             App::setLocale($currentLanguage);
+            \Log::info('Using current language', ['language' => $currentLanguage]);
         }
     }
 } 

@@ -20,6 +20,14 @@ class LanguageMiddleware
         // Initialize language from request
         LanguageHelper::initializeLanguage();
         
+        // Add debugging
+        \Log::info('Language Middleware Debug', [
+            'requested_lang' => $request->get('lang'),
+            'current_language' => LanguageHelper::getCurrentLanguage(),
+            'is_rtl' => LanguageHelper::isRTL(),
+            'session_language' => session('woo_language'),
+        ]);
+        
         // Share language data with all views
         view()->share('currentLanguage', LanguageHelper::getCurrentLanguage());
         view()->share('isRTL', LanguageHelper::isRTL());

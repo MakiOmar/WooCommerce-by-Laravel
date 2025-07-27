@@ -216,6 +216,31 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Language Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configure language settings for the dashboard.
+    |
+    */
+    'language' => [
+        // Default language (ar = Arabic, en = English)
+        'default' => env('WOO_DEFAULT_LANGUAGE', 'ar'),
+        
+        // Available languages
+        'available' => ['ar', 'en'],
+        
+        // Language names for display
+        'names' => [
+            'ar' => 'العربية',
+            'en' => 'English',
+        ],
+        
+        // RTL languages
+        'rtl' => ['ar'],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Shipping Configuration
     |--------------------------------------------------------------------------
     |

@@ -13,10 +13,11 @@
         <div class="row mb-4">
             <div class="col-12">
                 <div class="d-flex justify-content-between align-items-center">
-                    <h2 class="h3 mb-0">Create New Order</h2>
+                    <h2 class="h3 mb-0">{{ __('woo-order-dashboard::orders.create_new_order') }}</h2>
                     <div>
-                        <a href="{{ route('orders.index') }}" class="btn btn-secondary">Cancel</a>
-                        <button type="submit" class="btn btn-success">Submit Order</button>
+                        @include('woo-order-dashboard::partials.language-switcher')
+                        <a href="{{ route('orders.index') }}" class="btn btn-secondary">{{ __('woo-order-dashboard::orders.cancel') }}</a>
+                        <button type="submit" class="btn btn-success">{{ __('woo-order-dashboard::orders.submit_order') }}</button>
                     </div>
                 </div>
             </div>
@@ -27,23 +28,23 @@
                 <div class="card mb-3">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="card-title mb-0">Order details</h5>
+                            <h5 class="card-title mb-0">{{ __('woo-order-dashboard::orders.order_details') }}</h5>
                             <div>
-                                <button class="btn btn-link" type="button">Create custom product</button>
+                                <button class="btn btn-link" type="button">{{ __('woo-order-dashboard::orders.create_custom_product') }}</button>
                             </div>
                         </div>
                         <div class="form-group mb-3">
-                            <label for="product_search">Search Products</label>
+                            <label for="product_search">{{ __('woo-order-dashboard::orders.search_products') }}</label>
                             <div class="row">
                                 <div class="col-md-3">
                                     <select class="form-control" id="search_type">
-                                        <option value="sku" selected>Search by SKU</option>
-                                        <option value="title">Search by Title</option>
+                                        <option value="sku" selected>{{ __('woo-order-dashboard::orders.search_by_sku') }}</option>
+                                        <option value="title">{{ __('woo-order-dashboard::orders.search_by_title') }}</option>
                                     </select>
                                 </div>
                                 <div class="col-md-7">
                                     <div class="search-input-container">
-                                        <input type="text" class="form-control" id="product_search" placeholder="Search for products..." autocomplete="off">
+                                        <input type="text" class="form-control" id="product_search" placeholder="{{ __('woo-order-dashboard::orders.search_for_products') }}" autocomplete="off">
                                         <div class="loading-indicator">
                                             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                                         </div>
@@ -60,10 +61,10 @@
                         <table class="table" id="products-table">
                             <thead>
                                 <tr>
-                                    <th>Product</th>
-                                    <th>Price</th>
-                                    <th>Quantity</th>
-                                    <th>Total</th>
+                                    <th>{{ __('woo-order-dashboard::orders.product') }}</th>
+                                    <th>{{ __('woo-order-dashboard::orders.price') }}</th>
+                                    <th>{{ __('woo-order-dashboard::orders.quantity') }}</th>
+                                    <th>{{ __('woo-order-dashboard::orders.total') }}</th>
                                     <th></th>
                                 </tr>
                             </thead>
@@ -72,7 +73,7 @@
                                 <tr id="no-products-row">
                                     <td colspan="5" class="text-center text-muted py-4">
                                         <i class="fas fa-shopping-cart fa-2x mb-2"></i>
-                                        <p class="mb-0">No products added yet. Search for products above to add them to your order.</p>
+                                        <p class="mb-0">{{ __('woo-order-dashboard::orders.no_products_added') }}</p>
                                     </td>
                                 </tr>
                             </tbody>
@@ -92,13 +93,13 @@
             <div class="col-md-4">
                 <div class="card mb-3">
                     <div class="card-body">
-                        <h6>Find or create a customer <button type="button" class="close" aria-label="Close"><span aria-hidden="true">&times;</span></button></h6>
+                        <h6>{{ __('woo-order-dashboard::orders.find_or_create_customer') }} <button type="button" class="close" aria-label="Close"><span aria-hidden="true">&times;</span></button></h6>
                         <div class="form-group mb-2">
-                            <a href="#">New customer</a>
+                            <a href="#">{{ __('woo-order-dashboard::orders.new_customer') }}</a>
                             <div class="row">
                                 <div class="col-md-9">
                                     <div class="search-input-container">
-                                        <input type="text" class="form-control" id="customer-search" placeholder="Guest" autocomplete="off">
+                                        <input type="text" class="form-control" id="customer-search" placeholder="{{ __('woo-order-dashboard::orders.guest') }}" autocomplete="off">
                                         <div class="loading-indicator">
                                             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                                         </div>

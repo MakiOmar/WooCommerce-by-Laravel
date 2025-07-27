@@ -52,6 +52,14 @@ class WooOrderDashboardServiceProvider extends ServiceProvider
             __DIR__.'/../resources/views' => resource_path('views/vendor/woo-order-dashboard'),
         ], 'views');
 
+        // Load language files
+        $this->loadTranslationsFrom(__DIR__.'/Resources/lang', 'woo-order-dashboard');
+
+        // Publish language files
+        $this->publishes([
+            __DIR__.'/Resources/lang' => resource_path('lang/vendor/woo-order-dashboard'),
+        ], 'lang');
+
         // Publish pagination views
         $this->publishes([
             __DIR__.'/../resources/views/vendor/pagination' => resource_path('views/vendor/pagination'),
@@ -85,6 +93,9 @@ class WooOrderDashboardServiceProvider extends ServiceProvider
 
         // Load assets
         $this->loadAssets();
+
+        // Register middleware
+        $this->registerMiddleware();
 
         // Configure performance optimizations
         $this->configurePerformanceOptimizations();
@@ -132,6 +143,14 @@ class WooOrderDashboardServiceProvider extends ServiceProvider
         $this->publishes([
             __DIR__.'/../resources/assets/js' => public_path('vendor/woo-order-dashboard/js'),
         ], 'assets');
+    }
+
+    /**
+     * Register middleware
+     */
+    protected function registerMiddleware()
+    {
+        $this->app['router']->aliasMiddleware('woo.language', \Makiomar\WooOrderDashboard\Http\Middleware\LanguageMiddleware::class);
     }
 
     /**

@@ -622,6 +622,42 @@ For advanced customization, you can modify the `config/woo-order-dashboard.php` 
 - Modify which methods are excluded for different cart totals
 - Add or remove methods that should always be included
 
+## Language Configuration
+
+The package supports multilingual interfaces with Arabic and English. Arabic is the default language.
+
+### Language Settings
+
+```env
+# Language Settings
+WOO_DEFAULT_LANGUAGE=ar
+```
+
+### Available Languages
+
+- **Arabic (ar)**: العربية - Default language with RTL support
+- **English (en)**: English - LTR language
+
+### Language Switching
+
+Users can switch languages using the language switcher in the interface. The selected language is stored in the session and persists across requests.
+
+### RTL Support
+
+Arabic language automatically enables RTL (Right-to-Left) layout support, including:
+- Text direction
+- Form layouts
+- Navigation elements
+- Table structures
+
+### Adding New Languages
+
+To add new languages:
+
+1. Create language files in `src/Resources/lang/{language_code}/`
+2. Add the language code to the configuration
+3. Update the language names and RTL settings
+
 ## Status Management
 
 The package includes a comprehensive `StatusHelper` that dynamically manages WooCommerce order statuses by merging predefined default statuses with custom statuses from your database.

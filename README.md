@@ -555,7 +555,72 @@ WOO_BOOTSTRAP_CSS_ENABLED=false
 WOO_BOOTSTRAP_CSS_URL=https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css
 WOO_FONTAWESOME_ENABLED=true
 WOO_FONTAWESOME_URL=https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css
+
+# Shipping Settings
+WOO_SHIPPING_CART_TOTAL_FILTERING=true
+WOO_SHIPPING_SA_LOW_THRESHOLD=499
+WOO_SHIPPING_SA_MEDIUM_THRESHOLD=999
+WOO_SHIPPING_SA_LOW_COST=21.74
+WOO_SHIPPING_SA_MEDIUM_COST=8.70
+WOO_SHIPPING_SA_HIGH_COST=0.00
+WOO_SHIPPING_OTHER_LOW_THRESHOLD=499
+WOO_SHIPPING_OTHER_MEDIUM_THRESHOLD=999
 ```
+
+## Shipping Configuration
+
+The package includes advanced shipping method filtering based on cart total, similar to your WordPress theme logic. This feature is **enabled by default** but can be customized or disabled.
+
+### Shipping Method Filtering
+
+The shipping filtering works as follows:
+
+#### For Saudi Arabia (SA):
+- **Cart total < 499 SAR**: Shows only methods with cost 21.74 SAR
+- **Cart total 499-998 SAR**: Shows only methods with cost 8.70 SAR  
+- **Cart total ≥ 999 SAR**: Shows only methods with cost 0.00 SAR (free shipping)
+
+#### For Other Countries:
+- **Cart total < 499**: Excludes specific methods based on configuration
+- **Cart total 499-998**: Excludes different methods based on configuration
+- **Cart total ≥ 999**: Excludes specific methods based on configuration
+
+#### Always Included Methods:
+- Redbox pickup delivery methods
+- Local pickup methods
+- Any methods specified in the configuration
+
+### Disabling Shipping Filtering
+
+To disable cart total-based filtering and show all available shipping methods:
+
+```env
+WOO_SHIPPING_CART_TOTAL_FILTERING=false
+```
+
+### Customizing Shipping Thresholds
+
+You can customize the cart total thresholds and shipping costs:
+
+```env
+# Saudi Arabia thresholds and costs
+WOO_SHIPPING_SA_LOW_THRESHOLD=499
+WOO_SHIPPING_SA_MEDIUM_THRESHOLD=999
+WOO_SHIPPING_SA_LOW_COST=21.74
+WOO_SHIPPING_SA_MEDIUM_COST=8.70
+WOO_SHIPPING_SA_HIGH_COST=0.00
+
+# Other countries thresholds
+WOO_SHIPPING_OTHER_LOW_THRESHOLD=499
+WOO_SHIPPING_OTHER_MEDIUM_THRESHOLD=999
+```
+
+### Advanced Configuration
+
+For advanced customization, you can modify the `config/woo-order-dashboard.php` file to:
+- Change which countries exclude DHL Express
+- Modify which methods are excluded for different cart totals
+- Add or remove methods that should always be included
 
 ## Status Management
 

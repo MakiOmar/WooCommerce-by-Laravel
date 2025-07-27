@@ -33,8 +33,12 @@ class WooCommerceShippingService
             }
         }
         
-        // Apply cart total filtering logic (similar to WordPress theme)
-        $filteredRates = $this->filterShippingMethodsByCartTotal($rates, $cartItems, $destination);
+        // Apply cart total filtering logic (similar to WordPress theme) - optional
+        if (config('woo-order-dashboard.shipping.enable_cart_total_filtering', true)) {
+            $filteredRates = $this->filterShippingMethodsByCartTotal($rates, $cartItems, $destination);
+        } else {
+            $filteredRates = $rates;
+        }
         
         return $filteredRates;
     }
@@ -548,36 +552,44 @@ class WooCommerceShippingService
         // Apply filtering logic similar to WordPress theme
         if ($country == 'SA') {
             // For Saudi Arabia, apply specific filtering logic
-            if ($total < 499) {
-                $this->filterShippingMethodsByCost($ratesArray, '21.74');
-            } elseif ($total >= 499 && $total < 999) {
-                $this->filterShippingMethodsByCost($ratesArray, '8.70');
-            } elseif ($total >= 999) {
-                $this->filterShippingMethodsByCost($ratesArray, '0.00');
+            $saThresholds = config('woo-order-dashboard.shipping.sa_thresholds', ['low' => 499, 'medium' => 999]);
+            $saCosts = config('woo-order-dashboard.shipping.sa_costs', ['low' => '21.74', 'medium' => '8.70', 'high' => '0.00']);
+            
+            if ($total < $saThresholds['low']) {
+                $this->filterShippingMethodsByCost($ratesArray, $saCosts['low']);
+            } elseif ($total >= $saThresholds['low'] && $total < $saThresholds['medium']) {
+                $this->filterShippingMethodsByCost($ratesArray, $saCosts['medium']);
+            } elseif ($total >= $saThresholds['medium']) {
+                $this->filterShippingMethodsByCost($ratesArray, $saCosts['high']);
             }
         } else {
             // For other countries, apply different logic
-            $countries = ['AL', 'DZ', 'AM', 'AW', 'AU', 'AZ', 'CA', 'EG', 'FI', 'FR', 'DE', 'GR', 'HK', 'HU', 'IS', 'IQ', 'IT', 'JP', 'JO', 'LB', 'LY', 'LU', 'MV', 'MC', 'MA', 'NZ', 'NO', 'PT', 'RU', 'SG', 'ZA', 'ES', 'SD', 'SE', 'CH', 'SY', 'TN', 'TR', 'GB', 'US'];
+            $excludeDhlCountries = config('woo-order-dashboard.shipping.exclude_dhl_countries', []);
+            $otherThresholds = config('woo-order-dashboard.shipping.other_countries_thresholds', ['low' => 499, 'medium' => 999]);
+            $excludeMethods = config('woo-order-dashboard.shipping.exclude_methods', []);
             
-            if (in_array($country, $countries)) {
+            if (in_array($country, $excludeDhlCountries)) {
                 // Remove DHL Express for these countries
                 $ratesArray = array_filter($ratesArray, function($rate) {
                     return $rate['id'] !== 'dhlexpress_WPX';
                 });
-            } elseif ($total < 499) {
+            } elseif ($total < $otherThresholds['low']) {
                 // Remove specific methods for low totals
-                $ratesArray = array_filter($ratesArray, function($rate) {
-                    return !in_array($rate['id'], ['flat_rate:8', 'free_shipping:24']);
+                $methodsToExclude = $excludeMethods['low_total'] ?? [];
+                $ratesArray = array_filter($ratesArray, function($rate) use ($methodsToExclude) {
+                    return !in_array($rate['id'], $methodsToExclude);
                 });
-            } elseif ($total >= 499 && $total < 999) {
+            } elseif ($total >= $otherThresholds['low'] && $total < $otherThresholds['medium']) {
                 // Remove specific methods for medium totals
-                $ratesArray = array_filter($ratesArray, function($rate) {
-                    return !in_array($rate['id'], ['flat_rate:25', 'free_shipping:24']);
+                $methodsToExclude = $excludeMethods['medium_total'] ?? [];
+                $ratesArray = array_filter($ratesArray, function($rate) use ($methodsToExclude) {
+                    return !in_array($rate['id'], $methodsToExclude);
                 });
             } else {
                 // Remove specific methods for high totals
-                $ratesArray = array_filter($ratesArray, function($rate) {
-                    return !in_array($rate['id'], ['flat_rate:8', 'flat_rate:25']);
+                $methodsToExclude = $excludeMethods['high_total'] ?? [];
+                $ratesArray = array_filter($ratesArray, function($rate) use ($methodsToExclude) {
+                    return !in_array($rate['id'], $methodsToExclude);
                 });
             }
         }
@@ -597,7 +609,9 @@ class WooCommerceShippingService
      */
     protected function filterShippingMethodsByCost(&$ratesArray, $targetCost)
     {
-        $ratesArray = array_filter($ratesArray, function($rate) use ($targetCost) {
+        $alwaysIncludeMethods = config('woo-order-dashboard.shipping.always_include_methods', ['redbox_pickup_delivery', 'local_pickup:116']);
+        
+        $ratesArray = array_filter($ratesArray, function($rate) use ($targetCost, $alwaysIncludeMethods) {
             $cost = $rate['cost'] ?? 0;
             
             // Keep methods with the target cost
@@ -605,9 +619,11 @@ class WooCommerceShippingService
                 return true;
             }
             
-            // Always keep redbox methods and local pickup
-            if (strpos($rate['id'], 'redbox') !== false || $rate['id'] == 'local_pickup:116') {
-                return true;
+            // Always keep specified methods regardless of cost
+            foreach ($alwaysIncludeMethods as $methodPattern) {
+                if (strpos($rate['id'], $methodPattern) !== false) {
+                    return true;
+                }
             }
             
             return false;

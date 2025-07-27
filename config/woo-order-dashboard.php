@@ -216,6 +216,56 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Shipping Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configure shipping method filtering and calculation settings.
+    |
+    */
+    'shipping' => [
+        // Enable cart total-based shipping method filtering
+        'enable_cart_total_filtering' => env('WOO_SHIPPING_CART_TOTAL_FILTERING', true),
+
+        // Cart total thresholds for Saudi Arabia (SAR)
+        'sa_thresholds' => [
+            'low' => env('WOO_SHIPPING_SA_LOW_THRESHOLD', 499),
+            'medium' => env('WOO_SHIPPING_SA_MEDIUM_THRESHOLD', 999),
+        ],
+
+        // Shipping costs for Saudi Arabia (SAR)
+        'sa_costs' => [
+            'low' => env('WOO_SHIPPING_SA_LOW_COST', '21.74'),
+            'medium' => env('WOO_SHIPPING_SA_MEDIUM_COST', '8.70'),
+            'high' => env('WOO_SHIPPING_SA_HIGH_COST', '0.00'),
+        ],
+
+        // Cart total thresholds for other countries
+        'other_countries_thresholds' => [
+            'low' => env('WOO_SHIPPING_OTHER_LOW_THRESHOLD', 499),
+            'medium' => env('WOO_SHIPPING_OTHER_MEDIUM_THRESHOLD', 999),
+        ],
+
+        // Countries that should exclude DHL Express
+        'exclude_dhl_countries' => [
+            'AL', 'DZ', 'AM', 'AW', 'AU', 'AZ', 'CA', 'EG', 'FI', 'FR', 'DE', 'GR', 
+            'HK', 'HU', 'IS', 'IQ', 'IT', 'JP', 'JO', 'LB', 'LY', 'LU', 'MV', 'MC', 
+            'MA', 'NZ', 'NO', 'PT', 'RU', 'SG', 'ZA', 'ES', 'SD', 'SE', 'CH', 'SY', 
+            'TN', 'TR', 'GB', 'US'
+        ],
+
+        // Method IDs to exclude for different cart totals (other countries)
+        'exclude_methods' => [
+            'low_total' => ['flat_rate:8', 'free_shipping:24'],
+            'medium_total' => ['flat_rate:25', 'free_shipping:24'],
+            'high_total' => ['flat_rate:8', 'flat_rate:25'],
+        ],
+
+        // Method IDs that should always be included regardless of cart total
+        'always_include_methods' => ['redbox_pickup_delivery', 'local_pickup:116'],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Available Meta Keys for Filtering
     |--------------------------------------------------------------------------
     |

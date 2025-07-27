@@ -131,6 +131,40 @@ php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashbo
 ```
 Publishes routes file to `routes/woo-dashboard.php` for customization
 
+#### ⚠️ IMPORTANT: Middleware Requirements for Manual Routes
+
+**If you are manually defining routes in your Laravel application instead of using the package's automatic route registration, you MUST include the required middleware:**
+
+```php
+// In your routes/web.php or routes/api.php
+Route::group(['middleware' => ['web', 'auth:admin', 'woo.language']], function() {
+    // Your order management routes here
+    Route::get('/orders', [WooOrderDashboardController::class, 'index'])->name('orders.index');
+    Route::get('/orders/create', [OrdersController::class, 'create'])->name('orders.create');
+    // ... other routes
+});
+```
+
+**Required Middleware:**
+- `web` - Laravel web middleware group
+- `auth:admin` - Authentication middleware (adjust according to your auth setup)
+- `woo.language` - **Language switching middleware (REQUIRED for multilingual support)**
+
+**Without the `woo.language` middleware:**
+- Language switching will not work
+- URL parameters like `?lang=ar` or `?lang=en` will be ignored
+- The language switcher component will not function
+- All text will remain in the default language
+
+**To manually register the middleware (if not using the package's ServiceProvider):**
+```php
+// In app/Http/Kernel.php
+protected $routeMiddleware = [
+    // ... other middlewares
+    'woo.language' => \Makiomar\WooOrderDashboard\Http\Middleware\LanguageMiddleware::class,
+];
+```
+
 ### Pagination
 ```bash
 php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashboardServiceProvider" --tag="pagination"

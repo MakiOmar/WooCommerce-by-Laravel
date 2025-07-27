@@ -10,7 +10,7 @@
             <div class="card">
                 <div class="card-header bg-light">
                     <h3 class="card-title mb-0">
-                        <i class="fas fa-filter mr-2"></i>Filter Orders
+                        <i class="fas fa-filter mr-2"></i>{{ __('woo-order-dashboard::orders.filter_orders') }}
                     </h3>
                 </div>
                 <div class="card-body">
@@ -18,27 +18,27 @@
                         <div class="row">
                             <div class="col-md-3">
                                 <div class="form-group">
-                                    <label for="order_id" class="font-weight-bold">Order ID</label>
-                                    <input type="text" class="form-control" id="order_id" name="order_id" value="{{ request('order_id') }}" placeholder="Enter order ID">
+                                    <label for="order_id" class="font-weight-bold">{{ __('woo-order-dashboard::orders.order_id') }}</label>
+                                    <input type="text" class="form-control" id="order_id" name="order_id" value="{{ request('order_id') }}" placeholder="{{ __('woo-order-dashboard::orders.enter_order_id') }}">
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group">
-                                    <label for="start_date" class="font-weight-bold">Start Date</label>
+                                    <label for="start_date" class="font-weight-bold">{{ __('woo-order-dashboard::orders.start_date') }}</label>
                                     <input type="text" class="form-control" id="start_date" name="start_date" value="{{ request('start_date') }}">
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group">
-                                    <label for="end_date" class="font-weight-bold">End Date</label>
+                                    <label for="end_date" class="font-weight-bold">{{ __('woo-order-dashboard::orders.end_date') }}</label>
                                     <input type="text" class="form-control" id="end_date" name="end_date" value="{{ request('end_date') }}">
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group">
-                                    <label for="status" class="font-weight-bold">Status</label>
+                                    <label for="status" class="font-weight-bold">{{ __('woo-order-dashboard::orders.status') }}</label>
                                     <select class="form-control" id="status" name="status">
-                                        <option value="">All Statuses</option>
+                                        <option value="">{{ __('woo-order-dashboard::orders.all_statuses') }}</option>
                                         @foreach($orderStatuses ?? [] as $statusKey => $statusLabel)
                                             <option value="{{ $statusKey }}" {{ request('status') == $statusKey ? 'selected' : '' }}>
                                                 {{ $statusLabel }}
@@ -51,9 +51,9 @@
                         <div class="row">
                             <div class="col-md-3">
                                 <div class="form-group">
-                                    <label for="meta_key" class="font-weight-bold">Meta Key</label>
+                                    <label for="meta_key" class="font-weight-bold">{{ __('woo-order-dashboard::orders.meta_key') }}</label>
                                     <select class="form-control" id="meta_key" name="meta_key">
-                                        <option value="">Select Meta Key</option>
+                                        <option value="">{{ __('woo-order-dashboard::orders.select_meta_key') }}</option>
                                         @foreach(config('woo-order-dashboard.meta_keys', []) as $key => $label)
                                             <option value="{{ $key }}" {{ request('meta_key') == $key ? 'selected' : '' }}>
                                                 {{ $label }}
@@ -64,13 +64,13 @@
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group">
-                                    <label for="meta_value" class="font-weight-bold">Meta Value</label>
-                                    <input type="text" class="form-control" id="meta_value" name="meta_value" value="{{ request('meta_value') }}" placeholder="Enter meta value">
+                                    <label for="meta_value" class="font-weight-bold">{{ __('woo-order-dashboard::orders.meta_value') }}</label>
+                                    <input type="text" class="form-control" id="meta_value" name="meta_value" value="{{ request('meta_value') }}" placeholder="{{ __('woo-order-dashboard::orders.enter_meta_value') }}">
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group">
-                                    <label for="per_page" class="font-weight-bold">Per Page</label>
+                                    <label for="per_page" class="font-weight-bold">{{ __('woo-order-dashboard::orders.per_page') }}</label>
                                     <select class="form-control" id="per_page" name="per_page">
                                         @foreach([15, 25, 50, 100] as $value)
                                             <option value="{{ $value }}" {{ request('per_page', 15) == $value ? 'selected' : '' }}>
@@ -85,10 +85,10 @@
                                     <label class="font-weight-bold">&nbsp;</label>
                                     <div>
                                         <button type="submit" class="btn btn-primary" id="filter-btn">
-                                            <i class="fas fa-search mr-1"></i> Filter
+                                            <i class="fas fa-search mr-1"></i> {{ __('woo-order-dashboard::orders.filter') }}
                                         </button>
                                         <a href="{{ route('orders.index') }}" class="btn btn-secondary">
-                                            <i class="fas fa-redo mr-1"></i> Reset
+                                            <i class="fas fa-redo mr-1"></i> {{ __('woo-order-dashboard::orders.reset') }}
                                         </a>
                                     </div>
                                 </div>
@@ -106,20 +106,20 @@
                 <div class="card-header bg-light">
                     <div class="d-flex justify-content-between align-items-center">
                         <h3 class="card-title mb-0">
-                            <i class="fas fa-shopping-cart mr-2"></i>Orders
+                            <i class="fas fa-shopping-cart mr-2"></i>{{ __('woo-order-dashboard::orders.orders') }}
                         </h3>
                         <div class="bulk-actions" style="display: none;">
                             <div class="d-flex align-items-center">
                                 <span class="mr-2 text-muted">
-                                    <span id="selected-count">0</span> selected
+                                    <span id="selected-count">0</span> {{ __('woo-order-dashboard::orders.selected') }}
                                 </span>
                                 <div class="dropdown">
                                     <button class="btn btn-outline-danger dropdown-toggle" type="button" id="bulkActionDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                        Bulk Actions
+                                        {{ __('woo-order-dashboard::orders.bulk_actions') }}
                                     </button>
                                     <div class="dropdown-menu" aria-labelledby="bulkActionDropdown">
                                         <a class="dropdown-item text-danger" href="#" id="bulk-delete">
-                                            <i class="fas fa-trash mr-2"></i>Delete Selected
+                                            <i class="fas fa-trash mr-2"></i>{{ __('woo-order-dashboard::orders.delete_selected') }}
                                         </a>
                                     </div>
                                 </div>
@@ -138,12 +138,12 @@
                                             <label class="custom-control-label" for="select-all"></label>
                                         </div>
                                     </th>
-                                    <th class="border-0">Order ID</th>
-                                    <th class="border-0">Date</th>
-                                    <th class="border-0">Status</th>
-                                    <th class="border-0">Total</th>
-                                    <th class="border-0">Customer</th>
-                                    <th class="border-0 text-center">Actions</th>
+                                    <th class="border-0">{{ __('woo-order-dashboard::orders.order_id') }}</th>
+                                    <th class="border-0">{{ __('woo-order-dashboard::orders.date') }}</th>
+                                    <th class="border-0">{{ __('woo-order-dashboard::orders.status') }}</th>
+                                    <th class="border-0">{{ __('woo-order-dashboard::orders.total') }}</th>
+                                    <th class="border-0">{{ __('woo-order-dashboard::orders.customer') }}</th>
+                                    <th class="border-0 text-center">{{ __('woo-order-dashboard::orders.actions') }}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -177,13 +177,13 @@
                                                 </span>
                                                 <small class="text-muted">
                                                     <i class="far fa-envelope mr-1"></i>
-                                                    {{ $order['billing']['email'] ?? 'N/A' }}
+                                                    {{ $order['billing']['email'] ?? __('woo-order-dashboard::orders.n_a') }}
                                                 </small>
                                             </div>
                                         </td>
                                         <td class="align-middle text-center">
                                             <a href="{{ route('orders.show', $order['id']) }}" class="btn btn-sm btn-info">
-                                                <i class="fas fa-eye mr-1"></i> View
+                                                <i class="fas fa-eye mr-1"></i> {{ __('woo-order-dashboard::orders.view') }}
                                             </a>
                                         </td>
                                     </tr>
@@ -192,7 +192,7 @@
                                         <td colspan="7" class="text-center py-4">
                                             <div class="text-muted">
                                                 <i class="fas fa-box-open fa-2x mb-2"></i>
-                                                <p class="mb-0">No orders found</p>
+                                                <p class="mb-0">{{ __('woo-order-dashboard::orders.no_orders_found') }}</p>
                                             </div>
                                         </td>
                                     </tr>

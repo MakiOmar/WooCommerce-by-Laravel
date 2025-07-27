@@ -3,6 +3,19 @@
 @endphp
 <script>
     window.wooCurrency = @json($wooCurrency);
+    window.translations = {
+        no_products_found: @json(__('woo-order-dashboard::orders.no_products_found')),
+        search_failed: @json(__('woo-order-dashboard::orders.search_failed')),
+        could_not_retrieve_product: @json(__('woo-order-dashboard::orders.could_not_retrieve_product')),
+        please_add_products: @json(__('woo-order-dashboard::orders.please_add_products')),
+        no_customers_found: @json(__('woo-order-dashboard::orders.no_customers_found')),
+        create_new: @json(__('woo-order-dashboard::orders.create_new')),
+        new_customer_will_be_created: @json(__('woo-order-dashboard::orders.new_customer_will_be_created')),
+        no_shipping_methods: @json(__('woo-order-dashboard::orders.no_shipping_methods')),
+        failed_to_load_shipping: @json(__('woo-order-dashboard::orders.failed_to_load_shipping')),
+        am: @json(__('woo-order-dashboard::orders.am')),
+        pm: @json(__('woo-order-dashboard::orders.pm')),
+    };
 </script>
 @extends('layouts.admin')
 
@@ -80,12 +93,12 @@
                         </table>
                         <input type="hidden" name="order_items" id="order_items">
                         <div class="form-group">
-                            <label>Customer provided note</label>
-                            <textarea class="form-control" rows="2" name="customer_note" placeholder="Add a note"></textarea>
+                            <label>{{ __('woo-order-dashboard::orders.customer_provided_note') }}</label>
+                            <textarea class="form-control" rows="2" name="customer_note" placeholder="{{ __('woo-order-dashboard::orders.add_note') }}"></textarea>
                         </div>
                         <div class="form-group">
-                            <label>Private note</label>
-                            <textarea class="form-control" rows="2" name="private_note" placeholder="Add a note"></textarea>
+                            <label>{{ __('woo-order-dashboard::orders.private_note') }}</label>
+                            <textarea class="form-control" rows="2" name="private_note" placeholder="{{ __('woo-order-dashboard::orders.add_note') }}"></textarea>
                         </div>
                     </div>
                 </div>
@@ -115,8 +128,8 @@
                         <input type="hidden" name="customer_id" id="customer_id">
                         <div id="customer-details" class="mt-2" style="display:none;"></div>
                         <div class="form-group mb-2">
-                            <label>Billing Details</label>
-                            <span id="billing-display">No customer selected</span>
+                            <label>{{ __('woo-order-dashboard::orders.billing_details') }}</label>
+                            <span id="billing-display">{{ __('woo-order-dashboard::orders.no_customer_selected') }}</span>
                             <a href="#" class="ml-2" id="edit-billing-btn" style="display:none;"><i class="fa fa-pencil-alt"></i></a>
                         </div>
                         
@@ -181,7 +194,7 @@
                                 </div>
                             </div>
                             <div class="form-group mb-2">
-                                <button type="button" class="btn btn-sm btn-outline-secondary" id="cancel-billing-btn">Close</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="cancel-billing-btn">{{ __('woo-order-dashboard::orders.close') }}</button>
                             </div>
                         </div>
                     </div>
@@ -189,13 +202,13 @@
                 <div class="card mb-3">
                     <div class="card-body">
                         <div class="form-group mb-2">
-                            <label>Order date</label>
+                            <label>{{ __('woo-order-dashboard::orders.order_date') }}</label>
                             <input type="text" class="form-control mb-1" name="order_date" value="{{ old('order_date', $defaultOrderDate ?? '') }}">
                             <div class="d-flex">
                                 <select class="form-control mr-2" style="width: 125px;" name="order_hour">
                                     @for ($h = 0; $h < 24; $h++)
                                         @php
-                                            $ampm = $h == 0 ? '12 AM' : ($h < 12 ? $h . ' AM' : ($h == 12 ? '12 PM' : ($h-12) . ' PM'));
+                                            $ampm = $h == 0 ? '12 ' . __('woo-order-dashboard::orders.am') : ($h < 12 ? $h . ' ' . __('woo-order-dashboard::orders.am') : ($h == 12 ? '12 ' . __('woo-order-dashboard::orders.pm') : ($h-12) . ' ' . __('woo-order-dashboard::orders.pm')));
                                             $label = sprintf('%02d', $h) . ' (' . $ampm . ')';
                                         @endphp
                                         <option value="{{ $h }}" {{ (old('order_hour', $defaultOrderHour ?? '') == $h) ? 'selected' : '' }}>{{ $label }}</option>
@@ -209,7 +222,7 @@
                             </div>
                         </div>
                         <div class="form-group mb-2">
-                            <label>Order status</label>
+                            <label>{{ __('woo-order-dashboard::orders.order_status') }}</label>
                             <select class="form-control" name="order_status">
                                 @php
                                     $orderStatuses = \Makiomar\WooOrderDashboard\Helpers\Orders\StatusHelper::getAllStatuses();
@@ -222,19 +235,19 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="payment_method">{{ __('Payment Method') }}</label>
+                            <label for="payment_method">{{ __('woo-order-dashboard::orders.payment_method') }}</label>
                             @php
                                 $paymentGatewayHelper = new \Makiomar\WooOrderDashboard\Helpers\Gateways\PaymentGatewayHelper();
                                 $paymentGateways = $paymentGatewayHelper->getEnabledPaymentGateways();
                             @endphp
                             <select class="form-control" name="payment_method" id="payment_method">
-                                <option value="">{{ __('Select a payment method') }}</option>
+                                <option value="">{{ __('woo-order-dashboard::orders.select_payment_method') }}</option>
                                 @if (!empty($paymentGateways))
                                     @foreach ($paymentGateways as $gateway_id => $gateway)
                                         <option value="{{ $gateway_id }}">{{ $gateway['title'] }}</option>
                                     @endforeach
                                 @else
-                                    <option value="">{{ __('No payment methods available') }}</option>
+                                    <option value="">{{ __('woo-order-dashboard::orders.no_payment_methods') }}</option>
                                 @endif
                             </select>
                         </div>
@@ -245,19 +258,19 @@
                         <!-- Order Summary Section -->
                         <div class="card mt-4">
                             <div class="card-header bg-light">
-                                <h5 class="card-title mb-0">Order Summary</h5>
+                                <h5 class="card-title mb-0">{{ __('woo-order-dashboard::orders.order_summary') }}</h5>
                             </div>
                             <div class="card-body">
                                 <!-- Subtotal Row -->
                                 <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <span class="text-muted">Subtotal</span>
+                                    <span class="text-muted">{{ __('woo-order-dashboard::orders.subtotal') }}</span>
                                     <span class="font-weight-bold">{{$wooCurrency}} <span class="order-subtotal">0.00</span></span>
                                 </div>
 
                                 <!-- Discount Row -->
                                 <div class="row mb-3">
                                     <div class="col-6">
-                                        <label class="form-label text-muted">Discount</label>
+                                        <label class="form-label text-muted">{{ __('woo-order-dashboard::orders.discount') }}</label>
                                         <div class="input-group">
                                             <span class="input-group-text">{{$wooCurrency}}</span>
                                             <input type="number" class="form-control order-discount" name="discount" value="0" min="0" step="0.01">
@@ -268,7 +281,7 @@
                                 <!-- Shipping Row -->
                                 <div class="row mb-3">
                                     <div class="col-6">
-                                        <label class="form-label text-muted">Shipping</label>
+                                        <label class="form-label text-muted">{{ __('woo-order-dashboard::orders.shipping') }}</label>
                                         <div class="input-group shipping-input-group">
                                             <span class="input-group-text">{{$wooCurrency}}</span>
                                             <input type="number" class="form-control order-shipping" name="shipping" value="0" min="0" step="0.01">
@@ -283,7 +296,7 @@
                                 <!-- Tax Row -->
                                 <div class="row mb-3">
                                     <div class="col-6">
-                                        <label class="form-label text-muted">Tax</label>
+                                        <label class="form-label text-muted">{{ __('woo-order-dashboard::orders.tax') }}</label>
                                         <div class="input-group">
                                             <span class="input-group-text">{{$wooCurrency}}</span>
                                             <input type="number" class="form-control order-taxes" name="taxes" value="0" min="0" step="0.01">
@@ -295,7 +308,7 @@
 
                                 <!-- Total Row -->
                                 <div class="d-flex justify-content-between align-items-center">
-                                    <h5 class="mb-0">Total</h5>
+                                    <h5 class="mb-0">{{ __('woo-order-dashboard::orders.grand_total') }}</h5>
                                     <h5 class="mb-0">{{$wooCurrency}} <span class="order-grand-total">0.00</span></h5>
                                 </div>
                             </div>
@@ -505,7 +518,7 @@ $(document).ready(function() {
         $.getJSON("{{ route('products.search') }}", {q: q, search_type: searchType}, function(data) {
             $prodDropdown.empty().show().css('z-index', '3000');
             if (data.length === 0) {
-                $prodDropdown.append('<div class="list-group-item">No products found</div>');
+                $prodDropdown.append('<div class="list-group-item">' + window.translations.no_products_found + '</div>');
             } else {
                 data.forEach(function(p) {
                     var productData = {
@@ -557,7 +570,7 @@ $(document).ready(function() {
             }
         }).fail(function(xhr, status, error) {
             console.error('Search failed:', error);
-            $prodDropdown.empty().show().append('<div class="list-group-item text-danger">Search failed: ' + error + '</div>');
+            $prodDropdown.empty().show().append('<div class="list-group-item text-danger">' + window.translations.search_failed + ': ' + error + '</div>');
         }).always(function() {
             // Hide loading indicator
             loadingManager.hideInputLoading('#product_search');
@@ -590,7 +603,7 @@ $(document).ready(function() {
         
         var product = $(this).data('product');
         if (!product) {
-            console.error('Could not retrieve product data.');
+            console.error(window.translations.could_not_retrieve_product);
             return;
         }
 
@@ -678,7 +691,7 @@ $(document).ready(function() {
             if ($custDropdown) $custDropdown.remove();
             $custDropdown = $('<div class="list-group customer-search-dropdown position-absolute w-100"></div>');
             if (customers.length === 0) {
-                $custDropdown.append('<div class="list-group-item">No customers found. <a href="#" class="text-primary add-new-customer">Create new</a></div>');
+                $custDropdown.append('<div class="list-group-item">' + window.translations.no_customers_found + '. <a href="#" class="text-primary add-new-customer">' + window.translations.create_new + '</a></div>');
             } else {
                 customers.forEach(function(c) {
                     $custDropdown.append('<button type="button" class="list-group-item list-group-item-action cust-item" data-id="'+c.id+'" data-name="'+c.name+'" data-email="'+c.email+'" data-billing-first-name="'+(c.billing_first_name || '')+'" data-billing-last-name="'+(c.billing_last_name || '')+'" data-billing-phone="'+(c.billing_phone || '')+'" data-billing-address-1="'+(c.billing_address_1 || '')+'" data-billing-address-2="'+(c.billing_address_2 || '')+'" data-billing-city="'+(c.billing_city || '')+'" data-billing-state="'+(c.billing_state || '')+'" data-billing-postcode="'+(c.billing_postcode || '')+'" data-billing-country="'+(c.billing_country || '')+'">'+c.name+' <small class="text-muted">('+c.email+')</small></button>');
@@ -775,7 +788,7 @@ $(document).ready(function() {
     $(document).on('click', '.add-new-customer', function(e) {
         e.preventDefault();
         $('#customer_id').val('');
-        $custDetails.html('<div class="alert alert-warning p-2">New customer will be created on order submit.</div>').show();
+        $custDetails.html('<div class="alert alert-warning p-2">' + window.translations.new_customer_will_be_created + '</div>').show();
         if ($custDropdown) $custDropdown.remove();
         
         // Clear billing fields for new customer
@@ -885,7 +898,7 @@ $(document).ready(function() {
         // Validate that we have at least one item
         if (items.length === 0) {
             e.preventDefault();
-            alert('Please add at least one product to the order.');
+            alert(window.translations.please_add_products);
             return false;
         }
         
@@ -958,11 +971,11 @@ $(document).ready(function() {
                         $dropdown.append(html);
                     });
                 } else {
-                    $dropdown.append('<div class="list-group-item">No shipping methods available</div>');
+                    $dropdown.append('<div class="list-group-item">' + window.translations.no_shipping_methods + '</div>');
                 }
             },
             error: function(xhr, status, error) {
-                $('#shipping-methods-dropdown').empty().show().append('<div class="list-group-item text-danger">Failed to load shipping methods</div>');
+                $('#shipping-methods-dropdown').empty().show().append('<div class="list-group-item text-danger">' + window.translations.failed_to_load_shipping + '</div>');
             }
         });
     });

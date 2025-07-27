@@ -2,6 +2,14 @@
 
 A powerful Laravel package that provides a clean and efficient dashboard for managing WooCommerce orders. This package is designed to work seamlessly with your existing WooCommerce installation while providing enhanced performance and functionality.
 
+## ⚠️ IMPORTANT: Required Database Configuration
+
+**Before using this package, you MUST configure the WooCommerce database connection in your Laravel application. This is a critical step that cannot be skipped.**
+
+**If you encounter "Undefined array key driver" errors, it means you haven't properly configured the database connection.**
+
+**See the [Database Connection Configuration](#-critical-database-connection-configuration) section below for detailed instructions.**
+
 ## Features
 
 - 🚀 High-performance order management with Eloquent ORM
@@ -57,6 +65,10 @@ php artisan vendor:publish --tag=woo-order-dashboard-migrations
 ```bash
 php artisan migrate --path=vendor/makiomar/woo-order-dashboard/database/migrations
 ```
+
+4. **⚠️ CRITICAL STEP**: Configure the WooCommerce database connection (see [Database Connection Configuration](#-critical-database-connection-configuration) below)
+
+**This step is REQUIRED and must be completed before using the package.**
 
 ## Publishing Commands
 
@@ -147,13 +159,19 @@ Publishes all package assets (config, views, assets, migrations)
 - `data` - Data files (continent-country mapping)
 - No tag - All assets (recommended for first-time setup)
 
-## Configuration
+## ⚠️ CRITICAL: Database Connection Configuration
 
-- Configure your WooCommerce database connection in `config/database.php`:
+**This step is REQUIRED for the package to work properly. Without this configuration, you will get "Undefined array key driver" errors.**
+
+### Step 1: Add WooCommerce Database Connection
+
+You **MUST** add the WooCommerce database connection to your Laravel `config/database.php` file. This is not optional and must be done before using the package.
+
+Open your `config/database.php` file and add the following connection to the `connections` array:
 
 ```php
 'connections' => [
-    // ... other connections
+    // ... your existing connections (mysql, sqlite, etc.)
     
     'woocommerce' => [
         'driver' => 'mysql',
@@ -171,9 +189,12 @@ Publishes all package assets (config, views, assets, migrations)
 ],
 ```
 
-- Add WooCommerce database credentials to your `.env`:
+### Step 2: Add WooCommerce Database Credentials
+
+Add the following environment variables to your `.env` file:
 
 ```env
+# WooCommerce Database Configuration (REQUIRED)
 WOO_DB_HOST=127.0.0.1
 WOO_DB_PORT=3306
 WOO_DB_DATABASE=your_woocommerce_db
@@ -181,6 +202,30 @@ WOO_DB_USERNAME=your_username
 WOO_DB_PASSWORD=your_password
 WOO_DB_PREFIX=wp_
 ```
+
+### Step 3: Verify Configuration
+
+After adding the database connection, you can verify it's working by running:
+
+```bash
+php artisan tinker
+>>> DB::connection('woocommerce')->getPdo();
+```
+
+If you see a PDO object returned, your connection is working correctly.
+
+### Troubleshooting Database Connection Issues
+
+If you encounter "Undefined array key driver" errors:
+
+1. **Check that you added the 'woocommerce' connection to `config/database.php`**
+2. **Verify your `.env` file has the correct WooCommerce database credentials**
+3. **Clear Laravel's configuration cache:**
+   ```bash
+   php artisan config:clear
+   php artisan cache:clear
+   ```
+4. **Restart your web server/development server**
 
 ## WooCommerce REST API Configuration (Optional)
 

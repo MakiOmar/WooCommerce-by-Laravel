@@ -33,7 +33,10 @@ class WooCommerceShippingService
             }
         }
         
-        return $rates;
+        // Apply cart total filtering logic (similar to WordPress theme)
+        $filteredRates = $this->filterShippingMethodsByCartTotal($rates, $cartItems, $destination);
+        
+        return $filteredRates;
     }
     
     /**
@@ -506,5 +509,108 @@ class WooCommerceShippingService
         
         // If no mapping found, return the original state
         return $state;
+    }
+    
+    /**
+     * Filter shipping methods based on cart total (similar to WordPress theme logic)
+     */
+    protected function filterShippingMethodsByCartTotal($rates, $cartItems, $destination)
+    {
+        // If no cart items, return all rates (no filtering)
+        if (empty($cartItems)) {
+            \Log::info("No cart items, returning all shipping methods");
+            return $rates;
+        }
+        
+        // Calculate cart total
+        $cartTotal = collect($cartItems)->sum(function($item) {
+            return ($item['price'] ?? 0) * ($item['qty'] ?? 1);
+        });
+        
+        // Add tax if applicable (using default tax rate from config)
+        $taxRate = config('woo-order-dashboard.tax_rate', 0.15);
+        $taxTotal = $cartTotal * $taxRate;
+        $total = $cartTotal + $taxTotal;
+        
+        $country = strtoupper($destination['country'] ?? 'SA');
+        
+        \Log::info("Filtering shipping methods", [
+            'cartTotal' => $cartTotal,
+            'taxTotal' => $taxTotal,
+            'total' => $total,
+            'country' => $country,
+            'originalRates' => $rates->count()
+        ]);
+        
+        // Convert rates to array for easier manipulation
+        $ratesArray = $rates->toArray();
+        
+        // Apply filtering logic similar to WordPress theme
+        if ($country == 'SA') {
+            // For Saudi Arabia, apply specific filtering logic
+            if ($total < 499) {
+                $this->filterShippingMethodsByCost($ratesArray, '21.74');
+            } elseif ($total >= 499 && $total < 999) {
+                $this->filterShippingMethodsByCost($ratesArray, '8.70');
+            } elseif ($total >= 999) {
+                $this->filterShippingMethodsByCost($ratesArray, '0.00');
+            }
+        } else {
+            // For other countries, apply different logic
+            $countries = ['AL', 'DZ', 'AM', 'AW', 'AU', 'AZ', 'CA', 'EG', 'FI', 'FR', 'DE', 'GR', 'HK', 'HU', 'IS', 'IQ', 'IT', 'JP', 'JO', 'LB', 'LY', 'LU', 'MV', 'MC', 'MA', 'NZ', 'NO', 'PT', 'RU', 'SG', 'ZA', 'ES', 'SD', 'SE', 'CH', 'SY', 'TN', 'TR', 'GB', 'US'];
+            
+            if (in_array($country, $countries)) {
+                // Remove DHL Express for these countries
+                $ratesArray = array_filter($ratesArray, function($rate) {
+                    return $rate['id'] !== 'dhlexpress_WPX';
+                });
+            } elseif ($total < 499) {
+                // Remove specific methods for low totals
+                $ratesArray = array_filter($ratesArray, function($rate) {
+                    return !in_array($rate['id'], ['flat_rate:8', 'free_shipping:24']);
+                });
+            } elseif ($total >= 499 && $total < 999) {
+                // Remove specific methods for medium totals
+                $ratesArray = array_filter($ratesArray, function($rate) {
+                    return !in_array($rate['id'], ['flat_rate:25', 'free_shipping:24']);
+                });
+            } else {
+                // Remove specific methods for high totals
+                $ratesArray = array_filter($ratesArray, function($rate) {
+                    return !in_array($rate['id'], ['flat_rate:8', 'flat_rate:25']);
+                });
+            }
+        }
+        
+        \Log::info("Filtered shipping methods", [
+            'filteredRates' => count($ratesArray),
+            'filteredMethods' => array_map(function($rate) {
+                return $rate['id'] . ' (' . $rate['cost'] . ')';
+            }, $ratesArray)
+        ]);
+        
+        return collect($ratesArray);
+    }
+    
+    /**
+     * Filter shipping methods by cost (helper method)
+     */
+    protected function filterShippingMethodsByCost(&$ratesArray, $targetCost)
+    {
+        $ratesArray = array_filter($ratesArray, function($rate) use ($targetCost) {
+            $cost = $rate['cost'] ?? 0;
+            
+            // Keep methods with the target cost
+            if (abs($cost - floatval($targetCost)) < 0.01) {
+                return true;
+            }
+            
+            // Always keep redbox methods and local pickup
+            if (strpos($rate['id'], 'redbox') !== false || $rate['id'] == 'local_pickup:116') {
+                return true;
+            }
+            
+            return false;
+        });
     }
 } 

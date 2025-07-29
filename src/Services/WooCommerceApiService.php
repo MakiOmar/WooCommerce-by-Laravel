@@ -105,13 +105,13 @@ class WooCommerceApiService
             'billing' => $billingAddress,
             'shipping' => $shippingAddress,
             'line_items' => $lineItems,
-            'shipping_lines' => [
+            'shipping_lines' => ($orderData['shipping'] ?? 0) > 0 ? [
                 [
                     'method_id' => 'flat_rate',
                     'method_title' => 'Flat Rate',
                     'total' => number_format($orderData['shipping'] ?? 0, 2, '.', ''),
                 ]
-            ],
+            ] : [],
             'fee_lines' => [],
             'coupon_lines' => [],
             'refunds' => [],

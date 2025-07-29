@@ -42,13 +42,42 @@
                         </td>
                     </tr>
                     @endforeach
+                    
+                    {{-- Display shipping as separate line item --}}
+                    @foreach($order->items->where('order_item_type', 'shipping') as $shippingItem)
+                    <tr class="shipping-line-item">
+                        <td class="align-middle">
+                            <h6 class="mb-0 text-muted">{{ $shippingItem->order_item_name }}</h6>
+                        </td>
+                        <td class="align-middle text-center">
+                            <span class="badge badge-secondary">1</span>
+                        </td>
+                        <td class="align-middle text-right">
+                            @php
+                                $shippingCost = $shippingItem->meta->where('meta_key', 'cost')->first()->meta_value ?? 0;
+                                $currency = $order->meta->where('meta_key', '_order_currency')->first()->meta_value ?? '';
+                            @endphp
+                            {{ $currency }} {{ number_format($shippingCost, 2) }}
+                        </td>
+                        <td class="align-middle text-right">
+                            <strong>{{ $currency }} {{ number_format($shippingCost, 2) }}</strong>
+                        </td>
+                    </tr>
+                    @endforeach
                 </tbody>
                 <tfoot class="bg-light">
                     @php
                         $subtotal = $order->items->where('order_item_type', 'line_item')->sum(function($item) {
                             return $item->meta->where('meta_key', '_line_total')->first()->meta_value ?? 0;
                         });
-                        $shipping = $order->meta->where('meta_key', '_order_shipping')->first()->meta_value ?? 0;
+                        
+                        // Get shipping from line items first, fallback to meta for legacy orders
+                        $shippingFromLineItems = $order->items->where('order_item_type', 'shipping')->sum(function($item) {
+                            return $item->meta->where('meta_key', 'cost')->first()->meta_value ?? 0;
+                        });
+                        $shippingFromMeta = $order->meta->where('meta_key', '_order_shipping')->first()->meta_value ?? 0;
+                        $shipping = $shippingFromLineItems > 0 ? $shippingFromLineItems : $shippingFromMeta;
+                        
                         $discount = $order->meta->where('meta_key', '_cart_discount')->first()->meta_value ?? 0;
                         $total = $order->meta->where('meta_key', '_order_total')->first()->meta_value ?? 0;
                         $currency = $order->meta->where('meta_key', '_order_currency')->first()->meta_value ?? '';

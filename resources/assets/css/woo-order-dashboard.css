@@ -352,4 +352,19 @@ body {
     width: 0.875rem;
     height: 0.875rem;
     margin-right: 5px;
+}
+
+/* Shipping line item styling */
+.shipping-line-item {
+    background-color: rgba(0, 0, 0, 0.02);
+    border-left: 3px solid var(--info-color);
+}
+
+.shipping-line-item td {
+    border-top: 1px solid #e5e7eb;
+}
+
+.shipping-line-item h6 {
+    color: var(--secondary-color);
+    font-style: italic;
 } 

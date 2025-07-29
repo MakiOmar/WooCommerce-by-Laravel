@@ -597,6 +597,30 @@ class OrdersController extends Controller
                     ]);
                 }
             }
+
+            // Create shipping line item if shipping amount > 0
+            if (($data['shipping'] ?? 0) > 0) {
+                $shippingItem = OrderItem::create([
+                    'order_item_name' => 'Shipping',
+                    'order_item_type' => 'shipping',
+                    'order_id' => $order->ID,
+                ]);
+
+                $shippingItemMeta = [
+                    ['method_id', 'flat_rate'],
+                    ['cost', $data['shipping']],
+                    ['total_tax', '0'],
+                    ['taxes', 'a:0:{}'],
+                ];
+                
+                foreach ($shippingItemMeta as $meta) {
+                    $itemMeta = OrderItemMeta::create([
+                        'order_item_id' => $shippingItem->order_item_id,
+                        'meta_key' => $meta[0],
+                        'meta_value' => $meta[1],
+                    ]);
+                }
+            }
             
             try {
                 DB::connection('woocommerce')->table('wc_order_stats')->insert([

@@ -147,16 +147,7 @@ class WooCommerceApiService
 
             'fee_lines' => [],
             'coupon_lines' => [],
-            'tax_lines' => $totalTax > 0 ? [
-                [
-                    'rate_code' => 'VAT',
-                    'rate_id' => $taxRateId,
-                    'label' => 'VAT (15%)',
-                    'compound' => false,
-                    'tax_total' => number_format($totalTax, 2, '.', ''),
-                    'shipping_tax_total' => number_format($shippingTax, 2, '.', ''),
-                ]
-            ] : [],
+            'tax_lines' => [], // WordPress doesn't use separate tax lines
             'refunds' => [],
             'total' => number_format($total, 2, '.', ''),
             'subtotal' => number_format($subtotal, 2, '.', ''),
@@ -165,7 +156,7 @@ class WooCommerceApiService
             'total_discount' => number_format($orderData['discount'] ?? 0, 2, '.', ''),
             'customer_note' => $orderData['customer_note'] ?? '',
             'status' => $orderData['order_status'] ?? 'processing',
-            'currency' => $this->config['default_currency'],
+            'currency' => 'SAR',
             'customer_id' => $orderData['customer_id'] ?? 0,
             'meta_data' => [
                 [

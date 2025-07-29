@@ -72,6 +72,32 @@ class OrdersController extends Controller
     }
 
     /**
+     * Build address index for WooCommerce
+     */
+    protected function buildAddressIndex($customerInfo, $type)
+    {
+        $prefix = $type === 'billing' ? 'billing' : 'shipping';
+        $parts = [
+            $customerInfo['_' . $prefix . '_first_name'] ?? '',
+            $customerInfo['_' . $prefix . '_last_name'] ?? '',
+            $customerInfo['_' . $prefix . '_address_1'] ?? '',
+            $customerInfo['_' . $prefix . '_city'] ?? '',
+            $customerInfo['_' . $prefix . '_state'] ?? '',
+            $customerInfo['_' . $prefix . '_postcode'] ?? '',
+            $customerInfo['_' . $prefix . '_country'] ?? '',
+        ];
+        
+        if ($type === 'billing') {
+            $parts[] = $customerInfo['_billing_email'] ?? '';
+            $parts[] = $customerInfo['_billing_phone'] ?? '';
+        } else {
+            $parts[] = $customerInfo['_shipping_phone'] ?? '';
+        }
+        
+        return implode(' ', array_filter($parts));
+    }
+
+    /**
      * Ensure VAT tax rate exists in WooCommerce
      */
     protected function ensureTaxRateExists()
@@ -551,11 +577,12 @@ class OrdersController extends Controller
                 return ($item['price'] * $item['qty']);
             });
             
-            // Calculate total tax from line items and shipping
+            // Calculate total tax from line items and shipping (matching WordPress structure)
             $lineItemsTax = collect($items)->sum(function ($item) {
                 return ($item['price'] * $item['qty']) * 0.15;
             });
-            $shippingTax = ($data['shipping'] ?? 0) * 0.15 / 1.15; // Extract tax from shipping total
+            $shippingCostWithoutTax = ($data['shipping'] ?? 0) / 1.15; // Remove 15% tax
+            $shippingTax = ($data['shipping'] ?? 0) - $shippingCostWithoutTax; // Extract tax from shipping total
             $totalTax = $lineItemsTax + $shippingTax;
             
             $total = $subtotal - ($data['discount'] ?? 0) + ($data['shipping'] ?? 0) + $totalTax; // Total includes tax
@@ -593,14 +620,16 @@ class OrdersController extends Controller
             $metaData = [
                 ['_customer_user', $data['customer_id'] ?? '0'],
                 ['_order_total', $total],
-                ['_order_currency', 'USD'],
+                ['_order_currency', 'SAR'],
                 ['_payment_method', $data['payment_method'] ?? ''],
                 ['_payment_method_title', $data['payment_method'] ? ucwords(str_replace('_', ' ', $data['payment_method'])) : ''],
                 ['_cart_discount', $data['discount'] ?? '0'],
-                ['_order_shipping', $data['shipping'] ?? '0'],
+                ['_order_shipping', $shippingCostWithoutTax],
+                ['_order_shipping_tax', $shippingTax],
                 ['_shipping_method', $data['shipping_method_id'] ?? 'flat_rate'],
                 ['_shipping_method_title', $data['shipping_method_title'] ?? 'Flat Rate'],
                 ['_order_tax', $totalTax],
+                ['_cart_tax', $lineItemsTax],
                 ['_billing_first_name', $customerInfo['_billing_first_name'] ?? ''],
                 ['_billing_last_name', $customerInfo['_billing_last_name'] ?? ''],
                 ['_billing_email', $customerInfo['_billing_email'] ?? ''],
@@ -619,6 +648,8 @@ class OrdersController extends Controller
                 ['_shipping_state', $customerInfo['_shipping_state'] ?? ''],
                 ['_shipping_postcode', $customerInfo['_shipping_postcode'] ?? ''],
                 ['_shipping_country', $customerInfo['_shipping_country'] ?? ''],
+                ['_billing_address_index', $this->buildAddressIndex($customerInfo, 'billing')],
+                ['_shipping_address_index', $this->buildAddressIndex($customerInfo, 'shipping')],
                 ['_order_key', 'wc_' . uniqid()],
                 ['_order_version', '7.0.0'],
                 ['_prices_include_tax', 'no'],
@@ -629,12 +660,18 @@ class OrdersController extends Controller
                 ['_shipping_tax', $shippingTax],
                 ['_cart_tax', $lineItemsTax],
                 ['_total_tax', $totalTax],
+                ['is_vat_exempt', 'no'],
                 ['_customer_ip_address', request()->ip()],
                 ['_customer_user_agent', request()->userAgent()],
                 ['_created_via', 'admin'],
                 ['_date_completed', ''],
                 ['_date_paid', now()->format('Y-m-d H:i:s')],
                 ['_cart_hash', ''],
+                ['_download_permissions_granted', 'no'],
+                ['_recorded_sales', 'no'],
+                ['_recorded_coupon_usage_counts', 'no'],
+                ['_new_order_email_sent', 'false'],
+                ['_order_stock_reduced', 'no'],
             ];
 
             foreach ($metaData as $meta) {
@@ -652,10 +689,10 @@ class OrdersController extends Controller
                     'order_id' => $order->ID,
                 ]);
 
-                // Calculate line item tax (15%)
+                // Calculate line item tax (15%) - matching WordPress structure
                 $lineSubtotal = $itemData['price'] * $itemData['qty'];
                 $lineTax = $lineSubtotal * 0.15;
-                $lineTotal = $lineSubtotal; // Total should be tax-exclusive
+                $lineTotal = $lineSubtotal; // Total should be tax-exclusive (matching WordPress)
                 
                 // Get the tax rate ID for VAT
                 $taxRateId = DB::connection('woocommerce')->table('woocommerce_tax_rates')
@@ -673,6 +710,7 @@ class OrdersController extends Controller
                     ['_line_total', $lineTotal],
                     ['_line_tax', $lineTax],
                     ['_line_tax_data', 'a:2:{s:5:"total";a:1:{s:'.$taxRateId.';d:'.$lineTax.';}s:8:"subtotal";a:1:{s:'.$taxRateId.';d:'.$lineTax.';}}'],
+                    ['_reduced_stock', '1'],
                 ];
                 
                 foreach ($orderItemMeta as $meta) {
@@ -691,7 +729,7 @@ class OrdersController extends Controller
                 $shippingMethodId = $data['shipping_method_id'] ?? 'flat_rate';
                 $shippingInstanceId = $data['shipping_instance_id'] ?? '';
                 
-                // Calculate shipping cost without tax (since tax is already included in the total)
+                // Calculate shipping cost without tax (matching WordPress structure)
                 $shippingCostWithoutTax = $data['shipping'] / 1.15; // Remove 15% tax
                 $shippingTax = $data['shipping'] - $shippingCostWithoutTax;
                 
@@ -734,32 +772,8 @@ class OrdersController extends Controller
                 ->where('tax_rate', '15.0000')
                 ->value('tax_rate_id') ?? 1;
             
-            // Create tax line items for each tax rate to ensure VAT column appears
-            if ($totalTax > 0) {
-                $taxItem = OrderItem::create([
-                    'order_item_name' => 'VAT (15%)',
-                    'order_item_type' => 'tax',
-                    'order_id' => $order->ID,
-                ]);
-
-                $taxItemMeta = [
-                    ['rate_id', $taxRateId],
-                    ['label', 'VAT (15%)'],
-                    ['compound', '0'],
-                    ['tax_amount', $totalTax],
-                    ['shipping_tax_amount', $shippingTax],
-                    ['rate_code', 'VAT'],
-                    ['rate_percent', '15'],
-                ];
-                
-                foreach ($taxItemMeta as $meta) {
-                    $itemMeta = OrderItemMeta::create([
-                        'order_item_id' => $taxItem->order_item_id,
-                        'meta_key' => $meta[0],
-                        'meta_value' => $meta[1],
-                    ]);
-                }
-            }
+            // Note: WordPress doesn't create separate tax line items
+            // Tax information is stored in line item meta and order meta
             
             try {
                 DB::connection('woocommerce')->table('wc_order_stats')->insert([

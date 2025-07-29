@@ -490,7 +490,15 @@ class OrdersController extends Controller
             $subtotal = collect($items)->sum(function ($item) {
                 return ($item['price'] * $item['qty']);
             });
-            $total = $subtotal - ($data['discount'] ?? 0) + ($data['shipping'] ?? 0) + ($data['taxes'] ?? 0);
+            
+            // Calculate total tax from line items and shipping
+            $lineItemsTax = collect($items)->sum(function ($item) {
+                return ($item['price'] * $item['qty']) * 0.15;
+            });
+            $shippingTax = ($data['shipping'] ?? 0) * 0.15 / 1.15; // Extract tax from shipping total
+            $totalTax = $lineItemsTax + $shippingTax;
+            
+            $total = $subtotal - ($data['discount'] ?? 0) + ($data['shipping'] ?? 0) + $totalTax;
             
             $order = Order::create($orderData);
             
@@ -532,7 +540,7 @@ class OrdersController extends Controller
                 ['_order_shipping', $data['shipping'] ?? '0'],
                 ['_shipping_method', $data['shipping_method_id'] ?? 'flat_rate'],
                 ['_shipping_method_title', $data['shipping_method_title'] ?? 'Flat Rate'],
-                ['_order_tax', $data['taxes'] ?? '0'],
+                ['_order_tax', $totalTax],
                 ['_billing_first_name', $customerInfo['_billing_first_name'] ?? ''],
                 ['_billing_last_name', $customerInfo['_billing_last_name'] ?? ''],
                 ['_billing_email', $customerInfo['_billing_email'] ?? ''],
@@ -556,9 +564,9 @@ class OrdersController extends Controller
                 ['_prices_include_tax', 'no'],
                 ['_discount_total', $data['discount'] ?? '0'],
                 ['_discount_tax', '0'],
-                ['_shipping_tax', '0'],
-                ['_cart_tax', $data['taxes'] ?? '0'],
-                ['_total_tax', $data['taxes'] ?? '0'],
+                ['_shipping_tax', $shippingTax],
+                ['_cart_tax', $lineItemsTax],
+                ['_total_tax', $totalTax],
                 ['_customer_ip_address', request()->ip()],
                 ['_customer_user_agent', request()->userAgent()],
                 ['_created_via', 'admin'],
@@ -582,16 +590,21 @@ class OrdersController extends Controller
                     'order_id' => $order->ID,
                 ]);
 
+                // Calculate line item tax (15%)
+                $lineSubtotal = $itemData['price'] * $itemData['qty'];
+                $lineTax = $lineSubtotal * 0.15;
+                $lineTotal = $lineSubtotal + $lineTax;
+                
                 $orderItemMeta = [
                     ['_product_id', $itemData['product_id']],
                     ['_variation_id', $itemData['variation_id'] ?? 0],
                     ['_qty', $itemData['qty']],
                     ['_tax_class', ''],
-                    ['_line_subtotal', $itemData['price']],
-                    ['_line_subtotal_tax', '0'],
-                    ['_line_total', $itemData['price'] * $itemData['qty']],
-                    ['_line_tax', '0'],
-                    ['_line_tax_data', 'a:2:{s:5:"total";a:0:{}s:8:"subtotal";a:0:{}}'],
+                    ['_line_subtotal', $lineSubtotal],
+                    ['_line_subtotal_tax', $lineTax],
+                    ['_line_total', $lineTotal],
+                    ['_line_tax', $lineTax],
+                    ['_line_tax_data', 'a:2:{s:5:"total";a:1:{s:8:"shipping";d:'.$lineTax.';}s:8:"subtotal";a:1:{s:8:"shipping";d:'.$lineTax.';}}'],
                 ];
                 
                 foreach ($orderItemMeta as $meta) {

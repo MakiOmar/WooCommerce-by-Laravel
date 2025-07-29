@@ -73,19 +73,38 @@ class WooCommerceApiService
         $subtotal = collect($items)->sum(function ($item) {
             return ($item['price'] * $item['qty']);
         });
-        $total = $subtotal - ($orderData['discount'] ?? 0) + ($orderData['shipping'] ?? 0) + ($orderData['taxes'] ?? 0);
+        
+        // Calculate tax for line items
+        $lineItemsTax = collect($items)->sum(function ($item) {
+            return ($item['price'] * $item['qty']) * 0.15;
+        });
+        
+        // Calculate shipping tax
+        $shippingTax = ($orderData['shipping'] ?? 0) * 0.15 / 1.15;
+        $totalTax = $lineItemsTax + $shippingTax;
+        
+        $total = $subtotal - ($orderData['discount'] ?? 0) + ($orderData['shipping'] ?? 0) + $totalTax;
 
         // Prepare line items for WooCommerce API
         $lineItems = collect($items)->map(function ($item) {
+            $subtotal = $item['price'] * $item['qty'];
+            $tax = $subtotal * 0.15;
+            $total = $subtotal + $tax;
+            
             return [
                 'product_id' => $item['product_id'],
                 'variation_id' => $item['variation_id'] ?? 0,
                 'quantity' => $item['qty'],
-                'total' => number_format($item['price'] * $item['qty'], 2, '.', ''),
-                'subtotal' => number_format($item['price'] * $item['qty'], 2, '.', ''),
-                'subtotal_tax' => '0.00',
-                'total_tax' => '0.00',
-                'taxes' => [],
+                'total' => number_format($total, 2, '.', ''),
+                'subtotal' => number_format($subtotal, 2, '.', ''),
+                'subtotal_tax' => number_format($tax, 2, '.', ''),
+                'total_tax' => number_format($tax, 2, '.', ''),
+                'taxes' => [
+                    [
+                        'total' => number_format($tax, 2, '.', ''),
+                        'subtotal' => number_format($tax, 2, '.', ''),
+                    ]
+                ],
                 'meta_data' => [],
                 'sku' => $item['sku'] ?? '',
                 'price' => number_format($item['price'], 2, '.', ''),
@@ -124,7 +143,7 @@ class WooCommerceApiService
             'refunds' => [],
             'total' => number_format($total, 2, '.', ''),
             'subtotal' => number_format($subtotal, 2, '.', ''),
-            'total_tax' => number_format($orderData['taxes'] ?? 0, 2, '.', ''),
+            'total_tax' => number_format($totalTax, 2, '.', ''),
             'total_shipping' => number_format($orderData['shipping'] ?? 0, 2, '.', ''),
             'total_discount' => number_format($orderData['discount'] ?? 0, 2, '.', ''),
             'customer_note' => $orderData['customer_note'] ?? '',

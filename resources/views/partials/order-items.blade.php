@@ -15,6 +15,7 @@
                         <th class="border-0 text-center">Quantity</th>
                         <th class="border-0 text-right">Price</th>
                         <th class="border-0 text-right">Total</th>
+                        <th class="border-0 text-right">نسبة ضريبة القيمة المضافة (15%)</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -40,6 +41,12 @@
                         <td class="align-middle text-right">
                             <strong>{{ $currency }} {{ number_format($total, 2) }}</strong>
                         </td>
+                        <td class="align-middle text-right">
+                            @php
+                                $lineTax = $item->meta->where('meta_key', '_line_tax')->first()->meta_value ?? 0;
+                            @endphp
+                            {{ $currency }} {{ number_format($lineTax, 2) }}
+                        </td>
                     </tr>
                     @endforeach
                     
@@ -58,14 +65,19 @@
                         <td class="align-middle text-right">
                             @php
                                 $shippingCost = $shippingItem->meta->where('meta_key', 'cost')->first()->meta_value ?? 0;
-                                $shippingTax = $shippingItem->meta->where('meta_key', 'total_tax')->first()->meta_value ?? 0;
-                                $shippingTotal = $shippingCost + $shippingTax;
                                 $currency = $order->meta->where('meta_key', '_order_currency')->first()->meta_value ?? '';
                             @endphp
-                            {{ $currency }} {{ number_format($shippingTotal, 2) }}
+                            {{ $currency }} {{ number_format($shippingCost, 2) }}
                         </td>
                         <td class="align-middle text-right">
+                            @php
+                                $shippingTax = $shippingItem->meta->where('meta_key', 'total_tax')->first()->meta_value ?? 0;
+                                $shippingTotal = $shippingCost + $shippingTax;
+                            @endphp
                             <strong>{{ $currency }} {{ number_format($shippingTotal, 2) }}</strong>
+                        </td>
+                        <td class="align-middle text-right">
+                            {{ $currency }} {{ number_format($shippingTax, 2) }}
                         </td>
                     </tr>
                     @endforeach
@@ -85,28 +97,41 @@
                         $shippingFromMeta = $order->meta->where('meta_key', '_order_shipping')->first()->meta_value ?? 0;
                         $shipping = $shippingFromLineItems > 0 ? $shippingFromLineItems : $shippingFromMeta;
                         
+                        // Calculate total VAT from line items and shipping
+                        $lineItemsVAT = $order->items->where('order_item_type', 'line_item')->sum(function($item) {
+                            return $item->meta->where('meta_key', '_line_tax')->first()->meta_value ?? 0;
+                        });
+                        $shippingVAT = $order->items->where('order_item_type', 'shipping')->sum(function($item) {
+                            return $item->meta->where('meta_key', 'total_tax')->first()->meta_value ?? 0;
+                        });
+                        $totalVAT = $lineItemsVAT + $shippingVAT;
+                        
                         $discount = $order->meta->where('meta_key', '_cart_discount')->first()->meta_value ?? 0;
                         $total = $order->meta->where('meta_key', '_order_total')->first()->meta_value ?? 0;
                         $currency = $order->meta->where('meta_key', '_order_currency')->first()->meta_value ?? '';
                     @endphp
                     <tr>
-                        <td colspan="3" class="text-right"><strong>Subtotal:</strong></td>
+                        <td colspan="4" class="text-right"><strong>Items Subtotal:</strong></td>
                         <td class="text-right">{{ $currency }} {{ number_format($subtotal, 2) }}</td>
                     </tr>
                     @if($shipping > 0)
                     <tr>
-                        <td colspan="3" class="text-right"><strong>Shipping:</strong></td>
+                        <td colspan="4" class="text-right"><strong>Shipping:</strong></td>
                         <td class="text-right">{{ $currency }} {{ number_format($shipping, 2) }}</td>
                     </tr>
                     @endif
                     @if($discount > 0)
                     <tr>
-                        <td colspan="3" class="text-right"><strong>Discount:</strong></td>
+                        <td colspan="4" class="text-right"><strong>Discount:</strong></td>
                         <td class="text-right text-danger">-{{ $currency }} {{ number_format($discount, 2) }}</td>
                     </tr>
                     @endif
                     <tr>
-                        <td colspan="3" class="text-right"><strong>Total:</strong></td>
+                        <td colspan="4" class="text-right"><strong>نسبة ضريبة القيمة المضافة (15%):</strong></td>
+                        <td class="text-right">{{ $currency }} {{ number_format($totalVAT, 2) }}</td>
+                    </tr>
+                    <tr>
+                        <td colspan="4" class="text-right"><strong>Order Total:</strong></td>
                         <td class="text-right"><strong>{{ $currency }} {{ number_format($total, 2) }}</strong></td>
                     </tr>
                 </tfoot>

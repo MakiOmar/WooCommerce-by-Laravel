@@ -80,7 +80,8 @@ class WooCommerceApiService
         });
         
         // Calculate shipping tax
-        $shippingTax = ($orderData['shipping'] ?? 0) * 0.15 / 1.15;
+        $shippingCostWithoutTax = ($orderData['shipping'] ?? 0) / 1.15; // Remove 15% tax
+        $shippingTax = ($orderData['shipping'] ?? 0) - $shippingCostWithoutTax;
         $totalTax = $lineItemsTax + $shippingTax;
         
         $total = $subtotal - ($orderData['discount'] ?? 0) + ($orderData['shipping'] ?? 0) + $totalTax;
@@ -95,7 +96,7 @@ class WooCommerceApiService
                 'product_id' => $item['product_id'],
                 'variation_id' => $item['variation_id'] ?? 0,
                 'quantity' => $item['qty'],
-                'total' => number_format($total, 2, '.', ''),
+                'total' => number_format($subtotal, 2, '.', ''), // Show base price in total column
                 'subtotal' => number_format($subtotal, 2, '.', ''),
                 'subtotal_tax' => number_format($tax, 2, '.', ''),
                 'total_tax' => number_format($tax, 2, '.', ''),
@@ -128,7 +129,7 @@ class WooCommerceApiService
                 [
                     'method_id' => $orderData['shipping_method_id'] ?? 'flat_rate',
                     'method_title' => $orderData['shipping_method_title'] ?? 'Flat Rate',
-                    'total' => number_format($orderData['shipping'] ?? 0, 2, '.', ''),
+                    'total' => number_format($shippingCostWithoutTax, 2, '.', ''), // Show base shipping cost
                     'total_tax' => number_format($shippingTax, 2, '.', ''),
                     'taxes' => [
                         [
@@ -138,18 +139,7 @@ class WooCommerceApiService
                     ],
                 ]
             ] : [],
-            'tax_lines' => $totalTax > 0 ? [
-                [
-                    'id' => 1,
-                    'rate_code' => 'VAT',
-                    'rate_id' => 1,
-                    'label' => 'VAT (15%)',
-                    'compound' => false,
-                    'tax_total' => number_format($totalTax, 2, '.', ''),
-                    'shipping_tax_total' => number_format($shippingTax, 2, '.', ''),
-                    'meta_data' => [],
-                ]
-            ] : [],
+
             'fee_lines' => [],
             'coupon_lines' => [],
             'refunds' => [],

@@ -604,7 +604,7 @@ class OrdersController extends Controller
                     ['_line_subtotal_tax', $lineTax],
                     ['_line_total', $lineTotal],
                     ['_line_tax', $lineTax],
-                    ['_line_tax_data', 'a:2:{s:5:"total";a:1:{s:8:"shipping";d:'.$lineTax.';}s:8:"subtotal";a:1:{s:8:"shipping";d:'.$lineTax.';}}'],
+                    ['_line_tax_data', 'a:2:{s:5:"total";a:1:{s:3:"1";d:'.$lineTax.';}s:8:"subtotal";a:1:{s:3:"1";d:'.$lineTax.';}}'],
                 ];
                 
                 foreach ($orderItemMeta as $meta) {
@@ -638,7 +638,7 @@ class OrdersController extends Controller
                     ['method_title', $shippingMethodTitle],
                     ['cost', $shippingCostWithoutTax],
                     ['total_tax', $shippingTax],
-                    ['taxes', 'a:1:{s:5:"total";a:1:{s:8:"shipping";d:'.$shippingTax.';}}'],
+                    ['taxes', 'a:1:{s:5:"total";a:1:{s:3:"1";d:'.$shippingTax.';}}'],
                     ['Items', ''],
                 ];
                 
@@ -651,58 +651,8 @@ class OrdersController extends Controller
                 }
             }
 
-            // Create tax line items for proper WooCommerce display
-            if ($totalTax > 0) {
-                // Create line items tax
-                if ($lineItemsTax > 0) {
-                    $lineItemsTaxItem = OrderItem::create([
-                        'order_item_name' => 'VAT (15%)',
-                        'order_item_type' => 'tax',
-                        'order_id' => $order->ID,
-                    ]);
-
-                    $lineItemsTaxMeta = [
-                        ['rate_id', '1'],
-                        ['label', 'VAT (15%)'],
-                        ['compound', '0'],
-                        ['tax_amount', $lineItemsTax],
-                        ['shipping_tax_amount', '0'],
-                    ];
-                    
-                    foreach ($lineItemsTaxMeta as $meta) {
-                        $itemMeta = OrderItemMeta::create([
-                            'order_item_id' => $lineItemsTaxItem->order_item_id,
-                            'meta_key' => $meta[0],
-                            'meta_value' => $meta[1],
-                        ]);
-                    }
-                }
-
-                // Create shipping tax
-                if ($shippingTax > 0) {
-                    $shippingTaxItem = OrderItem::create([
-                        'order_item_name' => 'VAT (15%)',
-                        'order_item_type' => 'tax',
-                        'order_id' => $order->ID,
-                    ]);
-
-                    $shippingTaxMeta = [
-                        ['rate_id', '1'],
-                        ['label', 'VAT (15%)'],
-                        ['compound', '0'],
-                        ['tax_amount', '0'],
-                        ['shipping_tax_amount', $shippingTax],
-                    ];
-                    
-                    foreach ($shippingTaxMeta as $meta) {
-                        $itemMeta = OrderItemMeta::create([
-                            'order_item_id' => $shippingTaxItem->order_item_id,
-                            'meta_key' => $meta[0],
-                            'meta_value' => $meta[1],
-                        ]);
-                    }
-                }
-            }
+            // Note: We don't create separate tax line items as WooCommerce will display VAT in the line items table
+            // The tax information is stored in the line item meta and order meta for proper calculations
             
             try {
                 DB::connection('woocommerce')->table('wc_order_stats')->insert([

@@ -527,6 +527,8 @@ class OrdersController extends Controller
                 ['_payment_method_title', $data['payment_method'] ? ucwords(str_replace('_', ' ', $data['payment_method'])) : ''],
                 ['_cart_discount', $data['discount'] ?? '0'],
                 ['_order_shipping', $data['shipping'] ?? '0'],
+                ['_shipping_method', 'flat_rate'],
+                ['_shipping_method_title', 'Flat Rate'],
                 ['_order_tax', $data['taxes'] ?? '0'],
                 ['_billing_first_name', $customerInfo['_billing_first_name'] ?? ''],
                 ['_billing_last_name', $customerInfo['_billing_last_name'] ?? ''],
@@ -601,16 +603,18 @@ class OrdersController extends Controller
             // Create shipping line item if shipping amount > 0
             if (($data['shipping'] ?? 0) > 0) {
                 $shippingItem = OrderItem::create([
-                    'order_item_name' => 'Shipping',
+                    'order_item_name' => 'Flat Rate',
                     'order_item_type' => 'shipping',
                     'order_id' => $order->ID,
                 ]);
 
                 $shippingItemMeta = [
                     ['method_id', 'flat_rate'],
+                    ['method_title', 'Flat Rate'],
                     ['cost', $data['shipping']],
                     ['total_tax', '0'],
                     ['taxes', 'a:0:{}'],
+                    ['Items', ''],
                 ];
                 
                 foreach ($shippingItemMeta as $meta) {

@@ -47,7 +47,10 @@
                     @foreach($order->items->where('order_item_type', 'shipping') as $shippingItem)
                     <tr class="shipping-line-item">
                         <td class="align-middle">
-                            <h6 class="mb-0 text-muted">{{ $shippingItem->order_item_name }}</h6>
+                            @php
+                                $methodTitle = $shippingItem->meta->where('meta_key', 'method_title')->first()->meta_value ?? $shippingItem->order_item_name;
+                            @endphp
+                            <h6 class="mb-0 text-muted">{{ $methodTitle }}</h6>
                         </td>
                         <td class="align-middle text-center">
                             <span class="badge badge-secondary">1</span>

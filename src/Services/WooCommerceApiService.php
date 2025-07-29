@@ -110,6 +110,8 @@ class WooCommerceApiService
                     'method_id' => 'flat_rate',
                     'method_title' => 'Flat Rate',
                     'total' => number_format($orderData['shipping'] ?? 0, 2, '.', ''),
+                    'total_tax' => '0.00',
+                    'taxes' => [],
                 ]
             ] : [],
             'fee_lines' => [],

@@ -107,11 +107,16 @@ class WooCommerceApiService
             'line_items' => $lineItems,
             'shipping_lines' => ($orderData['shipping'] ?? 0) > 0 ? [
                 [
-                    'method_id' => 'flat_rate',
-                    'method_title' => 'Flat Rate',
+                    'method_id' => $orderData['shipping_method_id'] ?? 'flat_rate',
+                    'method_title' => $orderData['shipping_method_title'] ?? 'Flat Rate',
                     'total' => number_format($orderData['shipping'] ?? 0, 2, '.', ''),
-                    'total_tax' => '0.00',
-                    'taxes' => [],
+                    'total_tax' => number_format(($orderData['shipping'] ?? 0) * 0.15, 2, '.', ''),
+                    'taxes' => [
+                        [
+                            'total' => number_format(($orderData['shipping'] ?? 0) * 0.15, 2, '.', ''),
+                            'subtotal' => number_format(($orderData['shipping'] ?? 0) * 0.15, 2, '.', ''),
+                        ]
+                    ],
                 ]
             ] : [],
             'fee_lines' => [],

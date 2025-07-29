@@ -408,6 +408,9 @@ class OrdersController extends Controller
             'discount' => 'nullable|numeric',
             'shipping' => 'nullable|numeric',
             'taxes' => 'nullable|numeric',
+            'shipping_method_id' => 'nullable|string',
+            'shipping_method_title' => 'nullable|string',
+            'shipping_instance_id' => 'nullable|string',
         ]);
 
         $items = json_decode($data['order_items'], true);
@@ -527,8 +530,8 @@ class OrdersController extends Controller
                 ['_payment_method_title', $data['payment_method'] ? ucwords(str_replace('_', ' ', $data['payment_method'])) : ''],
                 ['_cart_discount', $data['discount'] ?? '0'],
                 ['_order_shipping', $data['shipping'] ?? '0'],
-                ['_shipping_method', 'flat_rate'],
-                ['_shipping_method_title', 'Flat Rate'],
+                ['_shipping_method', $data['shipping_method_id'] ?? 'flat_rate'],
+                ['_shipping_method_title', $data['shipping_method_title'] ?? 'Flat Rate'],
                 ['_order_tax', $data['taxes'] ?? '0'],
                 ['_billing_first_name', $customerInfo['_billing_first_name'] ?? ''],
                 ['_billing_last_name', $customerInfo['_billing_last_name'] ?? ''],
@@ -602,18 +605,27 @@ class OrdersController extends Controller
 
             // Create shipping line item if shipping amount > 0
             if (($data['shipping'] ?? 0) > 0) {
+                // Use actual shipping method details if available, otherwise fallback to defaults
+                $shippingMethodTitle = $data['shipping_method_title'] ?? 'Flat Rate';
+                $shippingMethodId = $data['shipping_method_id'] ?? 'flat_rate';
+                $shippingInstanceId = $data['shipping_instance_id'] ?? '';
+                
+                // Calculate shipping cost without tax (since tax is already included in the total)
+                $shippingCostWithoutTax = $data['shipping'] / 1.15; // Remove 15% tax
+                $shippingTax = $data['shipping'] - $shippingCostWithoutTax;
+                
                 $shippingItem = OrderItem::create([
-                    'order_item_name' => 'Flat Rate',
+                    'order_item_name' => $shippingMethodTitle,
                     'order_item_type' => 'shipping',
                     'order_id' => $order->ID,
                 ]);
 
                 $shippingItemMeta = [
-                    ['method_id', 'flat_rate'],
-                    ['method_title', 'Flat Rate'],
-                    ['cost', $data['shipping']],
-                    ['total_tax', '0'],
-                    ['taxes', 'a:0:{}'],
+                    ['method_id', $shippingMethodId],
+                    ['method_title', $shippingMethodTitle],
+                    ['cost', $shippingCostWithoutTax],
+                    ['total_tax', $shippingTax],
+                    ['taxes', 'a:1:{s:5:"total";a:1:{s:8:"shipping";d:'.$shippingTax.';}}'],
                     ['Items', ''],
                 ];
                 

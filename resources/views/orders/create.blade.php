@@ -307,6 +307,10 @@
                                             </button>
                                         </div>
                                         <div id="shipping-methods-dropdown" class="list-group position-absolute w-100" style="z-index:3000; display:none; max-height: 200px; overflow-y: auto;"></div>
+                                        <!-- Hidden fields for shipping method details -->
+                                        <input type="hidden" name="shipping_method_id" id="shipping_method_id" value="">
+                                        <input type="hidden" name="shipping_method_title" id="shipping_method_title" value="">
+                                        <input type="hidden" name="shipping_instance_id" id="shipping_instance_id" value="">
                                     </div>
                                 </div>
 
@@ -1058,7 +1062,7 @@ $(document).ready(function() {
                 $dropdown.empty().show();
                 if (response.methods && response.methods.length > 0) {
                     response.methods.forEach(function(method) {
-                        var html = '<button type="button" class="list-group-item list-group-item-action shipping-method-item" data-id="'+method.id+'" data-cost="'+method.cost+'">'+
+                        var html = '<button type="button" class="list-group-item list-group-item-action shipping-method-item" data-id="'+method.id+'" data-cost="'+method.cost+'" data-title="'+method.title+'" data-method-id="'+method.method_id+'" data-instance-id="'+method.instance_id+'">'+
                             '<div class="d-flex justify-content-between align-items-center">'+
                             '<div><strong>'+method.title+'</strong></div>'+
                             '<div class="text-right"><strong>' + window.wooCurrency + parseFloat(method.cost).toFixed(2) + '</strong></div>'+
@@ -1078,7 +1082,19 @@ $(document).ready(function() {
     // Shipping method selection
     $(document).on('click', '.shipping-method-item', function() {
         var cost = $(this).data('cost');
-        $('.order-shipping').val(cost);
+        var title = $(this).data('title');
+        var methodId = $(this).data('method-id');
+        var instanceId = $(this).data('instance-id');
+        
+        // Calculate shipping with 15% tax
+        var shippingTax = cost * 0.15;
+        var shippingWithTax = cost + shippingTax;
+        
+        $('.order-shipping').val(shippingWithTax.toFixed(2));
+        $('#shipping_method_id').val(methodId);
+        $('#shipping_method_title').val(title);
+        $('#shipping_instance_id').val(instanceId);
+        
         $('#shipping-methods-dropdown').hide();
         recalcSummary(); // Recalculate totals after selecting shipping method
     });

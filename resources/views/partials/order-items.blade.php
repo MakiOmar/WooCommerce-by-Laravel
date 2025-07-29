@@ -58,12 +58,14 @@
                         <td class="align-middle text-right">
                             @php
                                 $shippingCost = $shippingItem->meta->where('meta_key', 'cost')->first()->meta_value ?? 0;
+                                $shippingTax = $shippingItem->meta->where('meta_key', 'total_tax')->first()->meta_value ?? 0;
+                                $shippingTotal = $shippingCost + $shippingTax;
                                 $currency = $order->meta->where('meta_key', '_order_currency')->first()->meta_value ?? '';
                             @endphp
-                            {{ $currency }} {{ number_format($shippingCost, 2) }}
+                            {{ $currency }} {{ number_format($shippingTotal, 2) }}
                         </td>
                         <td class="align-middle text-right">
-                            <strong>{{ $currency }} {{ number_format($shippingCost, 2) }}</strong>
+                            <strong>{{ $currency }} {{ number_format($shippingTotal, 2) }}</strong>
                         </td>
                     </tr>
                     @endforeach
@@ -76,7 +78,9 @@
                         
                         // Get shipping from line items first, fallback to meta for legacy orders
                         $shippingFromLineItems = $order->items->where('order_item_type', 'shipping')->sum(function($item) {
-                            return $item->meta->where('meta_key', 'cost')->first()->meta_value ?? 0;
+                            $cost = $item->meta->where('meta_key', 'cost')->first()->meta_value ?? 0;
+                            $tax = $item->meta->where('meta_key', 'total_tax')->first()->meta_value ?? 0;
+                            return $cost + $tax;
                         });
                         $shippingFromMeta = $order->meta->where('meta_key', '_order_shipping')->first()->meta_value ?? 0;
                         $shipping = $shippingFromLineItems > 0 ? $shippingFromLineItems : $shippingFromMeta;

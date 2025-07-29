@@ -234,13 +234,30 @@
                                 @endforeach
                             </select>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group mb-3">
+                            <label for="payment_method_type">{{ __('woo-order-dashboard::orders.payment_method_type') }}</label>
+                            <select class="form-control" name="payment_method_type" id="payment_method_type">
+                                <option value="static" selected>{{ __('woo-order-dashboard::orders.static_payment_methods') }}</option>
+                                <option value="dynamic">{{ __('woo-order-dashboard::orders.dynamic_payment_methods') }}</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group" id="static_payment_methods">
                             <label for="payment_method">{{ __('woo-order-dashboard::orders.payment_method') }}</label>
+                            <select class="form-control" name="payment_method" id="payment_method">
+                                <option value="bacs" selected>{{ __('woo-order-dashboard::orders.direct_bank_transfer') }}</option>
+                                <option value="cod">{{ __('woo-order-dashboard::orders.cash_on_delivery') }}</option>
+                                <option value="online">{{ __('woo-order-dashboard::orders.online_payment') }}</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group" id="dynamic_payment_methods" style="display: none;">
+                            <label for="payment_method_dynamic">{{ __('woo-order-dashboard::orders.payment_method') }}</label>
                             @php
                                 $paymentGatewayHelper = new \Makiomar\WooOrderDashboard\Helpers\Gateways\PaymentGatewayHelper();
                                 $paymentGateways = $paymentGatewayHelper->getEnabledPaymentGateways();
                             @endphp
-                            <select class="form-control" name="payment_method" id="payment_method">
+                            <select class="form-control" name="payment_method_dynamic" id="payment_method_dynamic">
                                 <option value="">{{ __('woo-order-dashboard::orders.select_payment_method') }}</option>
                                 @if (!empty($paymentGateways))
                                     @foreach ($paymentGateways as $gateway_id => $gateway)
@@ -466,6 +483,21 @@
 /* Prevent zoom on mobile for numeric inputs */
 .order-qty, .order-discount, .order-shipping, .order-taxes {
     font-size: 16px;
+}
+
+/* Payment method styling */
+#payment_method_type {
+    margin-bottom: 1rem;
+}
+
+#static_payment_methods, #dynamic_payment_methods {
+    transition: all 0.3s ease;
+}
+
+.payment-method-section {
+    border-left: 3px solid #007cba;
+    padding-left: 1rem;
+    margin-left: 0.5rem;
 }
 </style>
 @endsection
@@ -917,6 +949,20 @@ $(document).ready(function() {
     $('#order-create-form').on('submit', function(e) {
         console.log('Form submission started');
         
+        // Handle payment method selection
+        var paymentMethodType = $('#payment_method_type').val();
+        
+        if (paymentMethodType === 'dynamic') {
+            // Use dynamic payment method value
+            var dynamicValue = $('#payment_method_dynamic').val();
+            if (dynamicValue) {
+                // Remove any existing hidden payment_method input
+                $('input[name="payment_method"][type="hidden"]').remove();
+                // Create a hidden input for the actual payment method
+                $('<input type="hidden" name="payment_method" value="' + dynamicValue + '">').appendTo($(this));
+            }
+        }
+        
         var items = [];
         $('#products-table tbody tr').not('#no-products-row').each(function() {
             var $row = $(this);
@@ -1057,6 +1103,25 @@ $(document).ready(function() {
     
     // Initial check for shipping button visibility
     updateShippingButtonVisibility();
+    
+    // Payment method type switching
+    $('#payment_method_type').on('change', function() {
+        var selectedType = $(this).val();
+        
+        if (selectedType === 'static') {
+            $('#static_payment_methods').show();
+            $('#dynamic_payment_methods').hide();
+            // Clear dynamic payment method value
+            $('#payment_method_dynamic').val('');
+        } else {
+            $('#static_payment_methods').hide();
+            $('#dynamic_payment_methods').show();
+            // Clear static payment method value
+            $('#payment_method').val('bacs');
+        }
+    });
+    
+
 });
 document.addEventListener('DOMContentLoaded', function() {
     flatpickr('input[name="order_date"]', {

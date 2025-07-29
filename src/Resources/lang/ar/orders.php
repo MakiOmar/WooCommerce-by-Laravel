@@ -64,6 +64,12 @@ return [
     'payment_method' => 'طريقة الدفع',
     'select_payment_method' => 'اختر طريقة الدفع',
     'no_payment_methods' => 'لا توجد طرق دفع متاحة',
+    'payment_method_type' => 'نوع طريقة الدفع',
+    'dynamic_payment_methods' => 'طرق الدفع الديناميكية',
+    'static_payment_methods' => 'طرق الدفع الثابتة',
+    'cash_on_delivery' => 'الدفع عند الاستلام',
+    'direct_bank_transfer' => 'التحويل البنكي المباشر',
+    'online_payment' => 'الدفع الإلكتروني',
     
     // Order Summary
     'order_summary' => 'ملخص الطلب',

@@ -64,6 +64,12 @@ return [
     'payment_method' => 'Payment Method',
     'select_payment_method' => 'Select a payment method',
     'no_payment_methods' => 'No payment methods available',
+    'payment_method_type' => 'Payment Method Type',
+    'dynamic_payment_methods' => 'Dynamic Payment Methods',
+    'static_payment_methods' => 'Static Payment Methods',
+    'cash_on_delivery' => 'Cash on Delivery',
+    'direct_bank_transfer' => 'Direct Bank Transfer',
+    'online_payment' => 'Online Payment',
     
     // Order Summary
     'order_summary' => 'Order Summary',

@@ -76,6 +76,39 @@ class OrdersController extends Controller
      */
     protected function ensureTaxRateExists()
     {
+        // Enable WooCommerce taxes if not already enabled
+        $taxEnabled = DB::connection('woocommerce')->table('options')
+            ->where('option_name', 'woocommerce_calc_taxes')
+            ->value('option_value');
+            
+        if ($taxEnabled !== 'yes') {
+            DB::connection('woocommerce')->table('options')->updateOrInsert(
+                ['option_name' => 'woocommerce_calc_taxes'],
+                ['option_value' => 'yes']
+            );
+        }
+        
+        // Set tax display settings
+        DB::connection('woocommerce')->table('options')->updateOrInsert(
+            ['option_name' => 'woocommerce_tax_display_shop'],
+            ['option_value' => 'excl']
+        );
+        
+        DB::connection('woocommerce')->table('options')->updateOrInsert(
+            ['option_name' => 'woocommerce_tax_display_cart'],
+            ['option_value' => 'excl']
+        );
+        
+        DB::connection('woocommerce')->table('options')->updateOrInsert(
+            ['option_name' => 'woocommerce_price_decimal_sep'],
+            ['option_value' => '.']
+        );
+        
+        DB::connection('woocommerce')->table('options')->updateOrInsert(
+            ['option_name' => 'woocommerce_price_thousand_sep'],
+            ['option_value' => ',']
+        );
+
         // Check if VAT tax rate already exists
         $existingTaxRate = DB::connection('woocommerce')->table('woocommerce_tax_rates')
             ->where('tax_rate_name', 'VAT')
@@ -84,7 +117,7 @@ class OrdersController extends Controller
 
         if (!$existingTaxRate) {
             // Create VAT tax rate
-            DB::connection('woocommerce')->table('woocommerce_tax_rates')->insert([
+            $taxRateId = DB::connection('woocommerce')->table('woocommerce_tax_rates')->insertGetId([
                 'tax_rate_country' => '',
                 'tax_rate_state' => '',
                 'tax_rate' => '15.0000',
@@ -589,6 +622,8 @@ class OrdersController extends Controller
                 ['_order_key', 'wc_' . uniqid()],
                 ['_order_version', '7.0.0'],
                 ['_prices_include_tax', 'no'],
+                ['_tax_display_cart', 'excl'],
+                ['_display_totals_ex_tax', 'no'],
                 ['_discount_total', $data['discount'] ?? '0'],
                 ['_discount_tax', '0'],
                 ['_shipping_tax', $shippingTax],
@@ -693,8 +728,36 @@ class OrdersController extends Controller
             // Ensure tax rate exists for VAT display
             $this->ensureTaxRateExists();
             
-            // Note: We don't create separate tax line items as WooCommerce will display VAT in the line items table
-            // The tax information is stored in the line item meta and order meta for proper calculations
+            // Get the tax rate ID for VAT
+            $taxRateId = DB::connection('woocommerce')->table('woocommerce_tax_rates')
+                ->where('tax_rate_name', 'VAT')
+                ->where('tax_rate', '15.0000')
+                ->value('tax_rate_id') ?? 1;
+            
+            // Create a single tax line item for the entire order to ensure VAT column appears
+            if ($totalTax > 0) {
+                $taxItem = OrderItem::create([
+                    'order_item_name' => 'VAT (15%)',
+                    'order_item_type' => 'tax',
+                    'order_id' => $order->ID,
+                ]);
+
+                $taxItemMeta = [
+                    ['rate_id', $taxRateId],
+                    ['label', 'VAT (15%)'],
+                    ['compound', '0'],
+                    ['tax_amount', $lineItemsTax],
+                    ['shipping_tax_amount', $shippingTax],
+                ];
+                
+                foreach ($taxItemMeta as $meta) {
+                    $itemMeta = OrderItemMeta::create([
+                        'order_item_id' => $taxItem->order_item_id,
+                        'meta_key' => $meta[0],
+                        'meta_value' => $meta[1],
+                    ]);
+                }
+            }
             
             try {
                 DB::connection('woocommerce')->table('wc_order_stats')->insert([

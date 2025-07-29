@@ -84,19 +84,24 @@ class WooCommerceApiService
         $shippingTax = ($orderData['shipping'] ?? 0) - $shippingCostWithoutTax;
         $totalTax = $lineItemsTax + $shippingTax;
         
+        // Get the tax rate ID for VAT
+        $taxRateId = \DB::connection('woocommerce')->table('woocommerce_tax_rates')
+            ->where('tax_rate_name', 'VAT')
+            ->where('tax_rate', '15.0000')
+            ->value('tax_rate_id') ?? 1;
+        
         $total = $subtotal - ($orderData['discount'] ?? 0) + ($orderData['shipping'] ?? 0) + $totalTax;
 
         // Prepare line items for WooCommerce API
         $lineItems = collect($items)->map(function ($item) {
             $subtotal = $item['price'] * $item['qty'];
             $tax = $subtotal * 0.15;
-            $total = $subtotal + $tax;
             
             return [
                 'product_id' => $item['product_id'],
                 'variation_id' => $item['variation_id'] ?? 0,
                 'quantity' => $item['qty'],
-                'total' => number_format($subtotal, 2, '.', ''), // Show base price in total column
+                'total' => number_format($subtotal, 2, '.', ''), // Tax-exclusive total
                 'subtotal' => number_format($subtotal, 2, '.', ''),
                 'subtotal_tax' => number_format($tax, 2, '.', ''),
                 'total_tax' => number_format($tax, 2, '.', ''),
@@ -142,6 +147,16 @@ class WooCommerceApiService
 
             'fee_lines' => [],
             'coupon_lines' => [],
+            'tax_lines' => $totalTax > 0 ? [
+                [
+                    'rate_code' => 'VAT',
+                    'rate_id' => $taxRateId,
+                    'label' => 'VAT (15%)',
+                    'compound' => false,
+                    'tax_total' => number_format($totalTax, 2, '.', ''),
+                    'shipping_tax_total' => number_format($shippingTax, 2, '.', ''),
+                ]
+            ] : [],
             'refunds' => [],
             'total' => number_format($total, 2, '.', ''),
             'subtotal' => number_format($subtotal, 2, '.', ''),

@@ -558,7 +558,7 @@ class OrdersController extends Controller
             $shippingTax = ($data['shipping'] ?? 0) * 0.15 / 1.15; // Extract tax from shipping total
             $totalTax = $lineItemsTax + $shippingTax;
             
-            $total = $subtotal - ($data['discount'] ?? 0) + ($data['shipping'] ?? 0) + $totalTax;
+            $total = $subtotal - ($data['discount'] ?? 0) + ($data['shipping'] ?? 0) + $totalTax; // Total includes tax
             
             $order = Order::create($orderData);
             
@@ -655,7 +655,7 @@ class OrdersController extends Controller
                 // Calculate line item tax (15%)
                 $lineSubtotal = $itemData['price'] * $itemData['qty'];
                 $lineTax = $lineSubtotal * 0.15;
-                $lineTotal = $lineSubtotal + $lineTax;
+                $lineTotal = $lineSubtotal; // Total should be tax-exclusive
                 
                 // Get the tax rate ID for VAT
                 $taxRateId = DB::connection('woocommerce')->table('woocommerce_tax_rates')
@@ -734,7 +734,7 @@ class OrdersController extends Controller
                 ->where('tax_rate', '15.0000')
                 ->value('tax_rate_id') ?? 1;
             
-            // Create a single tax line item for the entire order to ensure VAT column appears
+            // Create tax line items for each tax rate to ensure VAT column appears
             if ($totalTax > 0) {
                 $taxItem = OrderItem::create([
                     'order_item_name' => 'VAT (15%)',
@@ -746,8 +746,10 @@ class OrdersController extends Controller
                     ['rate_id', $taxRateId],
                     ['label', 'VAT (15%)'],
                     ['compound', '0'],
-                    ['tax_amount', $lineItemsTax],
+                    ['tax_amount', $totalTax],
                     ['shipping_tax_amount', $shippingTax],
+                    ['rate_code', 'VAT'],
+                    ['rate_percent', '15'],
                 ];
                 
                 foreach ($taxItemMeta as $meta) {

@@ -70,6 +70,33 @@ class OrdersController extends Controller
             'price_with_tax' => $priceWithTax,
         ];
     }
+
+    /**
+     * Ensure VAT tax rate exists in WooCommerce
+     */
+    protected function ensureTaxRateExists()
+    {
+        // Check if VAT tax rate already exists
+        $existingTaxRate = DB::connection('woocommerce')->table('woocommerce_tax_rates')
+            ->where('tax_rate_name', 'VAT')
+            ->where('tax_rate', '15.0000')
+            ->first();
+
+        if (!$existingTaxRate) {
+            // Create VAT tax rate
+            DB::connection('woocommerce')->table('woocommerce_tax_rates')->insert([
+                'tax_rate_country' => '',
+                'tax_rate_state' => '',
+                'tax_rate' => '15.0000',
+                'tax_rate_name' => 'VAT',
+                'tax_rate_priority' => 1,
+                'tax_rate_compound' => 0,
+                'tax_rate_shipping' => 1,
+                'tax_rate_order' => 1,
+                'tax_rate_class' => '',
+            ]);
+        }
+    }
     
     public function searchProducts(Request $request)
     {
@@ -595,6 +622,12 @@ class OrdersController extends Controller
                 $lineTax = $lineSubtotal * 0.15;
                 $lineTotal = $lineSubtotal + $lineTax;
                 
+                // Get the tax rate ID for VAT
+                $taxRateId = DB::connection('woocommerce')->table('woocommerce_tax_rates')
+                    ->where('tax_rate_name', 'VAT')
+                    ->where('tax_rate', '15.0000')
+                    ->value('tax_rate_id') ?? 1;
+                
                 $orderItemMeta = [
                     ['_product_id', $itemData['product_id']],
                     ['_variation_id', $itemData['variation_id'] ?? 0],
@@ -604,7 +637,7 @@ class OrdersController extends Controller
                     ['_line_subtotal_tax', $lineTax],
                     ['_line_total', $lineTotal],
                     ['_line_tax', $lineTax],
-                    ['_line_tax_data', 'a:2:{s:5:"total";a:1:{s:3:"1";d:'.$lineTax.';}s:8:"subtotal";a:1:{s:3:"1";d:'.$lineTax.';}}'],
+                    ['_line_tax_data', 'a:2:{s:5:"total";a:1:{s:'.$taxRateId.';d:'.$lineTax.';}s:8:"subtotal";a:1:{s:'.$taxRateId.';d:'.$lineTax.';}}'],
                 ];
                 
                 foreach ($orderItemMeta as $meta) {
@@ -633,12 +666,18 @@ class OrdersController extends Controller
                     'order_id' => $order->ID,
                 ]);
 
+                // Get the tax rate ID for VAT
+                $taxRateId = DB::connection('woocommerce')->table('woocommerce_tax_rates')
+                    ->where('tax_rate_name', 'VAT')
+                    ->where('tax_rate', '15.0000')
+                    ->value('tax_rate_id') ?? 1;
+                
                 $shippingItemMeta = [
                     ['method_id', $shippingMethodId],
                     ['method_title', $shippingMethodTitle],
                     ['cost', $shippingCostWithoutTax],
                     ['total_tax', $shippingTax],
-                    ['taxes', 'a:1:{s:5:"total";a:1:{s:3:"1";d:'.$shippingTax.';}}'],
+                    ['taxes', 'a:1:{s:5:"total";a:1:{s:'.$taxRateId.';d:'.$shippingTax.';}}'],
                     ['Items', ''],
                 ];
                 
@@ -651,6 +690,9 @@ class OrdersController extends Controller
                 }
             }
 
+            // Ensure tax rate exists for VAT display
+            $this->ensureTaxRateExists();
+            
             // Note: We don't create separate tax line items as WooCommerce will display VAT in the line items table
             // The tax information is stored in the line item meta and order meta for proper calculations
             
@@ -692,9 +734,15 @@ class OrdersController extends Controller
                 }
                 
                 if ($totalTax > 0) {
+                    // Get the tax rate ID for VAT
+                    $taxRateId = DB::connection('woocommerce')->table('woocommerce_tax_rates')
+                        ->where('tax_rate_name', 'VAT')
+                        ->where('tax_rate', '15.0000')
+                        ->value('tax_rate_id') ?? 1;
+                    
                     DB::connection('woocommerce')->table('wc_order_tax_lookup')->insert([
                         'order_id' => $order->ID,
-                        'tax_rate_id' => 1,
+                        'tax_rate_id' => $taxRateId,
                         'date_created' => now(),
                         'shipping_tax' => $shippingTax,
                         'order_tax' => $lineItemsTax,

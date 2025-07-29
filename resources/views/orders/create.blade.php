@@ -273,7 +273,7 @@
                                         <label class="form-label text-muted">{{ __('woo-order-dashboard::orders.discount') }}</label>
                                         <div class="input-group">
                                             <span class="input-group-text">{{$wooCurrency}}</span>
-                                            <input type="number" class="form-control order-discount" name="discount" value="0" min="0" step="0.01">
+                                            <input type="text" class="form-control order-discount" name="discount" value="0" pattern="[0-9]*\.?[0-9]*" inputmode="decimal">
                                         </div>
                                     </div>
                                 </div>
@@ -284,7 +284,7 @@
                                         <label class="form-label text-muted">{{ __('woo-order-dashboard::orders.shipping') }}</label>
                                         <div class="input-group shipping-input-group">
                                             <span class="input-group-text">{{$wooCurrency}}</span>
-                                            <input type="number" class="form-control order-shipping" name="shipping" value="0" min="0" step="0.01">
+                                            <input type="text" class="form-control order-shipping" name="shipping" value="0" pattern="[0-9]*\.?[0-9]*" inputmode="decimal">
                                             <button type="button" class="btn btn-outline-secondary" id="shipping-methods-btn" style="display: none;">
                                                 <i class="fas fa-truck"></i>
                                             </button>
@@ -299,7 +299,7 @@
                                         <label class="form-label text-muted">{{ __('woo-order-dashboard::orders.tax') }}</label>
                                         <div class="input-group">
                                             <span class="input-group-text">{{$wooCurrency}}</span>
-                                            <input type="number" class="form-control order-taxes" name="taxes" value="0" min="0" step="0.01">
+                                            <input type="text" class="form-control order-taxes" name="taxes" value="0" pattern="[0-9]*\.?[0-9]*" inputmode="decimal">
                                         </div>
                                     </div>
                                 </div>
@@ -456,6 +456,17 @@
 .shipping-input-group #shipping-methods-btn {
     flex: 0 0 auto;
 }
+
+/* Numeric input styling */
+.order-qty, .order-discount, .order-shipping, .order-taxes {
+    text-align: right;
+    font-family: 'Courier New', monospace;
+}
+
+/* Prevent zoom on mobile for numeric inputs */
+.order-qty, .order-discount, .order-shipping, .order-taxes {
+    font-size: 16px;
+}
 </style>
 @endsection
 
@@ -473,22 +484,60 @@ $(document).ready(function() {
     var $prodTable = $('#products-table tbody');
     var $prodDropdown = $('#product_search_dropdown');
 
+    // Input validation for numeric fields
+    function validateNumericInput(input, allowDecimal = false) {
+        var value = input.value;
+        var pattern = allowDecimal ? /^[0-9]*\.?[0-9]*$/ : /^[0-9]*$/;
+        
+        if (!pattern.test(value)) {
+            // Remove non-numeric characters
+            input.value = value.replace(/[^0-9.]/g, '');
+            
+            // For decimal inputs, ensure only one decimal point
+            if (allowDecimal) {
+                var parts = input.value.split('.');
+                if (parts.length > 2) {
+                    input.value = parts[0] + '.' + parts.slice(1).join('');
+                }
+            }
+        }
+    }
+
+    // Bind validation to numeric inputs
+    $(document).on('input paste', '.order-qty', function() {
+        validateNumericInput(this, false);
+    });
+
+    $(document).on('input paste', '.order-discount, .order-shipping, .order-taxes', function() {
+        validateNumericInput(this, true);
+    });
+
     function recalcSummary() {
         var subtotal = 0;
         
         // Calculate subtotal from line items
         $('#products-table tbody tr').each(function() {
-            var qty = parseInt($(this).find('.order-qty').val()) || 1;
+            var qtyInput = $(this).find('.order-qty').val();
+            var qty = parseInt(qtyInput) || 1;
+            // Ensure quantity is at least 1
+            if (qty < 1) {
+                qty = 1;
+                $(this).find('.order-qty').val('1');
+            }
             var price = parseFloat($(this).find('.order-price').text()) || 0;
             var lineTotal = qty * price;
             $(this).find('.line-item-total').text(formatCurrency(lineTotal));
             subtotal += lineTotal;
         });
 
-        // Get additional costs
-        var discount = parseFloat($('.order-discount').val()) || 0;
-        var shipping = parseFloat($('.order-shipping').val()) || 0;
-        var taxes = parseFloat($('.order-taxes').val()) || 0;
+        // Get additional costs - ensure they are valid numbers
+        var discountInput = $('.order-discount').val();
+        var shippingInput = $('.order-shipping').val();
+        var taxesInput = $('.order-taxes').val();
+        
+        var discount = parseFloat(discountInput) || 0;
+        var shipping = parseFloat(shippingInput) || 0;
+        var taxes = parseFloat(taxesInput) || 0;
 
         // Calculate final total
         var grandTotal = subtotal - discount + shipping + taxes;
@@ -640,7 +689,7 @@ $(document).ready(function() {
                 .html(
                     '<td><strong>'+name+'</strong>'+attrHtml+'<br><small class="text-muted">Base: ' + window.wooCurrency + price.toFixed(2) + ' | With Tax: ' + window.wooCurrency + priceWithTax.toFixed(2) + '</small></td>' +
                     '<td class="order-price">'+priceWithTax.toFixed(2)+'</td>' +
-                    '<td><input type="number" class="form-control form-control-sm order-qty" value="1" min="1" style="width:70px;"></td>' +
+                    '<td><input type="text" class="form-control form-control-sm order-qty" value="1" pattern="[0-9]*" inputmode="numeric" style="width:70px;"></td>' +
                     '<td class="line-item-total">'+priceWithTax.toFixed(2)+'</td>' +
                     '<td><button type="button" class="btn btn-sm btn-danger remove-item">&times;</button></td>'
                 );
@@ -822,7 +871,7 @@ $(document).ready(function() {
     });
 
     // Bind events to recalculate on any change
-    $(document).on('change keyup', '.order-qty, .order-discount, .order-shipping, .order-taxes', recalcSummary);
+    $(document).on('change keyup input', '.order-qty, .order-discount, .order-shipping, .order-taxes', recalcSummary);
     $(document).on('click', '.remove-item', function() {
         $(this).closest('tr').remove();
         recalcSummary();
@@ -852,7 +901,7 @@ $(document).ready(function() {
             .html(
                 '<td><strong>'+testProduct.name+'</strong></td>' +
                 '<td class="order-price">'+testProduct.price.toFixed(2)+'</td>' +
-                '<td><input type="number" class="form-control form-control-sm order-qty" value="1" min="1" style="width:70px;"></td>' +
+                '<td><input type="text" class="form-control form-control-sm order-qty" value="1" pattern="[0-9]*" inputmode="numeric" style="width:70px;"></td>' +
                 '<td class="line-item-total">'+testProduct.price.toFixed(2)+'</td>' +
                 '<td><button type="button" class="btn btn-sm btn-danger remove-item">&times;</button></td>'
             );

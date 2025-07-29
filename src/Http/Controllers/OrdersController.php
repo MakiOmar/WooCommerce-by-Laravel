@@ -650,6 +650,59 @@ class OrdersController extends Controller
                     ]);
                 }
             }
+
+            // Create tax line items for proper WooCommerce display
+            if ($totalTax > 0) {
+                // Create line items tax
+                if ($lineItemsTax > 0) {
+                    $lineItemsTaxItem = OrderItem::create([
+                        'order_item_name' => 'VAT (15%)',
+                        'order_item_type' => 'tax',
+                        'order_id' => $order->ID,
+                    ]);
+
+                    $lineItemsTaxMeta = [
+                        ['rate_id', '1'],
+                        ['label', 'VAT (15%)'],
+                        ['compound', '0'],
+                        ['tax_amount', $lineItemsTax],
+                        ['shipping_tax_amount', '0'],
+                    ];
+                    
+                    foreach ($lineItemsTaxMeta as $meta) {
+                        $itemMeta = OrderItemMeta::create([
+                            'order_item_id' => $lineItemsTaxItem->order_item_id,
+                            'meta_key' => $meta[0],
+                            'meta_value' => $meta[1],
+                        ]);
+                    }
+                }
+
+                // Create shipping tax
+                if ($shippingTax > 0) {
+                    $shippingTaxItem = OrderItem::create([
+                        'order_item_name' => 'VAT (15%)',
+                        'order_item_type' => 'tax',
+                        'order_id' => $order->ID,
+                    ]);
+
+                    $shippingTaxMeta = [
+                        ['rate_id', '1'],
+                        ['label', 'VAT (15%)'],
+                        ['compound', '0'],
+                        ['tax_amount', '0'],
+                        ['shipping_tax_amount', $shippingTax],
+                    ];
+                    
+                    foreach ($shippingTaxMeta as $meta) {
+                        $itemMeta = OrderItemMeta::create([
+                            'order_item_id' => $shippingTaxItem->order_item_id,
+                            'meta_key' => $meta[0],
+                            'meta_value' => $meta[1],
+                        ]);
+                    }
+                }
+            }
             
             try {
                 DB::connection('woocommerce')->table('wc_order_stats')->insert([
@@ -661,14 +714,17 @@ class OrdersController extends Controller
                     'date_updated' => now(),
                     'num_items_sold' => collect($items)->sum('qty'),
                     'total_sales' => $total,
-                    'tax_total' => $data['taxes'] ?? 0,
+                    'tax_total' => $totalTax,
                     'shipping_total' => $data['shipping'] ?? 0,
-                    'net_total' => $total - ($data['taxes'] ?? 0) - ($data['shipping'] ?? 0),
+                    'net_total' => $total - $totalTax - ($data['shipping'] ?? 0),
                     'returning_customer' => 0,
                     'status' => $wcOrderStatus,
                 ]);
                 
                 foreach ($items as $itemData) {
+                    $itemSubtotal = $itemData['price'] * $itemData['qty'];
+                    $itemTax = $itemSubtotal * 0.15;
+                    
                     DB::connection('woocommerce')->table('wc_order_product_lookup')->insert([
                         'order_id' => $order->ID,
                         'product_id' => $itemData['product_id'],
@@ -676,23 +732,23 @@ class OrdersController extends Controller
                         'customer_id' => $data['customer_id'] ?? 0,
                         'date_created' => now(),
                         'product_qty' => $itemData['qty'],
-                        'product_net_revenue' => ($itemData['price'] * $itemData['qty']) - (($data['taxes'] ?? 0) / count($items)),
-                        'product_gross_revenue' => $itemData['price'] * $itemData['qty'],
+                        'product_net_revenue' => $itemSubtotal,
+                        'product_gross_revenue' => $itemSubtotal + $itemTax,
                         'coupon_amount' => 0,
-                        'tax_amount' => ($data['taxes'] ?? 0) / count($items),
+                        'tax_amount' => $itemTax,
                         'shipping_amount' => ($data['shipping'] ?? 0) / count($items),
-                        'shipping_tax_amount' => 0,
+                        'shipping_tax_amount' => ($shippingTax / count($items)),
                     ]);
                 }
                 
-                if (($data['taxes'] ?? 0) > 0) {
+                if ($totalTax > 0) {
                     DB::connection('woocommerce')->table('wc_order_tax_lookup')->insert([
                         'order_id' => $order->ID,
                         'tax_rate_id' => 1,
                         'date_created' => now(),
-                        'shipping_tax' => 0,
-                        'order_tax' => $data['taxes'] ?? 0,
-                        'total_tax' => $data['taxes'] ?? 0,
+                        'shipping_tax' => $shippingTax,
+                        'order_tax' => $lineItemsTax,
+                        'total_tax' => $totalTax,
                     ]);
                 }
                 
@@ -705,10 +761,10 @@ class OrdersController extends Controller
                         'discount_total' => $data['discount'] ?? 0,
                         'discount_tax' => 0,
                         'shipping_total' => $data['shipping'] ?? 0,
-                        'shipping_tax' => 0,
-                        'cart_tax' => $data['taxes'] ?? 0,
+                        'shipping_tax' => $shippingTax,
+                        'cart_tax' => $lineItemsTax,
                         'total' => $total,
-                        'total_tax' => $data['taxes'] ?? 0,
+                        'total_tax' => $totalTax,
                         'customer_id' => $data['customer_id'] ?? 0,
                         'order_key' => 'wc_' . uniqid(),
                         'billing_email' => '',

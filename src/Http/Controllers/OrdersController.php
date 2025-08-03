@@ -670,7 +670,7 @@ class OrdersController extends Controller
                 ['_billing_address_index', $this->buildAddressIndex($customerInfo, 'billing')],
                 ['_shipping_address_index', $this->buildAddressIndex($customerInfo, 'shipping')],
                 ['_order_key', 'wc_' . uniqid()],
-                ['_order_version', '10.0.4'],
+                ['_order_version', '9.3.3'],
                 ['_prices_include_tax', 'no'],
                 ['_tax_display_cart', 'incl'],
                 ['_tax_display_shop', 'incl'],
@@ -858,53 +858,7 @@ class OrdersController extends Controller
 
                 }
                 
-                try {
-                    DB::connection('woocommerce')->table('wc_order_operational_data')->insert([
-                        'order_id' => $order->ID,
-                        'created_via' => 'admin',
-                        'woocommerce_version' => '10.0.4',
-                        'prices_include_tax' => 0,
-                        'discount_total' => $data['discount'] ?? 0,
-                        'discount_tax' => 0,
-                        'shipping_total' => $data['shipping'] ?? 0,
-                        'shipping_tax' => $shippingTax,
-                        'cart_tax' => $lineItemsTax,
-                        'total' => $total,
-                        'total_tax' => $totalTax,
-                        'customer_id' => $data['customer_id'] ?? 0,
-                        'order_key' => 'wc_' . uniqid(),
-                        'billing_email' => '',
-                        'billing_first_name' => '',
-                        'billing_last_name' => '',
-                        'billing_phone' => '',
-                        'billing_address_1' => '',
-                        'billing_address_2' => '',
-                        'billing_city' => '',
-                        'billing_state' => '',
-                        'billing_postcode' => '',
-                        'billing_country' => '',
-                        'shipping_first_name' => '',
-                        'shipping_last_name' => '',
-                        'shipping_address_1' => '',
-                        'shipping_address_2' => '',
-                        'shipping_city' => '',
-                        'shipping_state' => '',
-                        'shipping_postcode' => '',
-                        'shipping_country' => '',
-                        'payment_method' => $data['payment_method'] ?? '',
-                        'payment_method_title' => $data['payment_method'] ? ucwords(str_replace('_', ' ', $data['payment_method'])) : '',
-                        'transaction_id' => '',
-                        'customer_ip_address' => request()->ip(),
-                        'customer_user_agent' => request()->userAgent(),
-                        'customer_note' => $data['customer_note'] ?? '',
-                        'date_completed' => null,
-                        'date_paid' => now(),
-                        'cart_hash' => '',
-                    ]);
-                    
-                } catch (\Exception $e) {
-                    \Log::info('wc_order_operational_data table not available or failed: ' . $e->getMessage());
-                }
+
                 
             } catch (\Exception $e) {
                 \Log::warning('Failed to add WooCommerce lookup table entries: ' . $e->getMessage());

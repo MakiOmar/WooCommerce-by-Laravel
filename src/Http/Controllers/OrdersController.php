@@ -807,6 +807,7 @@ class OrdersController extends Controller
                     'returning_customer' => 0,
                     'status' => $wcOrderStatus,
                     'customer_id' => $data['customer_id'] ?? 0,
+                    'date_completed' => null,
                 ]);
                 
                 foreach ($items as $itemData) {

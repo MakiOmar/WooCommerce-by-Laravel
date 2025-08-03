@@ -584,15 +584,20 @@ class OrdersController extends Controller
                 return ($item['price'] * $item['qty']);
             });
             
-            // Calculate total tax from line items and shipping (matching WordPress structure)
+            // Calculate tax correctly (matching WooCommerce structure)
             $lineItemsTax = collect($items)->sum(function ($item) {
                 return ($item['price'] * $item['qty']) * 0.15;
             });
+            
+            // Calculate shipping tax correctly
             $shippingCostWithoutTax = ($data['shipping'] ?? 0) / 1.15; // Remove 15% tax
             $shippingTax = ($data['shipping'] ?? 0) - $shippingCostWithoutTax; // Extract tax from shipping total
+            
+            // Total tax is the sum of line items tax and shipping tax
             $totalTax = $lineItemsTax + $shippingTax;
             
-            $total = $subtotal - ($data['discount'] ?? 0) + ($data['shipping'] ?? 0) + $totalTax; // Total includes tax
+            // Calculate total (subtotal + shipping + tax - discount)
+            $total = $subtotal + ($data['shipping'] ?? 0) + $totalTax - ($data['discount'] ?? 0);
             
             $order = Order::create($orderData);
             
@@ -631,6 +636,7 @@ class OrdersController extends Controller
                 ['_payment_method', $data['payment_method'] ?? ''],
                 ['_payment_method_title', $data['payment_method'] ? ucwords(str_replace('_', ' ', $data['payment_method'])) : ''],
                 ['_cart_discount', $data['discount'] ?? '0'],
+                ['_cart_discount_tax', '0'],
                 ['_order_shipping', $shippingCostWithoutTax],
                 ['_order_shipping_tax', $shippingTax],
                 ['_shipping_method', $data['shipping_method_id'] ?? 'flat_rate'],
@@ -655,10 +661,11 @@ class OrdersController extends Controller
                 ['_shipping_state', $customerInfo['_shipping_state'] ?? ''],
                 ['_shipping_postcode', $customerInfo['_shipping_postcode'] ?? ''],
                 ['_shipping_country', $customerInfo['_shipping_country'] ?? ''],
+                ['_shipping_email', $customerInfo['_billing_email'] ?? ''],
                 ['_billing_address_index', $this->buildAddressIndex($customerInfo, 'billing')],
                 ['_shipping_address_index', $this->buildAddressIndex($customerInfo, 'shipping')],
                 ['_order_key', 'wc_' . uniqid()],
-                ['_order_version', '7.0.0'],
+                ['_order_version', '10.0.4'],
                 ['_prices_include_tax', 'no'],
                 ['_tax_display_cart', 'incl'],
                 ['_tax_display_shop', 'incl'],
@@ -784,33 +791,6 @@ class OrdersController extends Controller
             // Ensure tax rate exists for VAT display
             $taxRateId = $this->ensureTaxRateExists();
             
-            // Create explicit tax line item if tax amount > 0
-            if ($totalTax > 0) {
-                $taxItem = OrderItem::create([
-                    'order_item_name' => 'VAT',
-                    'order_item_type' => 'tax',
-                    'order_id' => $order->ID,
-                ]);
-
-                $taxItemMeta = [
-                    ['rate_id', $taxRateId],
-                    ['label', 'VAT'],
-                    ['compound', 'no'],
-                    ['tax_amount', $lineItemsTax],
-                    ['shipping_tax_amount', $shippingTax],
-                    ['rate_code', 'VAT'],
-                    ['rate_percent', '15.0000'],
-                ];
-
-                foreach ($taxItemMeta as $meta) {
-                    OrderItemMeta::create([
-                        'order_item_id' => $taxItem->order_item_id,
-                        'meta_key' => $meta[0],
-                        'meta_value' => $meta[1],
-                    ]);
-                }
-            }
-            
             try {
                 DB::connection('woocommerce')->table('wc_order_stats')->insert([
                     'order_id' => $order->ID,
@@ -823,7 +803,7 @@ class OrdersController extends Controller
                     'total_sales' => $total,
                     'tax_total' => $totalTax,
                     'shipping_total' => $data['shipping'] ?? 0,
-                    'net_total' => $total - $totalTax - ($data['shipping'] ?? 0),
+                    'net_total' => $subtotal - ($data['discount'] ?? 0),
                     'returning_customer' => 0,
                     'status' => $wcOrderStatus,
                 ]);
@@ -869,7 +849,7 @@ class OrdersController extends Controller
                     DB::connection('woocommerce')->table('wc_order_operational_data')->insert([
                         'order_id' => $order->ID,
                         'created_via' => 'admin',
-                        'woocommerce_version' => '7.0.0',
+                        'woocommerce_version' => '10.0.4',
                         'prices_include_tax' => 0,
                         'discount_total' => $data['discount'] ?? 0,
                         'discount_tax' => 0,

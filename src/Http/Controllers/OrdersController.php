@@ -814,20 +814,32 @@ class OrdersController extends Controller
                     $itemSubtotal = $itemData['price'] * $itemData['qty'];
                     $itemTax = $itemSubtotal * 0.15;
                     
-                    DB::connection('woocommerce')->table('wc_order_product_lookup')->insert([
-                        'order_id' => $order->ID,
-                        'product_id' => $itemData['product_id'],
-                        'variation_id' => $itemData['variation_id'] ?? 0,
-                        'customer_id' => $data['customer_id'] ?? 0,
-                        'date_created' => now(),
-                        'product_qty' => $itemData['qty'],
-                        'product_net_revenue' => $itemSubtotal,
-                        'product_gross_revenue' => $itemSubtotal + $itemTax,
-                        'coupon_amount' => 0,
-                        'tax_amount' => $itemTax,
-                        'shipping_amount' => ($data['shipping'] ?? 0) / count($items),
-                        'shipping_tax_amount' => ($shippingTax / count($items)),
-                    ]);
+                    // Get the order item ID for this product
+                    $orderItem = OrderItem::where('order_id', $order->ID)
+                        ->where('order_item_type', 'line_item')
+                        ->whereHas('meta', function($query) use ($itemData) {
+                            $query->where('meta_key', '_product_id')
+                                  ->where('meta_value', $itemData['product_id']);
+                        })
+                        ->first();
+                    
+                    if ($orderItem) {
+                        DB::connection('woocommerce')->table('wc_order_product_lookup')->insert([
+                            'order_id' => $order->ID,
+                            'order_item_id' => $orderItem->order_item_id,
+                            'product_id' => $itemData['product_id'],
+                            'variation_id' => $itemData['variation_id'] ?? 0,
+                            'customer_id' => $data['customer_id'] ?? 0,
+                            'date_created' => now(),
+                            'product_qty' => $itemData['qty'],
+                            'product_net_revenue' => $itemSubtotal,
+                            'product_gross_revenue' => $itemSubtotal + $itemTax,
+                            'coupon_amount' => 0,
+                            'tax_amount' => $itemTax,
+                            'shipping_amount' => ($data['shipping'] ?? 0) / count($items),
+                            'shipping_tax_amount' => ($shippingTax / count($items)),
+                        ]);
+                    }
                 }
                 
                 if ($totalTax > 0) {

@@ -102,21 +102,16 @@ class OrdersController extends Controller
      */
     protected function ensureTaxRateExists()
     {
-        \Log::info('=== ensureTaxRateExists START ===');
-        
         // Enable WooCommerce taxes if not already enabled
         $taxEnabled = DB::connection('woocommerce')->table('options')
             ->where('option_name', 'woocommerce_calc_taxes')
             ->value('option_value');
-            
-        \Log::info('Current tax enabled status:', ['tax_enabled' => $taxEnabled]);
             
         if ($taxEnabled !== 'yes') {
             DB::connection('woocommerce')->table('options')->updateOrInsert(
                 ['option_name' => 'woocommerce_calc_taxes'],
                 ['option_value' => 'yes']
             );
-            \Log::info('Enabled WooCommerce taxes');
         }
         
         // Configure tax display settings for proper tax display
@@ -124,19 +119,16 @@ class OrdersController extends Controller
             ['option_name' => 'woocommerce_tax_display_shop'],
             ['option_value' => 'incl']
         );
-        \Log::info('Set woocommerce_tax_display_shop to incl');
         
         DB::connection('woocommerce')->table('options')->updateOrInsert(
             ['option_name' => 'woocommerce_tax_display_cart'],
             ['option_value' => 'incl']
         );
-        \Log::info('Set woocommerce_tax_display_cart to incl');
         
         DB::connection('woocommerce')->table('options')->updateOrInsert(
             ['option_name' => 'woocommerce_tax_total_display'],
             ['option_value' => 'itemized']
         );
-        \Log::info('Set woocommerce_tax_total_display to itemized');
         
         DB::connection('woocommerce')->table('options')->updateOrInsert(
             ['option_name' => 'woocommerce_price_decimal_sep'],
@@ -154,8 +146,6 @@ class OrdersController extends Controller
             ->where('tax_rate', '15.0000')
             ->first();
 
-        \Log::info('Existing tax rate check:', ['existing_tax_rate' => $existingTaxRate]);
-
         if (!$existingTaxRate) {
             // Create VAT tax rate
             $taxRateId = DB::connection('woocommerce')->table('woocommerce_tax_rates')->insertGetId([
@@ -169,17 +159,11 @@ class OrdersController extends Controller
                 'tax_rate_order' => 1,
                 'tax_rate_class' => '',
             ]);
-            \Log::info('Created new VAT tax rate:', ['tax_rate_id' => $taxRateId]);
         } else {
             $taxRateId = $existingTaxRate->tax_rate_id;
-            \Log::info('Using existing VAT tax rate:', ['tax_rate_id' => $taxRateId]);
         }
         
-        $finalTaxRateId = $existingTaxRate ? $existingTaxRate->tax_rate_id : $taxRateId ?? 1;
-        \Log::info('Final tax rate ID to return:', ['final_tax_rate_id' => $finalTaxRateId]);
-        \Log::info('=== ensureTaxRateExists END ===');
-        
-        return $finalTaxRateId;
+        return $existingTaxRate ? $existingTaxRate->tax_rate_id : $taxRateId ?? 1;
     }
     
     public function searchProducts(Request $request)
@@ -509,10 +493,6 @@ class OrdersController extends Controller
 
     public function store(Request $request)
     {
-        // Debug: Log store method entry
-        \Log::info('=== STORE METHOD ENTRY ===');
-        \Log::info('Request data:', $request->all());
-        
         $data = $request->validate([
             'order_items' => 'required|string',
             'customer_id' => 'nullable|integer',
@@ -530,23 +510,13 @@ class OrdersController extends Controller
 
         $items = json_decode($data['order_items'], true);
         
-        // Debug: Log validation and items
-        \Log::info('Validated data:', $data);
-        \Log::info('Decoded items:', $items);
-        
         if (empty($items)) {
             return back()->with('error', 'No order items found. Please add at least one product to the order.');
         }
 
-        // Debug: Log API configuration
-        $apiEnabled = config('woo-order-dashboard.api.enabled', false);
-        \Log::info('API enabled check:', ['api_enabled' => $apiEnabled]);
-
-        if ($apiEnabled) {
-            \Log::info('Using API method for order creation');
+        if (config('woo-order-dashboard.api.enabled', false)) {
             return $this->createOrderViaApi($data);
         } else {
-            \Log::info('Using database method for order creation');
             return $this->createOrderViaDatabase($data);
         }
     }
@@ -586,14 +556,8 @@ class OrdersController extends Controller
     {
         $items = json_decode($data['order_items'], true);
         
-        // Debug: Log input data
-        \Log::info('=== ORDER CREATION DEBUG START ===');
-        \Log::info('Input data:', $data);
-        \Log::info('Items:', $items);
-        
         // Ensure tax rate exists and settings are configured FIRST
         $taxRateId = $this->ensureTaxRateExists();
-        \Log::info('Tax rate ID:', ['tax_rate_id' => $taxRateId]);
         
         DB::connection('woocommerce')->beginTransaction();
         try {
@@ -639,18 +603,6 @@ class OrdersController extends Controller
             
             // Calculate total (subtotal + shipping + tax - discount)
             $total = $subtotal + ($data['shipping'] ?? 0) + $totalTax - ($data['discount'] ?? 0);
-            
-            // Debug: Log tax calculations
-            \Log::info('Tax calculations:', [
-                'subtotal' => $subtotal,
-                'lineItemsTax' => $lineItemsTax,
-                'shippingCostWithoutTax' => $shippingCostWithoutTax,
-                'shippingTax' => $shippingTax,
-                'totalTax' => $totalTax,
-                'total' => $total,
-                'shipping' => $data['shipping'] ?? 0,
-                'discount' => $data['discount'] ?? 0
-            ]);
             
             $order = Order::create($orderData);
             
@@ -742,21 +694,11 @@ class OrdersController extends Controller
                 ['_order_stock_reduced', 'no'],
             ];
 
-            // Debug: Log meta data before creation
-            \Log::info('Meta data to be created:', $metaData);
-            
             foreach ($metaData as $meta) {
                 $postMeta = PostMeta::create([
                     'post_id' => $order->ID,
                     'meta_key' => $meta[0],
                     'meta_value' => $meta[1],
-                ]);
-                
-                // Debug: Log each meta creation
-                \Log::info('Created meta:', [
-                    'post_id' => $order->ID,
-                    'meta_key' => $meta[0],
-                    'meta_value' => $meta[1]
                 ]);
             }
 
@@ -781,17 +723,7 @@ class OrdersController extends Controller
                     'subtotal' => [$taxRateId => $lineTax]
                 ]);
                 
-                // Debug: Log line item calculations
-                \Log::info('Line item calculations:', [
-                    'item_name' => $itemData['name'],
-                    'price' => $itemData['price'],
-                    'qty' => $itemData['qty'],
-                    'lineSubtotal' => $lineSubtotal,
-                    'lineTax' => $lineTax,
-                    'lineTotal' => $lineTotal,
-                    'taxRateId' => $taxRateId,
-                    'taxData' => $taxData
-                ]);
+
                 
                 $orderItemMeta = [
                     ['_product_id', $itemData['product_id']],
@@ -806,21 +738,11 @@ class OrdersController extends Controller
                     ['_reduced_stock', '1'],
                 ];
                 
-                // Debug: Log line item meta before creation
-                \Log::info('Line item meta to be created:', $orderItemMeta);
-                
                 foreach ($orderItemMeta as $meta) {
                     $itemMeta = OrderItemMeta::create([
                         'order_item_id' => $orderItem->order_item_id,
                         'meta_key' => $meta[0],
                         'meta_value' => $meta[1],
-                    ]);
-                    
-                    // Debug: Log each line item meta creation
-                    \Log::info('Created line item meta:', [
-                        'order_item_id' => $orderItem->order_item_id,
-                        'meta_key' => $meta[0],
-                        'meta_value' => $meta[1]
                     ]);
                 }
             }
@@ -869,15 +791,7 @@ class OrdersController extends Controller
             // Tax rate already configured at the beginning of the method
             
             try {
-                // Debug: Log wc_order_stats insertion attempt
-                \Log::info('Attempting to insert into wc_order_stats:', [
-                    'order_id' => $order->ID,
-                    'total_sales' => $total,
-                    'tax_total' => $totalTax,
-                    'shipping_total' => $data['shipping'] ?? 0,
-                    'net_total' => $subtotal - ($data['discount'] ?? 0),
-                    'status' => $wcOrderStatus
-                ]);
+
                 
                 DB::connection('woocommerce')->table('wc_order_stats')->insert([
                     'order_id' => $order->ID,
@@ -892,6 +806,7 @@ class OrdersController extends Controller
                     'net_total' => $subtotal - ($data['discount'] ?? 0),
                     'returning_customer' => 0,
                     'status' => $wcOrderStatus,
+                    'customer_id' => $data['customer_id'] ?? 0,
                 ]);
                 
                 foreach ($items as $itemData) {
@@ -927,14 +842,7 @@ class OrdersController extends Controller
                         'total_tax' => $totalTax,
                     ]);
                     
-                    // Debug: Log tax lookup insertion
-                    \Log::info('Inserted tax lookup:', [
-                        'order_id' => $order->ID,
-                        'tax_rate_id' => $taxRateId,
-                        'shipping_tax' => $shippingTax,
-                        'order_tax' => $lineItemsTax,
-                        'total_tax' => $totalTax
-                    ]);
+
                 }
                 
                 try {
@@ -991,18 +899,7 @@ class OrdersController extends Controller
             
             DB::connection('woocommerce')->commit();
 
-            // Debug: Log final order creation result
-            \Log::info('=== ORDER CREATION COMPLETED ===');
-            \Log::info('Order created successfully:', [
-                'order_id' => $order->ID,
-                'final_tax_calculations' => [
-                    'subtotal' => $subtotal,
-                    'lineItemsTax' => $lineItemsTax,
-                    'shippingTax' => $shippingTax,
-                    'totalTax' => $totalTax,
-                    'total' => $total
-                ]
-            ]);
+
 
             CacheHelper::clearCacheOnOrderCreate();
 

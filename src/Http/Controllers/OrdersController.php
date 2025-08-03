@@ -509,6 +509,10 @@ class OrdersController extends Controller
 
     public function store(Request $request)
     {
+        // Debug: Log store method entry
+        \Log::info('=== STORE METHOD ENTRY ===');
+        \Log::info('Request data:', $request->all());
+        
         $data = $request->validate([
             'order_items' => 'required|string',
             'customer_id' => 'nullable|integer',
@@ -526,13 +530,23 @@ class OrdersController extends Controller
 
         $items = json_decode($data['order_items'], true);
         
+        // Debug: Log validation and items
+        \Log::info('Validated data:', $data);
+        \Log::info('Decoded items:', $items);
+        
         if (empty($items)) {
             return back()->with('error', 'No order items found. Please add at least one product to the order.');
         }
 
-        if (config('woo-order-dashboard.api.enabled', false)) {
+        // Debug: Log API configuration
+        $apiEnabled = config('woo-order-dashboard.api.enabled', false);
+        \Log::info('API enabled check:', ['api_enabled' => $apiEnabled]);
+
+        if ($apiEnabled) {
+            \Log::info('Using API method for order creation');
             return $this->createOrderViaApi($data);
         } else {
+            \Log::info('Using database method for order creation');
             return $this->createOrderViaDatabase($data);
         }
     }
@@ -855,13 +869,22 @@ class OrdersController extends Controller
             // Tax rate already configured at the beginning of the method
             
             try {
+                // Debug: Log wc_order_stats insertion attempt
+                \Log::info('Attempting to insert into wc_order_stats:', [
+                    'order_id' => $order->ID,
+                    'total_sales' => $total,
+                    'tax_total' => $totalTax,
+                    'shipping_total' => $data['shipping'] ?? 0,
+                    'net_total' => $subtotal - ($data['discount'] ?? 0),
+                    'status' => $wcOrderStatus
+                ]);
+                
                 DB::connection('woocommerce')->table('wc_order_stats')->insert([
                     'order_id' => $order->ID,
                     'parent_id' => 0,
                     'date_created' => now(),
                     'date_created_gmt' => now()->utc(),
                     'date_paid' => now(),
-                    'date_updated' => now(),
                     'num_items_sold' => collect($items)->sum('qty'),
                     'total_sales' => $total,
                     'tax_total' => $totalTax,

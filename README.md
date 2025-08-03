@@ -39,6 +39,20 @@ A powerful Laravel package that provides a clean and efficient dashboard for man
 - WordPress with WooCommerce installed
 - MySQL 5.7+ or MariaDB 10.2+
 
+### Required Dependencies
+
+The package requires the following dependencies in your main Laravel project:
+
+```bash
+# Required for timezone handling and date management
+composer require nesbot/carbon
+
+# Optional but recommended for better performance
+composer require predis/predis  # For Redis cache driver
+```
+
+**Note**: The `nesbot/carbon` package is automatically included when you install this package, but you may need to run `composer update` in your main project to ensure it's available.
+
 ## Installation
 
 1. Install the package via Composer:
@@ -1133,6 +1147,20 @@ php artisan vendor:publish --provider="Makiomar\WooOrderDashboard\WooOrderDashbo
 ```
 
 ## Recent Updates
+
+### Version 2.1 - WooCommerce Order Improvements (In Development)
+
+This version includes comprehensive WooCommerce order management improvements:
+
+1. **Stock Management**: Automatic stock reduction/restoration based on order status changes
+2. **Order Notes System**: Complete order notes with customer visibility control
+3. **Tax Calculation**: Enhanced tax handling with proper calculation and storage
+4. **Download Permissions**: Digital product download permission management
+5. **Cache Invalidation**: Comprehensive cache clearing for data consistency
+6. **Payment Event Tracking**: Payment recording with transaction IDs and status updates
+7. **Shipping Event Tracking**: Tracking number storage and shipping event notes
+8. **Timezone Handling**: Proper timezone-aware timestamps using Carbon
+9. **Enhanced Order Meta**: Complete order meta field management
 
 ### Version 2.0 - Architectural Refactoring
 

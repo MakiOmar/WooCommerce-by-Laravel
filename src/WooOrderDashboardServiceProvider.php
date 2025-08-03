@@ -21,6 +21,9 @@ class WooOrderDashboardServiceProvider extends ServiceProvider
 
         // Register cache driver configuration
         $this->registerCacheConfiguration();
+
+        // Register WooCommerce services
+        $this->registerWooCommerceServices();
     }
 
     /**
@@ -217,5 +220,31 @@ class WooOrderDashboardServiceProvider extends ServiceProvider
                 'max' => config('woo-order-dashboard.database.max_connections', 10),
             ]);
         }
+    }
+
+    /**
+     * Register WooCommerce services
+     *
+     * @return void
+     */
+    protected function registerWooCommerceServices()
+    {
+        // Register WooCommerce Stock Service
+        $this->app->singleton(\Makiomar\WooOrderDashboard\Services\WooCommerceStockService::class);
+
+        // Register WooCommerce Order Notes Service
+        $this->app->singleton(\Makiomar\WooOrderDashboard\Services\WooCommerceOrderNotesService::class);
+
+        // Register WooCommerce Cache Service
+        $this->app->singleton(\Makiomar\WooOrderDashboard\Services\WooCommerceCacheService::class);
+
+        // Register WooCommerce Order Management Service
+        $this->app->singleton(\Makiomar\WooOrderDashboard\Services\WooCommerceOrderManagementService::class, function ($app) {
+            return new \Makiomar\WooOrderDashboard\Services\WooCommerceOrderManagementService(
+                $app->make(\Makiomar\WooOrderDashboard\Services\WooCommerceStockService::class),
+                $app->make(\Makiomar\WooOrderDashboard\Services\WooCommerceOrderNotesService::class),
+                $app->make(\Makiomar\WooOrderDashboard\Services\WooCommerceCacheService::class)
+            );
+        });
     }
 } 

@@ -554,6 +554,9 @@ class OrdersController extends Controller
     {
         $items = json_decode($data['order_items'], true);
         
+        // Ensure tax rate exists and settings are configured FIRST
+        $taxRateId = $this->ensureTaxRateExists();
+        
         DB::connection('woocommerce')->beginTransaction();
         try {
             $orderStatus = $data['order_status'] ?? 'processing';
@@ -674,7 +677,6 @@ class OrdersController extends Controller
                 ['_discount_total', $data['discount'] ?? '0'],
                 ['_discount_tax', '0'],
                 ['_shipping_tax', $shippingTax],
-                ['_cart_tax', $lineItemsTax],
                 ['_total_tax', $totalTax],
                 ['is_vat_exempt', 'no'],
                 ['_customer_ip_address', request()->ip()],
@@ -710,11 +712,8 @@ class OrdersController extends Controller
                 $lineTax = $lineSubtotal * 0.15;
                 $lineTotal = $lineSubtotal; // Total should be tax-exclusive (matching WordPress)
                 
-                // Get the tax rate ID for VAT
-                $taxRateId = DB::connection('woocommerce')->table('woocommerce_tax_rates')
-                    ->where('tax_rate_name', 'VAT')
-                    ->where('tax_rate', '15.0000')
-                    ->value('tax_rate_id') ?? 1;
+                // Use the tax rate ID from the beginning of the method
+                // $taxRateId is already available from ensureTaxRateExists()
                 
                 // Proper tax data serialization format
                 $taxData = serialize([
@@ -761,11 +760,8 @@ class OrdersController extends Controller
                     'order_id' => $order->ID,
                 ]);
 
-                // Get the tax rate ID for VAT
-                $taxRateId = DB::connection('woocommerce')->table('woocommerce_tax_rates')
-                    ->where('tax_rate_name', 'VAT')
-                    ->where('tax_rate', '15.0000')
-                    ->value('tax_rate_id') ?? 1;
+                // Use the tax rate ID from the beginning of the method
+                // $taxRateId is already available from ensureTaxRateExists()
                 
                 // Proper shipping tax data serialization
                 $shippingTaxData = serialize(['total' => [$taxRateId => $shippingTax]]);
@@ -788,8 +784,7 @@ class OrdersController extends Controller
                 }
             }
 
-            // Ensure tax rate exists for VAT display
-            $taxRateId = $this->ensureTaxRateExists();
+            // Tax rate already configured at the beginning of the method
             
             try {
                 DB::connection('woocommerce')->table('wc_order_stats')->insert([

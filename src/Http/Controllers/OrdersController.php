@@ -173,7 +173,7 @@ class OrdersController extends Controller
         $prefix = DB::getDatabaseName() . '.';
         
         // Debug logging
-        \Log::info("Product search - Query: {$q}, Search Type: {$searchType}");
+
         
         // First, search for regular products (simple and variable)
         $products = Product::with('meta')
@@ -192,7 +192,7 @@ class OrdersController extends Controller
             ->limit(20)
             ->get();
 
-        \Log::info("Found " . $products->count() . " products");
+
 
         $results = collect();
         $processedVariations = collect(); // Track which variations we've already processed
@@ -216,13 +216,12 @@ class OrdersController extends Controller
                             }
                         }
                     } catch (\Exception $e) {
-                        \Log::warning("Failed to unserialize product attributes for product {$product->ID}: " . $e->getMessage());
+                        // Failed to unserialize product attributes
                     }
                 }
             }
             
-            \Log::info("Processing product ID: {$product->ID}, Type: {$productType}, Title: {$product->post_title}");
-            \Log::info("Meta fields for product {$product->ID}: " . json_encode($meta->toArray()));
+            
             
             // If searching by title and it's a variable product, skip the parent and only include variations
             if ($searchType === 'title' && $productType === 'variable') {
@@ -232,7 +231,7 @@ class OrdersController extends Controller
                     ->where('post_parent', $product->ID)
                     ->get();
                 
-                \Log::info("Found " . $variations->count() . " variations for variable product {$product->ID}");
+        
                 
                 foreach ($variations as $variation) {
                     $variationMeta = $variation->meta->pluck('meta_value', 'meta_key');
@@ -283,7 +282,7 @@ class OrdersController extends Controller
                         ->where('post_parent', $product->ID)
                         ->get();
                     
-                    \Log::info("Found " . $variations->count() . " variations for variable product {$product->ID} (SKU search)");
+            
                     
                     foreach ($variations as $variation) {
                         $variationMeta = $variation->meta->pluck('meta_value', 'meta_key');
@@ -368,7 +367,7 @@ class OrdersController extends Controller
             ->limit(10)
             ->get();
 
-        \Log::info("Found " . $variations->count() . " variations directly");
+
 
         foreach ($variations as $variation) {
             // Skip if we've already processed this variation
@@ -422,7 +421,7 @@ class OrdersController extends Controller
             }
         }
 
-        \Log::info("Total results: " . $results->count());
+
 
         // Limit results to 20
         return response()->json($results->take(20)->values());
@@ -470,14 +469,10 @@ class OrdersController extends Controller
             'postcode' => $request->input('postcode', ''),
         ];
         
-        \Log::info("Shipping destination", ['destination' => $destination]);
-        
         $cartItems = $request->input('items', []);
-        \Log::info("Cart items", ['cartItems' => $cartItems]);
         
         $shippingService = new WooCommerceShippingService();
         $methods = $shippingService->getShippingMethods($destination, $cartItems);
-        \Log::info("methods", ['methods' => $methods]);
         
         $availableMethods = [];
         foreach ($methods as $method) {
@@ -861,7 +856,7 @@ class OrdersController extends Controller
 
                 
             } catch (\Exception $e) {
-                \Log::warning('Failed to add WooCommerce lookup table entries: ' . $e->getMessage());
+                // Failed to add WooCommerce lookup table entries
             }
             
             DB::connection('woocommerce')->commit();
@@ -895,7 +890,7 @@ class OrdersController extends Controller
                 DB::connection('woocommerce')->table('options')->where('option_name', 'like', '_transient_timeout_wc_%')->delete();
                 
             } catch (\Exception $e) {
-                \Log::warning('Failed to clear WooCommerce cache: ' . $e->getMessage());
+                // Failed to clear WooCommerce cache
             }
 
             return redirect()->route('orders.index')->with('success', 'Order created successfully. Order ID: ' . $order->ID);

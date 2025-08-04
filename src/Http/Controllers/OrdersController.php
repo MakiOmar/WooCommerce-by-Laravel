@@ -577,7 +577,7 @@ class OrdersController extends Controller
                 'post_parent' => 0,
                 'menu_order' => 0,
                 'comment_status' => 'closed',
-                'guid' => '',
+                'guid' => config('app.url') . '/?post_type=shop_order&p=' . uniqid(),
             ];
             
             $subtotal = collect($items)->sum(function ($item) {
@@ -817,7 +817,8 @@ class OrdersController extends Controller
                 ]);
                 
                 foreach ($items as $itemData) {
-                    $itemSubtotal = $itemData['price'] * $itemData['qty'];
+                    // Use tax-exclusive prices to match WooCommerce structure
+                    $itemSubtotal = ($itemData['price'] / 1.15) * $itemData['qty'];
                     $itemTax = $itemSubtotal * 0.15;
                     
                     // Get the order item ID for this product

@@ -836,7 +836,8 @@ class OrdersController extends Controller
                     ['Items', $itemData['name'] . ' × ' . $itemData['qty']],
                     ['wpo_package_hash', md5(uniqid())],
                     ['wpo_shipping_method_id', $shippingMethodId . ':' . $shippingInstanceId],
-                    ['total', $shippingExclTax], // Use the tax-exclusive shipping amount (WooCommerce expects this)
+                    ['cost', $shippingExclTax], // Use 'cost' key for shipping cost (tax-exclusive)
+                    ['total', $shippingInclTax], // Use 'total' key for shipping total (tax-inclusive)
                     ['total_tax', $shippingTax],
                     ['taxes', $shippingTaxData], // Critical: WooCommerce expects this for tax display
                 ];
@@ -915,7 +916,7 @@ class OrdersController extends Controller
                     'num_items_sold' => collect($items)->sum('qty'),
                     'total_sales' => $total,
                     'tax_total' => $totalTax,
-                    'shipping_total' => $data['shipping'] ?? 0,
+                    'shipping_total' => $shippingInclTax, // Use tax-inclusive shipping amount
                     'net_total' => $subtotal - ($data['discount'] ?? 0),
                     'returning_customer' => 0,
                     'status' => $wcOrderStatus,

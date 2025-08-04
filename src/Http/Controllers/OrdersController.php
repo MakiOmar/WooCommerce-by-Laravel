@@ -630,63 +630,65 @@ class OrdersController extends Controller
             }
             
             $metaData = [
-                ['_customer_user', $data['customer_id'] ?? '0'],
-                ['_order_total', $total],
-                ['_order_currency', 'SAR'],
-                ['_payment_method', $data['payment_method'] ?? ''],
-                ['_payment_method_title', $data['payment_method'] ? ucwords(str_replace('_', ' ', $data['payment_method'])) : ''],
-                ['_cart_discount', $data['discount'] ?? '0'],
-                ['_cart_discount_tax', '0'],
-                ['_order_shipping', $shippingCostWithoutTax],
-                ['_order_shipping_tax', $shippingTax],
-                ['_shipping_method', $data['shipping_method_id'] ?? 'flat_rate'],
-                ['_shipping_method_title', $data['shipping_method_title'] ?? 'Flat Rate'],
-                ['_order_tax', $totalTax],
-                ['_cart_tax', $lineItemsTax],
-                ['_billing_first_name', $customerInfo['_billing_first_name'] ?? ''],
-                ['_billing_last_name', $customerInfo['_billing_last_name'] ?? ''],
-                ['_billing_email', $customerInfo['_billing_email'] ?? ''],
-                ['_billing_phone', $customerInfo['_billing_phone'] ?? ''],
-                ['_billing_address_1', $customerInfo['_billing_address_1'] ?? ''],
-                ['_billing_address_2', $customerInfo['_billing_address_2'] ?? ''],
-                ['_billing_city', $customerInfo['_billing_city'] ?? ''],
-                ['_billing_state', $customerInfo['_billing_state'] ?? ''],
-                ['_billing_postcode', $customerInfo['_billing_postcode'] ?? ''],
-                ['_billing_country', $customerInfo['_billing_country'] ?? ''],
-                ['_shipping_first_name', $customerInfo['_shipping_first_name'] ?? ''],
-                ['_shipping_last_name', $customerInfo['_shipping_last_name'] ?? ''],
-                ['_shipping_address_1', $customerInfo['_shipping_address_1'] ?? ''],
-                ['_shipping_address_2', $customerInfo['_shipping_address_2'] ?? ''],
-                ['_shipping_city', $customerInfo['_shipping_city'] ?? ''],
-                ['_shipping_state', $customerInfo['_shipping_state'] ?? ''],
-                ['_shipping_postcode', $customerInfo['_shipping_postcode'] ?? ''],
-                ['_shipping_country', $customerInfo['_shipping_country'] ?? ''],
-                ['_shipping_email', $customerInfo['_billing_email'] ?? ''],
-                ['_billing_address_index', $this->buildAddressIndex($customerInfo, 'billing')],
-                ['_shipping_address_index', $this->buildAddressIndex($customerInfo, 'shipping')],
                 ['_order_key', 'wc_' . uniqid()],
-                ['_order_version', '9.3.3'],
-                ['_prices_include_tax', 'no'],
-                ['_tax_display_cart', 'incl'],
-                ['_tax_display_shop', 'incl'],
-                ['_tax_display_totals', 'itemized'],
-                ['_display_totals_ex_tax', 'no'],
-                ['_discount_total', $data['discount'] ?? '0'],
-                ['_discount_tax', '0'],
-                ['_shipping_tax', $shippingTax],
-                ['_total_tax', $totalTax],
-                ['is_vat_exempt', 'no'],
+                ['_customer_user', $data['customer_id'] ?? ''],
+                ['_payment_method', $data['payment_method'] ?? ''],
+                ['_payment_method_title', 'الحوالة البنكية'],
                 ['_customer_ip_address', request()->ip()],
                 ['_customer_user_agent', request()->userAgent()],
-                ['_created_via', 'admin'],
-                ['_date_completed', ''],
-                ['_date_paid', now()->format('Y-m-d H:i:s')],
-                ['_cart_hash', ''],
+                ['_created_via', 'checkout'],
+                ['_cart_hash', md5(json_encode($items))],
                 ['_download_permissions_granted', 'no'],
                 ['_recorded_sales', 'no'],
                 ['_recorded_coupon_usage_counts', 'no'],
                 ['_new_order_email_sent', 'false'],
                 ['_order_stock_reduced', 'no'],
+                ['_billing_first_name', $customerInfo['_billing_first_name'] ?? ''],
+                ['_billing_last_name', $customerInfo['_billing_last_name'] ?? ''],
+                ['_billing_address_1', $customerInfo['_billing_address_1'] ?? ''],
+                ['_billing_state', $customerInfo['_billing_state'] ?? ''],
+                ['_billing_postcode', $customerInfo['_billing_postcode'] ?? ''],
+                ['_billing_country', $customerInfo['_billing_country'] ?? ''],
+                ['_billing_email', $customerInfo['_billing_email'] ?? ''],
+                ['_billing_phone', $customerInfo['_billing_phone'] ?? ''],
+                ['_shipping_first_name', $customerInfo['_shipping_first_name'] ?? ''],
+                ['_shipping_last_name', $customerInfo['_shipping_last_name'] ?? ''],
+                ['_shipping_address_1', $customerInfo['_shipping_address_1'] ?? ''],
+                ['_shipping_city', $customerInfo['_shipping_state'] ?? ''],
+                ['_shipping_postcode', $customerInfo['_shipping_postcode'] ?? ''],
+                ['_shipping_country', $customerInfo['_shipping_country'] ?? ''],
+                ['_shipping_phone', $customerInfo['_billing_phone'] ?? ''],
+                ['_order_currency', 'SAR'],
+                ['_cart_discount', $data['discount'] ?? '0'],
+                ['_cart_discount_tax', '0'],
+                ['_order_shipping', $shippingCostWithoutTax],
+                ['_order_shipping_tax', $shippingTax],
+                ['_order_tax', $totalTax],
+                ['_order_total', $total],
+                ['_order_version', '9.3.3'],
+                ['_prices_include_tax', 'no'],
+                ['_billing_address_index', $this->buildAddressIndex($customerInfo, 'billing')],
+                ['_shipping_address_index', $this->buildAddressIndex($customerInfo, 'shipping')],
+                ['_shipping_email', $customerInfo['_billing_email'] ?? ''],
+                ['_billing_lat', ''],
+                ['_shipping_lat', ''],
+                ['_billing_lng', ''],
+                ['_shipping_lng', ''],
+                ['_billing_street_number', ''],
+                ['_shipping_street_number', ''],
+                ['is_vat_exempt', 'no'],
+                ['customer_geolocation', 'EG'],
+                ['_wpo_order_creator', $data['customer_id'] ?? ''],
+                ['_billing_city', null],
+                ['_wc_cancel_key', md5(uniqid())],
+                ['whatsapp_notifications', '-1'],
+                ['sms_notifications', '-1'],
+                ['sms_notifications_time', now()->format('Y-m-d H:i:s')],
+                ['whatsapp_notifications_time', now()->format('Y-m-d H:i:s')],
+                ['odoo_order', '25840'],
+                ['odoo_order_number', 'S25797'],
+                ['oodo-status', 'success'],
+                ['_edit_lock', time() . ':' . ($data['customer_id'] ?? '')],
             ];
 
             foreach ($metaData as $meta) {
@@ -733,6 +735,16 @@ class OrdersController extends Controller
                     ['_reduced_stock', '1'],
                 ];
                 
+                // Add variation attributes if they exist
+                if (isset($itemData['attributes']) && is_array($itemData['attributes'])) {
+                    foreach ($itemData['attributes'] as $attrKey => $attrValue) {
+                        // Convert percent-encoded keys to proper Arabic
+                        $decodedKey = urldecode($attrKey);
+                        $decodedValue = urldecode($attrValue);
+                        $orderItemMeta[] = [$decodedKey, $decodedValue];
+                    }
+                }
+                
                 foreach ($orderItemMeta as $meta) {
                     $itemMeta = OrderItemMeta::create([
                         'order_item_id' => $orderItem->order_item_id,
@@ -766,12 +778,10 @@ class OrdersController extends Controller
                 $shippingTaxData = serialize(['total' => [$taxRateId => $shippingTax]]);
                 
                 $shippingItemMeta = [
-                    ['method_id', $shippingMethodId],
                     ['method_title', $shippingMethodTitle],
-                    ['cost', $shippingCostWithoutTax],
-                    ['total_tax', $shippingTax],
-                    ['taxes', $shippingTaxData],
-                    ['Items', ''],
+                    ['Items', $itemData['name'] . ' × ' . $itemData['qty']],
+                    ['wpo_package_hash', md5(uniqid())],
+                    ['wpo_shipping_method_id', $shippingMethodId . ':' . $shippingInstanceId],
                 ];
                 
                 foreach ($shippingItemMeta as $meta) {

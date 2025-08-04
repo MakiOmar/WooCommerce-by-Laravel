@@ -580,13 +580,17 @@ class OrdersController extends Controller
                 'guid' => config('app.url') . '/?post_type=shop_order&p=' . uniqid(),
             ];
             
+            // Calculate subtotal as tax-exclusive (matching WooCommerce structure)
             $subtotal = collect($items)->sum(function ($item) {
-                return ($item['price'] * $item['qty']);
+                $taxExclusivePrice = $item['price'] / 1.15;
+                return $taxExclusivePrice * $item['qty'];
             });
             
             // Calculate tax correctly (matching WooCommerce structure)
+            // The prices we receive are tax-inclusive, so we need to extract tax
             $lineItemsTax = collect($items)->sum(function ($item) {
-                return ($item['price'] * $item['qty']) * 0.15;
+                $taxExclusivePrice = $item['price'] / 1.15;
+                return $taxExclusivePrice * 0.15 * $item['qty'];
             });
             
             // Calculate shipping tax correctly
@@ -596,8 +600,9 @@ class OrdersController extends Controller
             // Total tax is the sum of line items tax and shipping tax
             $totalTax = $lineItemsTax + $shippingTax;
             
-            // Calculate total (subtotal + shipping + tax - discount)
-            $total = $subtotal + ($data['shipping'] ?? 0) + $totalTax - ($data['discount'] ?? 0);
+            // Calculate total correctly (subtotal + shipping - discount)
+            // Note: $subtotal already includes tax, and $data['shipping'] already includes tax
+            $total = $subtotal + ($data['shipping'] ?? 0) - ($data['discount'] ?? 0);
             
             $order = Order::create($orderData);
             
@@ -664,7 +669,7 @@ class OrdersController extends Controller
                 ['_order_shipping', $shippingCostWithoutTax],
                 ['_order_shipping_tax', $shippingTax],
                 ['_order_tax', $totalTax],
-                ['_order_total', $total],
+                ['_order_total', $subtotal + ($data['shipping'] ?? 0) - ($data['discount'] ?? 0)],
                 ['_order_version', '9.3.3'],
                 ['_prices_include_tax', 'no'],
                 ['_billing_address_index', $this->buildAddressIndex($customerInfo, 'billing')],
@@ -781,7 +786,7 @@ class OrdersController extends Controller
                     ['Items', $itemData['name'] . ' × ' . $itemData['qty']],
                     ['wpo_package_hash', md5(uniqid())],
                     ['wpo_shipping_method_id', $shippingMethodId . ':' . $shippingInstanceId],
-                    ['total', $shippingCostWithoutTax],
+                    ['total', $data['shipping']], // Use the full shipping amount (tax-inclusive)
                     ['total_tax', $shippingTax],
                 ];
                 
@@ -806,7 +811,7 @@ class OrdersController extends Controller
                     'date_created_gmt' => now()->utc(),
                     'date_paid' => now(),
                     'num_items_sold' => collect($items)->sum('qty'),
-                    'total_sales' => $total,
+                    'total_sales' => $subtotal + ($data['shipping'] ?? 0) - ($data['discount'] ?? 0),
                     'tax_total' => $totalTax,
                     'shipping_total' => $data['shipping'] ?? 0,
                     'net_total' => $subtotal - ($data['discount'] ?? 0),

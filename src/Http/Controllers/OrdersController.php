@@ -706,10 +706,11 @@ class OrdersController extends Controller
                     'order_id' => $order->ID,
                 ]);
 
-                // Calculate line item tax (15%) - matching WordPress structure
-                $lineSubtotal = $itemData['price'] * $itemData['qty'];
+                // Calculate line item prices (tax-exclusive) - matching WooCommerce structure
+                // The price we receive is tax-inclusive (182), but we need to store tax-exclusive (158.26)
+                $lineSubtotal = ($itemData['price'] / 1.15) * $itemData['qty']; // Remove 15% tax
                 $lineTax = $lineSubtotal * 0.15;
-                $lineTotal = $lineSubtotal; // Total should be tax-exclusive (matching WordPress)
+                $lineTotal = $lineSubtotal; // Total should be tax-exclusive (matching WooCommerce)
                 
                 // Use the tax rate ID from the beginning of the method
                 // $taxRateId is already available from ensureTaxRateExists()
@@ -738,10 +739,8 @@ class OrdersController extends Controller
                 // Add variation attributes if they exist
                 if (isset($itemData['attributes']) && is_array($itemData['attributes'])) {
                     foreach ($itemData['attributes'] as $attrKey => $attrValue) {
-                        // Convert percent-encoded keys to proper Arabic
-                        $decodedKey = urldecode($attrKey);
-                        $decodedValue = urldecode($attrValue);
-                        $orderItemMeta[] = [$decodedKey, $decodedValue];
+                        // Keep the original percent-encoded format to match WooCommerce exactly
+                        $orderItemMeta[] = [$attrKey, $attrValue];
                     }
                 }
                 
@@ -757,9 +756,9 @@ class OrdersController extends Controller
             // Create shipping line item if shipping amount > 0
             if (($data['shipping'] ?? 0) > 0) {
                 // Use actual shipping method details if available, otherwise fallback to defaults
-                $shippingMethodTitle = $data['shipping_method_title'] ?? 'Flat Rate';
+                $shippingMethodTitle = $data['shipping_method_title'] ?? 'سمسا (2-5 أيام عمل)';
                 $shippingMethodId = $data['shipping_method_id'] ?? 'flat_rate';
-                $shippingInstanceId = $data['shipping_instance_id'] ?? '';
+                $shippingInstanceId = $data['shipping_instance_id'] ?? '72';
                 
                 // Calculate shipping cost without tax (matching WordPress structure)
                 $shippingCostWithoutTax = $data['shipping'] / 1.15; // Remove 15% tax
@@ -782,6 +781,8 @@ class OrdersController extends Controller
                     ['Items', $itemData['name'] . ' × ' . $itemData['qty']],
                     ['wpo_package_hash', md5(uniqid())],
                     ['wpo_shipping_method_id', $shippingMethodId . ':' . $shippingInstanceId],
+                    ['total', $shippingCostWithoutTax],
+                    ['total_tax', $shippingTax],
                 ];
                 
                 foreach ($shippingItemMeta as $meta) {

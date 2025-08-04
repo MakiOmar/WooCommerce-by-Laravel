@@ -849,7 +849,49 @@ class OrdersController extends Controller
                 \Log::info('Shipping item meta created successfully');
             }
 
-            // Tax rate already configured at the beginning of the method
+            // Create explicit tax line items (required for WooCommerce tax display)
+            if ($totalTax > 0) {
+                // Get tax rate details
+                $taxRate = DB::connection('woocommerce')->table('woocommerce_tax_rates')
+                    ->where('tax_rate_id', $taxRateId)
+                    ->first();
+                
+                $taxLabel = $taxRate ? $taxRate->tax_rate_name : 'VAT';
+                $taxCode = $taxRate ? $taxRate->tax_rate_name : 'VAT';
+                
+                // Create tax line item
+                $taxItem = OrderItem::create([
+                    'order_item_name' => $taxLabel,
+                    'order_item_type' => 'tax',
+                    'order_id' => $order->ID,
+                ]);
+                
+                // Create tax item meta
+                $taxItemMeta = [
+                    ['rate_code', $taxCode],
+                    ['rate_id', $taxRateId],
+                    ['label', $taxLabel],
+                    ['compound', '0'],
+                    ['tax_total', $lineItemsTax], // Tax on line items only
+                    ['shipping_tax_total', $shippingTax], // Tax on shipping only
+                    ['rate_percent', '15.00'],
+                ];
+                
+                foreach ($taxItemMeta as $meta) {
+                    OrderItemMeta::create([
+                        'order_item_id' => $taxItem->order_item_id,
+                        'meta_key' => $meta[0],
+                        'meta_value' => $meta[1],
+                    ]);
+                }
+                
+                \Log::info('Created tax line item:', [
+                    'tax_item_id' => $taxItem->order_item_id,
+                    'tax_total' => $lineItemsTax,
+                    'shipping_tax_total' => $shippingTax,
+                    'total_tax' => $totalTax
+                ]);
+            }
             
             try {
 

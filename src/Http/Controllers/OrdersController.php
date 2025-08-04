@@ -836,9 +836,8 @@ class OrdersController extends Controller
                     ['Items', $itemData['name'] . ' × ' . $itemData['qty']],
                     ['wpo_package_hash', md5(uniqid())],
                     ['wpo_shipping_method_id', $shippingMethodId . ':' . $shippingInstanceId],
-                    ['cost', $shippingExclTax], // Use 'cost' key for shipping cost (tax-exclusive)
-                    ['total', $shippingInclTax], // Use 'total' key for shipping total (tax-inclusive)
-                    ['total_tax', $shippingTax],
+                    ['cost', $shippingExclTax], // Shipping cost (tax-exclusive) - WooCommerce calculates total from cost + total_tax
+                    ['total_tax', $shippingTax], // Tax on shipping
                     ['taxes', $shippingTaxData], // Critical: WooCommerce expects this for tax display
                 ];
                 

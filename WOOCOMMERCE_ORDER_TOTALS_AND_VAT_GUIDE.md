@@ -35,7 +35,6 @@ order_item_type = 'line_item'
 ```sql
 order_item_type = 'shipping'
 - cost             - Shipping cost (tax-exclusive) - CRITICAL KEY
-- total            - Shipping total (tax-inclusive)
 - total_tax        - Tax on shipping
 - taxes            - Serialized tax data
 - method_title     - Shipping method name
@@ -98,8 +97,7 @@ $metaData = [
 ### 3. Shipping Line Item Creation
 ```php
 $shippingItemMeta = [
-    ['cost', $shippingExclTax], // Tax-exclusive shipping cost
-    ['total', $shippingInclTax], // Tax-inclusive shipping total
+    ['cost', $shippingExclTax], // Tax-exclusive shipping cost - WooCommerce calculates total from cost + total_tax
     ['total_tax', $shippingTax], // Tax on shipping
     ['taxes', $shippingTaxData], // Serialized tax data
     ['method_title', $shippingMethodTitle],
@@ -136,12 +134,12 @@ DB::connection('woocommerce')->table('wc_order_stats')->insert([
 ## Key Fixes Implemented
 
 ### 1. Shipping Meta Key Fix
-**Problem**: Shipping total showed 0.00 because the view was looking for meta key `'cost'` but we were storing it as `'total'`.
+**Problem**: Shipping total showed empty because WooCommerce doesn't use a `total` meta key for shipping items. Instead, it calculates the total from `cost` + `total_tax`.
 
-**Solution**: Store both keys:
+**Solution**: Only store the correct meta keys that WooCommerce expects:
 ```php
-['cost', $shippingExclTax], // For display in order items
-['total', $shippingInclTax], // For WooCommerce internal use
+['cost', $shippingExclTax], // Shipping cost (tax-exclusive)
+['total_tax', $shippingTax], // Tax on shipping
 ```
 
 ### 2. Order Stats Shipping Total Fix

@@ -120,6 +120,27 @@ After the fix, the shipping data should look like:
    - Removed references to `total` meta key for shipping items
    - Updated fix description
 
+## Additional Fix: Tax Line Item Meta Keys
+
+### Issue Found
+The VAT totals row was not showing because we were using incorrect meta keys for tax line items.
+
+### Root Cause
+We were using `tax_total` and `shipping_tax_total` meta keys, but WooCommerce expects `tax_amount` and `shipping_tax_amount`.
+
+### Solution Applied
+Updated tax line item meta keys:
+
+```php
+// BEFORE (incorrect)
+['tax_total', $lineItemsTax], // ❌ Wrong meta key
+['shipping_tax_total', $shippingTax], // ❌ Wrong meta key
+
+// AFTER (correct)
+['tax_amount', $lineItemsTax], // ✅ Correct meta key
+['shipping_tax_amount', $shippingTax], // ✅ Correct meta key
+```
+
 ## Conclusion
 
 This fix ensures that:
@@ -127,4 +148,5 @@ This fix ensures that:
 - ✅ `$item->get_total()` returns proper values
 - ✅ Shipping totals display correctly in all interfaces
 - ✅ Tax calculations remain accurate
-- ✅ Order analytics work properly 
+- ✅ Order analytics work properly
+- ✅ **VAT totals row displays correctly in WooCommerce admin** 

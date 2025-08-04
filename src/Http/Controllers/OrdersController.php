@@ -882,8 +882,8 @@ class OrdersController extends Controller
                     ['rate_id', $taxRateId],
                     ['label', $taxLabel],
                     ['compound', '0'],
-                    ['tax_total', $lineItemsTax], // Tax on line items only
-                    ['shipping_tax_total', $shippingTax], // Tax on shipping only
+                    ['tax_amount', $lineItemsTax], // Tax on line items only - CORRECT meta key
+                    ['shipping_tax_amount', $shippingTax], // Tax on shipping only - CORRECT meta key
                     ['rate_percent', '15.00'],
                 ];
                 

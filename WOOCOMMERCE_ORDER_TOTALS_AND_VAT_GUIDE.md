@@ -48,8 +48,8 @@ order_item_type = 'tax'
 - rate_id          - Tax rate ID from woocommerce_tax_rates
 - label            - Tax label (e.g., 'VAT')
 - compound         - Whether tax is compound (0/1)
-- tax_total        - Tax on line items
-- shipping_tax_total - Tax on shipping
+- tax_amount       - Tax on line items
+- shipping_tax_amount - Tax on shipping
 - rate_percent     - Tax rate percentage
 ```
 
@@ -113,8 +113,8 @@ $taxItemMeta = [
     ['rate_id', $taxRateId],
     ['label', 'VAT'],
     ['compound', '0'],
-    ['tax_total', $lineItemsTax], // Tax on line items
-    ['shipping_tax_total', $shippingTax], // Tax on shipping
+    ['tax_amount', $lineItemsTax], // Tax on line items
+    ['shipping_tax_amount', $shippingTax], // Tax on shipping
     ['rate_percent', '15.00'],
 ];
 ```

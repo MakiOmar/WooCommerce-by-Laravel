@@ -797,8 +797,21 @@ class OrdersController extends Controller
                 
                 // Use actual shipping method details if available, otherwise fallback to defaults
                 $shippingMethodTitle = $data['shipping_method_title'] ?? 'سمسا (2-5 أيام عمل)';
-                $shippingMethodId = $data['shipping_method_id'] ?? 'flat_rate';
-                $shippingInstanceId = $data['shipping_instance_id'] ?? '72';
+                $shippingMethodId = ($data['shipping_method_id'] && $data['shipping_method_id'] !== 'undefined') 
+                    ? $data['shipping_method_id'] 
+                    : 'flat_rate';
+                $shippingInstanceId = ($data['shipping_instance_id'] && $data['shipping_instance_id'] !== 'undefined') 
+                    ? $data['shipping_instance_id'] 
+                    : '72';
+                
+                // Log shipping method details
+                \Log::info('Shipping method details:', [
+                    'original_method_id' => $data['shipping_method_id'] ?? 'null',
+                    'original_instance_id' => $data['shipping_instance_id'] ?? 'null',
+                    'final_method_id' => $shippingMethodId,
+                    'final_instance_id' => $shippingInstanceId,
+                    'method_title' => $shippingMethodTitle
+                ]);
                 
                 // Calculate shipping cost without tax (matching WordPress structure)
                 $shippingCostWithoutTax = $shippingExclTax; // Already calculated above

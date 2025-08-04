@@ -826,19 +826,27 @@ class OrdersController extends Controller
                 // Use the tax rate ID from the beginning of the method
                 // $taxRateId is already available from ensureTaxRateExists()
                 
-                // Proper shipping tax data serialization
+                // Proper shipping tax data serialization (required for WooCommerce tax display)
                 $shippingTaxData = serialize(['total' => [$taxRateId => $shippingTax]]);
                 
                 $shippingItemMeta = [
                     ['method_title', $shippingMethodTitle],
+                    ['method_id', $shippingMethodId],
+                    ['instance_id', $shippingInstanceId],
                     ['Items', $itemData['name'] . ' × ' . $itemData['qty']],
                     ['wpo_package_hash', md5(uniqid())],
                     ['wpo_shipping_method_id', $shippingMethodId . ':' . $shippingInstanceId],
                     ['total', $shippingInclTax], // Use the calculated shipping amount (tax-inclusive)
                     ['total_tax', $shippingTax],
+                    ['taxes', $shippingTaxData], // Critical: WooCommerce expects this for tax display
                 ];
                 
-                \Log::info('Creating shipping item meta:', ['meta_count' => count($shippingItemMeta)]);
+                \Log::info('Creating shipping item meta:', [
+                    'meta_count' => count($shippingItemMeta),
+                    'shipping_tax_data' => $shippingTaxData,
+                    'shipping_tax_amount' => $shippingTax,
+                    'tax_rate_id' => $taxRateId
+                ]);
                 foreach ($shippingItemMeta as $meta) {
                     $itemMeta = OrderItemMeta::create([
                         'order_item_id' => $shippingItem->order_item_id,

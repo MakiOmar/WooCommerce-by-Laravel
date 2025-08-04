@@ -836,15 +836,17 @@ class OrdersController extends Controller
                     ['Items', $itemData['name'] . ' × ' . $itemData['qty']],
                     ['wpo_package_hash', md5(uniqid())],
                     ['wpo_shipping_method_id', $shippingMethodId . ':' . $shippingInstanceId],
-                    ['total', $shippingInclTax], // Use the calculated shipping amount (tax-inclusive)
+                    ['total', $shippingExclTax], // Use the tax-exclusive shipping amount (WooCommerce expects this)
                     ['total_tax', $shippingTax],
                     ['taxes', $shippingTaxData], // Critical: WooCommerce expects this for tax display
                 ];
                 
                 \Log::info('Creating shipping item meta:', [
                     'meta_count' => count($shippingItemMeta),
-                    'shipping_tax_data' => $shippingTaxData,
+                    'shipping_total_excl_tax' => $shippingExclTax,
+                    'shipping_total_incl_tax' => $shippingInclTax,
                     'shipping_tax_amount' => $shippingTax,
+                    'shipping_tax_data' => $shippingTaxData,
                     'tax_rate_id' => $taxRateId
                 ]);
                 foreach ($shippingItemMeta as $meta) {

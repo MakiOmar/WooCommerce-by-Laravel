@@ -549,10 +549,16 @@ class OrdersController extends Controller
      */
     protected function createOrderViaDatabase(array $data)
     {
+        // Log order creation start
+        \Log::info('=== ORDER CREATION START ===');
+        \Log::info('Submitted data:', $data);
+        
         $items = json_decode($data['order_items'], true);
+        \Log::info('Decoded items:', $items);
         
         // Ensure tax rate exists and settings are configured FIRST
         $taxRateId = $this->ensureTaxRateExists();
+        \Log::info('Tax rate ID:', ['tax_rate_id' => $taxRateId]);
         
         DB::connection('woocommerce')->beginTransaction();
         try {
@@ -604,7 +610,20 @@ class OrdersController extends Controller
             // Note: $subtotal already includes tax, and $data['shipping'] already includes tax
             $total = $subtotal + ($data['shipping'] ?? 0) - ($data['discount'] ?? 0);
             
+            // Log calculations
+            \Log::info('Order calculations:', [
+                'subtotal' => $subtotal,
+                'lineItemsTax' => $lineItemsTax,
+                'shippingCostWithoutTax' => $shippingCostWithoutTax,
+                'shippingTax' => $shippingTax,
+                'totalTax' => $totalTax,
+                'total' => $total,
+                'shipping' => $data['shipping'] ?? 0,
+                'discount' => $data['discount'] ?? 0
+            ]);
+            
             $order = Order::create($orderData);
+            \Log::info('Order created:', ['order_id' => $order->ID]);
             
             $customerInfo = [];
             if (!empty($data['customer_id'])) {
@@ -696,6 +715,7 @@ class OrdersController extends Controller
                 ['_edit_lock', time() . ':' . ($data['customer_id'] ?? '')],
             ];
 
+            \Log::info('Creating order meta data:', ['meta_count' => count($metaData)]);
             foreach ($metaData as $meta) {
                 $postMeta = PostMeta::create([
                     'post_id' => $order->ID,
@@ -703,8 +723,12 @@ class OrdersController extends Controller
                     'meta_value' => $meta[1],
                 ]);
             }
+            \Log::info('Order meta data created successfully');
 
+            \Log::info('Creating line items:', ['item_count' => count($items)]);
             foreach ($items as $itemData) {
+                \Log::info('Processing line item:', $itemData);
+                
                 $orderItem = OrderItem::create([
                     'order_item_name' => $itemData['name'],
                     'order_item_type' => 'line_item',
@@ -716,6 +740,15 @@ class OrdersController extends Controller
                 $lineSubtotal = ($itemData['price'] / 1.15) * $itemData['qty']; // Remove 15% tax
                 $lineTax = $lineSubtotal * 0.15;
                 $lineTotal = $lineSubtotal; // Total should be tax-exclusive (matching WooCommerce)
+                
+                \Log::info('Line item calculations:', [
+                    'product_name' => $itemData['name'],
+                    'original_price' => $itemData['price'],
+                    'qty' => $itemData['qty'],
+                    'lineSubtotal' => $lineSubtotal,
+                    'lineTax' => $lineTax,
+                    'lineTotal' => $lineTotal
+                ]);
                 
                 // Use the tax rate ID from the beginning of the method
                 // $taxRateId is already available from ensureTaxRateExists()
@@ -749,6 +782,7 @@ class OrdersController extends Controller
                     }
                 }
                 
+                \Log::info('Creating line item meta:', ['meta_count' => count($orderItemMeta)]);
                 foreach ($orderItemMeta as $meta) {
                     $itemMeta = OrderItemMeta::create([
                         'order_item_id' => $orderItem->order_item_id,
@@ -756,10 +790,18 @@ class OrdersController extends Controller
                         'meta_value' => $meta[1],
                     ]);
                 }
+                \Log::info('Line item meta created successfully');
             }
 
             // Create shipping line item if shipping amount > 0
             if (($data['shipping'] ?? 0) > 0) {
+                \Log::info('Creating shipping line item:', [
+                    'shipping_amount' => $data['shipping'],
+                    'shipping_method_title' => $data['shipping_method_title'] ?? 'سمسا (2-5 أيام عمل)',
+                    'shipping_method_id' => $data['shipping_method_id'] ?? 'flat_rate',
+                    'shipping_instance_id' => $data['shipping_instance_id'] ?? '72'
+                ]);
+                
                 // Use actual shipping method details if available, otherwise fallback to defaults
                 $shippingMethodTitle = $data['shipping_method_title'] ?? 'سمسا (2-5 أيام عمل)';
                 $shippingMethodId = $data['shipping_method_id'] ?? 'flat_rate';
@@ -790,6 +832,7 @@ class OrdersController extends Controller
                     ['total_tax', $shippingTax],
                 ];
                 
+                \Log::info('Creating shipping item meta:', ['meta_count' => count($shippingItemMeta)]);
                 foreach ($shippingItemMeta as $meta) {
                     $itemMeta = OrderItemMeta::create([
                         'order_item_id' => $shippingItem->order_item_id,
@@ -797,6 +840,7 @@ class OrdersController extends Controller
                         'meta_value' => $meta[1],
                     ]);
                 }
+                \Log::info('Shipping item meta created successfully');
             }
 
             // Tax rate already configured at the beginning of the method
@@ -877,10 +921,10 @@ class OrdersController extends Controller
             }
             
             DB::connection('woocommerce')->commit();
-
-
+            \Log::info('Database transaction committed successfully');
 
             CacheHelper::clearCacheOnOrderCreate();
+            \Log::info('Cache cleared successfully');
 
             // Store private note as an order comment if provided
             if (!empty($data['private_note'])) {
@@ -910,9 +954,19 @@ class OrdersController extends Controller
                 // Failed to clear WooCommerce cache
             }
 
+            \Log::info('=== ORDER CREATION COMPLETED ===', [
+                'order_id' => $order->ID,
+                'final_total' => $total,
+                'final_tax' => $totalTax
+            ]);
+            
             return redirect()->route('orders.index')->with('success', 'Order created successfully. Order ID: ' . $order->ID);
 
         } catch (\Exception $e) {
+            \Log::error('Order creation failed:', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
             DB::connection('woocommerce')->rollBack();
             return back()->with('error', 'Order creation failed: ' . $e->getMessage());
         }

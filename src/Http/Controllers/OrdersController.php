@@ -586,36 +586,29 @@ class OrdersController extends Controller
                 'guid' => config('app.url') . '/?post_type=shop_order&p=' . uniqid(),
             ];
             
-            // Calculate subtotal as tax-exclusive (matching WooCommerce structure)
-            $subtotal = collect($items)->sum(function ($item) {
-                $taxExclusivePrice = $item['price'] / 1.15;
-                return $taxExclusivePrice * $item['qty'];
+            // Replace calculations with proper tax handling
+            $subtotalExclTax = collect($items)->sum(function ($item) {
+                return ($item['price'] / 1.15) * $item['qty']; // 182 => 158.26
             });
-            
-            // Calculate tax correctly (matching WooCommerce structure)
-            // The prices we receive are tax-inclusive, so we need to extract tax
+
             $lineItemsTax = collect($items)->sum(function ($item) {
-                $taxExclusivePrice = $item['price'] / 1.15;
-                return $taxExclusivePrice * 0.15 * $item['qty'];
+                return ($item['price'] / 1.15) * 0.15 * $item['qty']; // 23.74
             });
-            
-            // Calculate shipping tax correctly
-            $shippingCostWithoutTax = ($data['shipping'] ?? 0) / 1.15; // Remove 15% tax
-            $shippingTax = ($data['shipping'] ?? 0) - $shippingCostWithoutTax; // Extract tax from shipping total
-            
-            // Total tax is the sum of line items tax and shipping tax
-            $totalTax = $lineItemsTax + $shippingTax;
-            
-            // Calculate total correctly (subtotal + shipping - discount)
-            // Note: $subtotal already includes tax, and $data['shipping'] already includes tax
-            $total = $subtotal + ($data['shipping'] ?? 0) - ($data['discount'] ?? 0);
+
+            $shippingExclTax = ($data['shipping'] ?? 0) / 1.15; // 25 => 21.74
+            $shippingTax = $shippingExclTax * 0.15; // 3.26
+            $shippingInclTax = $shippingExclTax + $shippingTax; // 25.00
+
+            $totalTax = $lineItemsTax + $shippingTax; // 23.74 + 3.26 = 27.00
+            $total = ($subtotalExclTax + $lineItemsTax) + $shippingInclTax - ($data['discount'] ?? 0); // 207.00
             
             // Log calculations
             \Log::info('Order calculations:', [
-                'subtotal' => $subtotal,
+                'subtotalExclTax' => $subtotalExclTax,
                 'lineItemsTax' => $lineItemsTax,
-                'shippingCostWithoutTax' => $shippingCostWithoutTax,
+                'shippingExclTax' => $shippingExclTax,
                 'shippingTax' => $shippingTax,
+                'shippingInclTax' => $shippingInclTax,
                 'totalTax' => $totalTax,
                 'total' => $total,
                 'shipping' => $data['shipping'] ?? 0,
@@ -685,12 +678,12 @@ class OrdersController extends Controller
                 ['_order_currency', 'SAR'],
                 ['_cart_discount', $data['discount'] ?? '0'],
                 ['_cart_discount_tax', '0'],
-                ['_order_shipping', $shippingCostWithoutTax],
-                ['_order_shipping_tax', $shippingTax],
-                ['_order_tax', $totalTax],
-                ['_order_total', $subtotal + ($data['shipping'] ?? 0) - ($data['discount'] ?? 0)],
+                ['_order_shipping', $shippingExclTax], // 21.74
+                ['_order_shipping_tax', $shippingTax], // 3.26
+                ['_order_tax', $totalTax], // 27.00
+                ['_order_total', $total], // 207.00
                 ['_order_version', '9.3.3'],
-                ['_prices_include_tax', 'no'],
+                ['_prices_include_tax', 'yes'], // Critical change!
                 ['_billing_address_index', $this->buildAddressIndex($customerInfo, 'billing')],
                 ['_shipping_address_index', $this->buildAddressIndex($customerInfo, 'shipping')],
                 ['_shipping_email', $customerInfo['_billing_email'] ?? ''],
@@ -737,9 +730,9 @@ class OrdersController extends Controller
 
                 // Calculate line item prices (tax-exclusive) - matching WooCommerce structure
                 // The price we receive is tax-inclusive (182), but we need to store tax-exclusive (158.26)
-                $lineSubtotal = ($itemData['price'] / 1.15) * $itemData['qty']; // Remove 15% tax
-                $lineTax = $lineSubtotal * 0.15;
-                $lineTotal = $lineSubtotal; // Total should be tax-exclusive (matching WooCommerce)
+                $lineSubtotal = ($itemData['price'] / 1.15) * $itemData['qty']; // 182 => 158.26
+                $lineTax = $lineSubtotal * 0.15; // 23.74
+                $lineTotal = $lineSubtotal; // 158.26 (tax-exclusive)
                 
                 \Log::info('Line item calculations:', [
                     'product_name' => $itemData['name'],
@@ -808,8 +801,8 @@ class OrdersController extends Controller
                 $shippingInstanceId = $data['shipping_instance_id'] ?? '72';
                 
                 // Calculate shipping cost without tax (matching WordPress structure)
-                $shippingCostWithoutTax = $data['shipping'] / 1.15; // Remove 15% tax
-                $shippingTax = $data['shipping'] - $shippingCostWithoutTax;
+                $shippingCostWithoutTax = $shippingExclTax; // Already calculated above
+                $shippingTax = $shippingTax; // Already calculated above
                 
                 $shippingItem = OrderItem::create([
                     'order_item_name' => $shippingMethodTitle,
@@ -828,7 +821,7 @@ class OrdersController extends Controller
                     ['Items', $itemData['name'] . ' × ' . $itemData['qty']],
                     ['wpo_package_hash', md5(uniqid())],
                     ['wpo_shipping_method_id', $shippingMethodId . ':' . $shippingInstanceId],
-                    ['total', $data['shipping']], // Use the full shipping amount (tax-inclusive)
+                    ['total', $shippingInclTax], // Use the calculated shipping amount (tax-inclusive)
                     ['total_tax', $shippingTax],
                 ];
                 
@@ -855,7 +848,7 @@ class OrdersController extends Controller
                     'date_created_gmt' => now()->utc(),
                     'date_paid' => now(),
                     'num_items_sold' => collect($items)->sum('qty'),
-                    'total_sales' => $subtotal + ($data['shipping'] ?? 0) - ($data['discount'] ?? 0),
+                    'total_sales' => $total,
                     'tax_total' => $totalTax,
                     'shipping_total' => $data['shipping'] ?? 0,
                     'net_total' => $subtotal - ($data['discount'] ?? 0),
@@ -867,8 +860,8 @@ class OrdersController extends Controller
                 
                 foreach ($items as $itemData) {
                     // Use tax-exclusive prices to match WooCommerce structure
-                    $itemSubtotal = ($itemData['price'] / 1.15) * $itemData['qty'];
-                    $itemTax = $itemSubtotal * 0.15;
+                    $itemSubtotal = ($itemData['price'] / 1.15) * $itemData['qty']; // 158.26
+                    $itemTax = $itemSubtotal * 0.15; // 23.74
                     
                     // Get the order item ID for this product
                     $orderItem = OrderItem::where('order_id', $order->ID)
@@ -892,7 +885,7 @@ class OrdersController extends Controller
                             'product_gross_revenue' => $itemSubtotal + $itemTax,
                             'coupon_amount' => 0,
                             'tax_amount' => $itemTax,
-                            'shipping_amount' => ($data['shipping'] ?? 0) / count($items),
+                            'shipping_amount' => ($shippingExclTax / count($items)),
                             'shipping_tax_amount' => ($shippingTax / count($items)),
                         ]);
                     }

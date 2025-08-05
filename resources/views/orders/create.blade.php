@@ -314,6 +314,34 @@
                                     </div>
                                 </div>
 
+                                <!-- RedBox Pickup Section -->
+                                <div class="row mb-3" id="redbox-pickup-section" style="display: none;">
+                                    <div class="col-12">
+                                        <div class="card border-primary">
+                                            <div class="card-header bg-primary text-white">
+                                                <h6 class="mb-0">
+                                                    <i class="fas fa-box-open"></i> 
+                                                    {{ __('woo-order-dashboard::shipping.redbox_pickup') }}
+                                                </h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="form-group mb-3">
+                                                    <label>{{ __('woo-order-dashboard::shipping.select_pickup_point') }}</label>
+                                                    <div class="input-group">
+                                                        <input type="text" class="form-control" id="redbox_point" name="redbox_point" readonly placeholder="{{ __('woo-order-dashboard::shipping.choose_pickup_point') }}">
+                                                        <button type="button" class="btn btn-outline-primary" id="select-redbox-point">
+                                                            <i class="fas fa-map-marker-alt"></i> 
+                                                            {{ __('woo-order-dashboard::shipping.select_point') }}
+                                                        </button>
+                                                    </div>
+                                                    <input type="hidden" name="redbox_point_id" id="redbox_point_id">
+                                                    <small class="form-text text-muted">{{ __('woo-order-dashboard::shipping.pickup_point_help') }}</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <!-- Tax Row -->
                                 <div class="row mb-3">
                                     <div class="col-6">
@@ -336,6 +364,54 @@
                         </div>
                         <button type="submit" class="btn btn-success btn-block mt-3">Submit Order</button>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RedBox Pickup Modal -->
+    <div class="modal fade" id="redbox-modal" tabindex="-1" role="dialog" aria-labelledby="redbox-modal-label" aria-hidden="true">
+        <div class="modal-dialog modal-xl" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="redbox-modal-label">
+                        <i class="fas fa-map-marker-alt"></i> 
+                        {{ __('woo-order-dashboard::shipping.select_redbox_pickup_point') }}
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="form-group mb-3">
+                                <label>{{ __('woo-order-dashboard::shipping.search_location') }}</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="redbox-search" placeholder="{{ __('woo-order-dashboard::shipping.enter_location') }}">
+                                    <button type="button" class="btn btn-primary" id="redbox-search-btn">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="redbox-map" style="height: 400px; border: 1px solid #ddd; border-radius: 8px;"></div>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>{{ __('woo-order-dashboard::shipping.available_points') }}</h6>
+                            <div id="redbox-points-list" class="list-group" style="max-height: 400px; overflow-y: auto;">
+                                <div class="text-center text-muted py-4">
+                                    <i class="fas fa-map-marker-alt fa-2x mb-2"></i>
+                                    <p>{{ __('woo-order-dashboard::shipping.no_points_available') }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        {{ __('woo-order-dashboard::shipping.cancel') }}
+                    </button>
+                    <button type="button" class="btn btn-primary" id="confirm-redbox-point" disabled>
+                        {{ __('woo-order-dashboard::shipping.confirm_selection') }}
+                    </button>
                 </div>
             </div>
         </div>

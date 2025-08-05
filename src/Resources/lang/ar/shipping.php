@@ -42,5 +42,6 @@ return [
     'restricted_access' => 'وصول مقيد',
     'confirm_access' => 'أؤكد أن لدي تصريح للوصول لهذا الموقع',
     'ship_to_location' => 'الشحن إلى هذا الموقع',
+    'select_this_point' => 'اختر هذه النقطة',
     'change_point' => 'تغيير نقطة الاستلام',
 ]; 

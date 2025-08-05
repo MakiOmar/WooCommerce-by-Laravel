@@ -42,5 +42,6 @@ return [
     'restricted_access' => 'Restricted Access',
     'confirm_access' => 'I confirm I have access to this location',
     'ship_to_location' => 'Ship to this location',
+    'select_this_point' => 'Select This Point',
     'change_point' => 'Change Pickup Point',
 ]; 

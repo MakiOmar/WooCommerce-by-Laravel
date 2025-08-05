@@ -381,36 +381,20 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="row">
-                        <div class="col-md-8">
-                            <div class="form-group mb-3">
-                                <label>{{ __('woo-order-dashboard::shipping.search_location') }}</label>
-                                <div class="input-group">
-                                    <input type="text" class="form-control" id="redbox-search" placeholder="{{ __('woo-order-dashboard::shipping.enter_location') }}">
-                                    <button type="button" class="btn btn-primary" id="redbox-search-btn">
-                                        <i class="fas fa-search"></i>
-                                    </button>
-                                </div>
-                            </div>
-                            <div id="redbox-map" style="height: 400px; border: 1px solid #ddd; border-radius: 8px;"></div>
-                        </div>
-                        <div class="col-md-4">
-                            <h6>{{ __('woo-order-dashboard::shipping.available_points') }}</h6>
-                            <div id="redbox-points-list" class="list-group" style="max-height: 400px; overflow-y: auto;">
-                                <div class="text-center text-muted py-4">
-                                    <i class="fas fa-map-marker-alt fa-2x mb-2"></i>
-                                    <p>{{ __('woo-order-dashboard::shipping.no_points_available') }}</p>
-                                </div>
-                            </div>
+                    <div class="form-group mb-3">
+                        <label>{{ __('woo-order-dashboard::shipping.search_location') }}</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="redbox-search" placeholder="{{ __('woo-order-dashboard::shipping.enter_location') }}">
+                            <button type="button" class="btn btn-primary" id="redbox-search-btn">
+                                <i class="fas fa-search"></i>
+                            </button>
                         </div>
                     </div>
+                    <div id="redbox-map" style="height: 500px; border: 1px solid #ddd; border-radius: 8px;"></div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                         {{ __('woo-order-dashboard::shipping.cancel') }}
-                    </button>
-                    <button type="button" class="btn btn-primary" id="confirm-redbox-point" disabled>
-                        {{ __('woo-order-dashboard::shipping.confirm_selection') }}
                     </button>
                 </div>
             </div>
@@ -1502,20 +1486,10 @@ $(document).ready(function() {
         });
     }
 
-    // Render RedBox points list
+    // Render RedBox points (now only on map)
     function renderRedBoxPoints() {
-        var $pointsList = $('#redbox-points-list');
-        $pointsList.empty();
-
-        if (!redboxPoints || redboxPoints.length === 0) {
-            $pointsList.html('<div class="redbox-points-empty"><i class="fas fa-map-marker-alt"></i> {{ __("woo-order-dashboard::shipping.no_pickup_points") }}</div>');
-            return;
-        }
-
-        redboxPoints.forEach(function(point) {
-            var pointHtml = createRedBoxPointHtml(point);
-            $pointsList.append(pointHtml);
-        });
+        // Only add markers to map, no sidebar list
+        addRedBoxMarkers();
     }
 
     // Create HTML for RedBox point
@@ -1628,7 +1602,7 @@ $(document).ready(function() {
             });
 
             marker.addEventListener('select', function() {
-                selectRedBoxPoint(point);
+                showRedBoxPointPopup(point);
             });
 
             redboxMap.addAnnotation(marker);
@@ -1652,76 +1626,125 @@ $(document).ready(function() {
         `)}`;
     }
 
-    // Select RedBox point
-    function selectRedBoxPoint(point) {
-        console.log('Selecting RedBox point:', point);
+    // Show RedBox point popup
+    function showRedBoxPointPopup(point) {
+        console.log('Showing RedBox point popup:', point);
         
-        selectedRedboxPoint = point;
+        var iconClass = getRedBoxPointIcon(point.type_point);
+        var statusClass = point.status === 'LockTemporary' ? 'text-danger' : 'text-success';
+        var statusText = point.status === 'LockTemporary' ? '{{ __("woo-order-dashboard::shipping.temporarily_closed") }}' : '{{ __("woo-order-dashboard::shipping.available") }}';
         
-        // Update UI
-        $('.redbox-point-item').removeClass('selected');
-        var $selectedItem = $(`.redbox-point-item[data-point-id="${point.id}"]`);
-        $selectedItem.addClass('selected');
+        var estimatedTime = getEstimatedDeliveryTime(point.estimateTime);
+        var acceptsPayment = point.lockers && point.lockers.find(function(l) { return l.accept_payment === true; }) ? '{{ __("woo-order-dashboard::shipping.yes") }}' : '{{ __("woo-order-dashboard::shipping.no") }}';
         
-        console.log('Updated UI - selected item:', $selectedItem.length > 0 ? 'found' : 'not found');
-        console.log('Selected point ID:', point.id);
+        var popupHtml = `
+            <div class="redbox-point-popup">
+                <div class="redbox-point-popup-header">
+                    <i class="fas ${iconClass}"></i>
+                    <h6 class="mb-1">${point.point_name}</h6>
+                    <small class="text-muted">${getPointTypeText(point.type_point)}</small>
+                </div>
+                <div class="redbox-point-popup-details">
+                    <div class="mb-2">
+                        <i class="fas fa-map-marker-alt text-primary"></i>
+                        <small>${point.address.city} - ${point.address.district} - ${point.address.street}</small>
+                    </div>
+                    <div class="mb-2">
+                        <i class="fas fa-clock text-primary"></i>
+                        <small>${point.open_hour}</small>
+                    </div>
+                    <div class="mb-2">
+                        <i class="fas fa-truck text-primary"></i>
+                        <small>{{ __("woo-order-dashboard::shipping.estimated_delivery") }}: ${estimatedTime}</small>
+                    </div>
+                    <div class="mb-2">
+                        <i class="fas fa-credit-card text-primary"></i>
+                        <small>{{ __("woo-order-dashboard::shipping.accepts_payment") }}: ${acceptsPayment}</small>
+                    </div>
+                    <div class="mb-3">
+                        <i class="fas fa-circle ${statusClass}"></i>
+                        <small>${statusText}</small>
+                    </div>
+                    <button type="button" class="btn btn-primary btn-sm w-100 select-this-point-btn" data-point-id="${point.id}" ${!point.is_public ? 'disabled' : ''}>
+                        {{ __("woo-order-dashboard::shipping.select_this_point") }}
+                    </button>
+                </div>
+            </div>
+        `;
         
-        // Enable confirm button
-        $('#confirm-redbox-point').prop('disabled', false);
+        // Remove existing popup
+        $('.redbox-point-popup').remove();
         
-        // Center map on selected point
-        if (redboxMap) {
-            var coordinate = new mapkit.Coordinate(point.location.lat, point.location.lng);
-            redboxMap.setCenterAnimated(coordinate);
-        }
+        // Add new popup to map container
+        $('#redbox-map').append(popupHtml);
         
-        console.log('Point selection completed');
+        // Position popup near the marker (you might need to adjust positioning)
+        $('.redbox-point-popup').css({
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 1000,
+            background: 'white',
+            border: '1px solid #ddd',
+            borderRadius: '8px',
+            padding: '1rem',
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            maxWidth: '300px'
+        });
     }
 
-    // RedBox point selection from list
-    $(document).on('click', '.select-point-btn', function() {
-        console.log('Select point button clicked');
+    // RedBox point selection from popup
+    $(document).on('click', '.select-this-point-btn', function() {
+        console.log('Select this point button clicked');
         
-        var $pointItem = $(this).closest('.redbox-point-item');
-        var pointId = $pointItem.data('point-id');
-        
-        console.log('Point item found:', $pointItem.length > 0);
-        console.log('Point ID from data:', pointId);
-        console.log('Available points:', redboxPoints);
-        
+        var pointId = $(this).data('point-id');
         var point = redboxPoints.find(function(p) { return p.id === pointId; });
         
+        console.log('Point ID:', pointId);
         console.log('Found point:', point);
         
         if (point) {
-            selectRedBoxPoint(point);
+            // Set the selected point
+            selectedRedboxPoint = point;
+            
+            // Update the form fields
+            var pointInfo = point.point_name + ' - ' + 
+                           point.address.city + ' - ' + 
+                           point.address.district + ' - ' + 
+                           point.address.street;
+            
+            $('#redbox_point').val(pointInfo);
+            $('#redbox_point_id').val(point.id);
+            
+            // Close the modal
+            $('#redbox-modal').modal('hide');
+            
+            // Remove the popup
+            $('.redbox-point-popup').remove();
+            
+            // Show success message
+            alert('{{ __("woo-order-dashboard::shipping.pickup_point_selected") }}');
+            
+            console.log('Point selected successfully:', pointInfo);
         } else {
             console.error('Point not found for ID:', pointId);
         }
     });
 
-    // Confirm RedBox point selection
-    $('#confirm-redbox-point').on('click', function() {
-        if (selectedRedboxPoint) {
-            var pointInfo = selectedRedboxPoint.point_name + ' - ' + 
-                           selectedRedboxPoint.address.city + ' - ' + 
-                           selectedRedboxPoint.address.district + ' - ' + 
-                           selectedRedboxPoint.address.street;
-            
-            $('#redbox_point').val(pointInfo);
-            $('#redbox_point_id').val(selectedRedboxPoint.id);
-            
-            $('#redbox-modal').modal('hide');
-            
-            // Show success message
-            alert('{{ __("woo-order-dashboard::shipping.pickup_point_selected") }}');
-        }
-    });
+
 
     // RedBox modal events
     $('#redbox-modal').on('shown.bs.modal', function() {
         if (!redboxMap) {
             initRedBoxMap();
+        }
+    });
+    
+    // Close popup when clicking outside of it
+    $(document).on('click', function(e) {
+        if (!$(e.target).closest('.redbox-point-popup').length && !$(e.target).closest('mapkit-annotation').length) {
+            $('.redbox-point-popup').remove();
         }
     });
 

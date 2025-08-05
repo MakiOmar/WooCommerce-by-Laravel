@@ -120,8 +120,45 @@ class WooCommerceApiService
         // Prepare billing address
         $billingAddress = $this->prepareAddress($orderData, 'billing');
         
-        // Prepare shipping address
+        // Prepare shipping address - use RedBox point address if RedBox is selected
         $shippingAddress = $this->prepareAddress($orderData, 'shipping');
+        
+        // Override shipping address with RedBox point address if RedBox is selected
+        if (!empty($orderData['redbox_point_id']) && !empty($orderData['redbox_point'])) {
+            $redboxPointData = json_decode($orderData['redbox_point'], true);
+            if (!$redboxPointData) {
+                // If not JSON, try to parse the string format: "Point Name - City - District - Street"
+                $parts = explode(' - ', $orderData['redbox_point']);
+                if (count($parts) >= 4) {
+                    $redboxPointData = [
+                        'point_name' => trim($parts[0]),
+                        'address' => [
+                            'city' => trim($parts[1]),
+                            'district' => trim($parts[2]),
+                            'street' => trim($parts[3])
+                        ]
+                    ];
+                }
+            }
+            
+            if ($redboxPointData && isset($redboxPointData['address'])) {
+                $shippingAddress = [
+                    'first_name' => $billingAddress['first_name'] ?? '',
+                    'last_name' => $billingAddress['last_name'] ?? '',
+                    'company' => '',
+                    'address_1' => $redboxPointData['address']['street'] ?? '',
+                    'address_2' => $redboxPointData['address']['district'] ?? '',
+                    'city' => $redboxPointData['address']['city'] ?? '',
+                    'state' => $redboxPointData['address']['city'] ?? '', // Use city as state
+                    'postcode' => '00000', // Default postcode for RedBox
+                    'country' => 'SA', // Saudi Arabia
+                    'email' => '',
+                    'phone' => $billingAddress['phone'] ?? '',
+                ];
+                
+                Log::info('RedBox shipping address set for API order:', $shippingAddress);
+            }
+        }
 
         $wcOrderData = [
             'payment_method' => $orderData['payment_method'] ?? '',

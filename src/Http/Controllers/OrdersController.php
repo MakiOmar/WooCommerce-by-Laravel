@@ -692,6 +692,43 @@ class OrdersController extends Controller
                 }
             }
             
+            // Prepare shipping address - use RedBox point address if RedBox is selected
+            $shippingAddress = $customerInfo;
+            if (!empty($data['redbox_point_id']) && !empty($data['redbox_point'])) {
+                // Parse RedBox point data to extract address components
+                $redboxPointData = json_decode($data['redbox_point'], true);
+                if (!$redboxPointData) {
+                    // If not JSON, try to parse the string format: "Point Name - City - District - Street"
+                    $parts = explode(' - ', $data['redbox_point']);
+                    if (count($parts) >= 4) {
+                        $redboxPointData = [
+                            'point_name' => trim($parts[0]),
+                            'address' => [
+                                'city' => trim($parts[1]),
+                                'district' => trim($parts[2]),
+                                'street' => trim($parts[3])
+                            ]
+                        ];
+                    }
+                }
+                
+                if ($redboxPointData && isset($redboxPointData['address'])) {
+                    $shippingAddress = [
+                        '_shipping_first_name' => $customerInfo['_billing_first_name'] ?? '',
+                        '_shipping_last_name' => $customerInfo['_billing_last_name'] ?? '',
+                        '_shipping_address_1' => $redboxPointData['address']['street'] ?? '',
+                        '_shipping_address_2' => $redboxPointData['address']['district'] ?? '',
+                        '_shipping_city' => $redboxPointData['address']['city'] ?? '',
+                        '_shipping_state' => $redboxPointData['address']['city'] ?? '', // Use city as state
+                        '_shipping_postcode' => '00000', // Default postcode for RedBox
+                        '_shipping_country' => 'SA', // Saudi Arabia
+                        '_shipping_phone' => $customerInfo['_billing_phone'] ?? '',
+                    ];
+                    
+                    \Log::info('RedBox shipping address set:', $shippingAddress);
+                }
+            }
+            
             $metaData = [
                 ['_order_key', 'wc_' . uniqid()],
                 ['_customer_user', $data['customer_id'] ?? ''],
@@ -714,13 +751,13 @@ class OrdersController extends Controller
                 ['_billing_country', $customerInfo['_billing_country'] ?? ''],
                 ['_billing_email', $customerInfo['_billing_email'] ?? ''],
                 ['_billing_phone', $customerInfo['_billing_phone'] ?? ''],
-                ['_shipping_first_name', $customerInfo['_shipping_first_name'] ?? ''],
-                ['_shipping_last_name', $customerInfo['_shipping_last_name'] ?? ''],
-                ['_shipping_address_1', $customerInfo['_shipping_address_1'] ?? ''],
-                ['_shipping_city', $customerInfo['_shipping_state'] ?? ''],
-                ['_shipping_postcode', $customerInfo['_shipping_postcode'] ?? ''],
-                ['_shipping_country', $customerInfo['_shipping_country'] ?? ''],
-                ['_shipping_phone', $customerInfo['_billing_phone'] ?? ''],
+                ['_shipping_first_name', $shippingAddress['_shipping_first_name'] ?? ''],
+                ['_shipping_last_name', $shippingAddress['_shipping_last_name'] ?? ''],
+                ['_shipping_address_1', $shippingAddress['_shipping_address_1'] ?? ''],
+                ['_shipping_city', $shippingAddress['_shipping_city'] ?? ''],
+                ['_shipping_postcode', $shippingAddress['_shipping_postcode'] ?? ''],
+                ['_shipping_country', $shippingAddress['_shipping_country'] ?? ''],
+                ['_shipping_phone', $shippingAddress['_shipping_phone'] ?? ''],
                 ['_order_currency', 'SAR'],
                 ['_cart_discount', $data['discount'] ?? '0'],
                 ['_cart_discount_tax', '0'],
@@ -731,7 +768,7 @@ class OrdersController extends Controller
                 ['_order_version', '9.3.3'],
                 ['_prices_include_tax', 'yes'], // Critical change!
                 ['_billing_address_index', $this->buildAddressIndex($customerInfo, 'billing')],
-                ['_shipping_address_index', $this->buildAddressIndex($customerInfo, 'shipping')],
+                ['_shipping_address_index', $this->buildAddressIndex($shippingAddress, 'shipping')],
                 ['_shipping_email', $customerInfo['_billing_email'] ?? ''],
                 ['_billing_lat', ''],
                 ['_shipping_lat', ''],

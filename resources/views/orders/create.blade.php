@@ -1654,11 +1654,17 @@ $(document).ready(function() {
 
     // Select RedBox point
     function selectRedBoxPoint(point) {
+        console.log('Selecting RedBox point:', point);
+        
         selectedRedboxPoint = point;
         
         // Update UI
         $('.redbox-point-item').removeClass('selected');
-        $(`.redbox-point-item[data-point-id="${point.id}"]`).addClass('selected');
+        var $selectedItem = $(`.redbox-point-item[data-point-id="${point.id}"]`);
+        $selectedItem.addClass('selected');
+        
+        console.log('Updated UI - selected item:', $selectedItem.length > 0 ? 'found' : 'not found');
+        console.log('Selected point ID:', point.id);
         
         // Enable confirm button
         $('#confirm-redbox-point').prop('disabled', false);
@@ -1668,16 +1674,29 @@ $(document).ready(function() {
             var coordinate = new mapkit.Coordinate(point.location.lat, point.location.lng);
             redboxMap.setCenterAnimated(coordinate);
         }
+        
+        console.log('Point selection completed');
     }
 
     // RedBox point selection from list
     $(document).on('click', '.select-point-btn', function() {
+        console.log('Select point button clicked');
+        
         var $pointItem = $(this).closest('.redbox-point-item');
         var pointId = $pointItem.data('point-id');
+        
+        console.log('Point item found:', $pointItem.length > 0);
+        console.log('Point ID from data:', pointId);
+        console.log('Available points:', redboxPoints);
+        
         var point = redboxPoints.find(function(p) { return p.id === pointId; });
+        
+        console.log('Found point:', point);
         
         if (point) {
             selectRedBoxPoint(point);
+        } else {
+            console.error('Point not found for ID:', pointId);
         }
     });
 

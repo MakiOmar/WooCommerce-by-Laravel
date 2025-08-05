@@ -1289,11 +1289,17 @@ $(document).ready(function() {
             },
             data: shippingData,
             success: function(response) {
+                // Debug logging
+                console.log('Shipping methods response:', response);
+                
                 // Render shipping methods as before
                 var $dropdown = $('#shipping-methods-dropdown');
                 $dropdown.empty().show();
                 if (response.methods && response.methods.length > 0) {
                     response.methods.forEach(function(method) {
+                        // Debug logging for each method
+                        console.log('Rendering method:', method);
+                        
                         var html = '<button type="button" class="list-group-item list-group-item-action shipping-method-item" data-id="'+method.id+'" data-cost="'+method.cost+'" data-title="'+method.title+'" data-method-id="'+method.method_id+'" data-instance-id="'+method.instance_id+'">'+
                             '<div class="d-flex justify-content-between align-items-center">'+
                             '<div><strong>'+method.title+'</strong></div>'+
@@ -1318,6 +1324,15 @@ $(document).ready(function() {
         var methodId = $(this).data('method-id');
         var instanceId = $(this).data('instance-id');
         
+        // Debug logging
+        console.log('Shipping method selected:', {
+            cost: cost,
+            title: title,
+            methodId: methodId,
+            instanceId: instanceId,
+            element: this
+        });
+        
         // Calculate shipping with 15% tax
         var shippingTax = cost * 0.15;
         var shippingWithTax = cost + shippingTax;
@@ -1326,6 +1341,13 @@ $(document).ready(function() {
         $('#shipping_method_id').val(methodId);
         $('#shipping_method_title').val(title);
         $('#shipping_instance_id').val(instanceId);
+        
+        // Debug logging for hidden fields
+        console.log('Hidden fields set:', {
+            shipping_method_id: $('#shipping_method_id').val(),
+            shipping_method_title: $('#shipping_method_title').val(),
+            shipping_instance_id: $('#shipping_instance_id').val()
+        });
         
         $('#shipping-methods-dropdown').hide();
         recalcSummary(); // Recalculate totals after selecting shipping method

@@ -754,6 +754,17 @@ class OrdersController extends Controller
                 ['_edit_lock', time() . ':' . ($data['customer_id'] ?? '')],
             ];
 
+            // Add RedBox meta keys if RedBox shipping method is selected
+            if (!empty($data['redbox_point_id']) && !empty($data['redbox_point'])) {
+                $metaData[] = ['_redbox_point_id', $data['redbox_point_id']];
+                $metaData[] = ['_redbox_point', $data['redbox_point']];
+                
+                \Log::info('RedBox meta data added:', [
+                    'redbox_point_id' => $data['redbox_point_id'],
+                    'redbox_point' => $data['redbox_point']
+                ]);
+            }
+
             \Log::info('Creating order meta data:', ['meta_count' => count($metaData)]);
             foreach ($metaData as $meta) {
                 $postMeta = PostMeta::create([

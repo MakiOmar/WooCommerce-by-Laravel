@@ -170,6 +170,23 @@ class WooCommerceApiService
             ]
         ];
 
+        // Add RedBox meta data if RedBox shipping method is selected
+        if (!empty($orderData['redbox_point_id']) && !empty($orderData['redbox_point'])) {
+            $wcOrderData['meta_data'][] = [
+                'key' => '_redbox_point_id',
+                'value' => $orderData['redbox_point_id']
+            ];
+            $wcOrderData['meta_data'][] = [
+                'key' => '_redbox_point',
+                'value' => $orderData['redbox_point']
+            ];
+            
+            Log::info('RedBox meta data added to API order:', [
+                'redbox_point_id' => $orderData['redbox_point_id'],
+                'redbox_point' => $orderData['redbox_point']
+            ]);
+        }
+
         return $wcOrderData;
     }
 

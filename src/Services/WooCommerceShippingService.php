@@ -209,6 +209,12 @@ class WooCommerceShippingService
                     'cost' => '0',
                     'tax_status' => 'none'
                 ];
+            case 'redbox_pickup_delivery':
+                return [
+                    'title' => 'RedBox Pickup Delivery',
+                    'cost' => '0',
+                    'tax_status' => 'taxable'
+                ];
             default:
                 return [
                     'title' => ucfirst(str_replace('_', ' ', $methodId)),
@@ -336,6 +342,12 @@ class WooCommerceShippingService
      */
     protected function calculateRedboxPickupDelivery($method, $settings)
     {
+        \Log::info("RedBox method calculation", [
+            'method_id' => $method->method_id,
+            'instance_id' => $method->instance_id,
+            'settings' => $settings
+        ]);
+        
         return [
             'id' => $method->method_id . ':' . $method->instance_id,
             'method_id' => $method->method_id,

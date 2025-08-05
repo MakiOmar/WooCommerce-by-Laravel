@@ -1329,6 +1329,9 @@ $(document).ready(function() {
         
         $('#shipping-methods-dropdown').hide();
         recalcSummary(); // Recalculate totals after selecting shipping method
+        
+        // Check if RedBox method is selected
+        checkRedBoxShippingMethod();
     });
     
     // Hide shipping dropdown when clicking outside
@@ -1715,10 +1718,7 @@ $(document).ready(function() {
         $('#redbox-modal').modal('show');
     });
 
-    // Monitor shipping method changes for RedBox
-    $(document).on('click', '.shipping-method-item', function() {
-        setTimeout(checkRedBoxShippingMethod, 100);
-    });
+
 
     // Initial check for RedBox
     checkRedBoxShippingMethod();

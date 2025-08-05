@@ -30,6 +30,10 @@ Route::group(['middleware' => ['web', 'auth:admin', 'woo.language']], function()
     Route::get('/customers/search', [OrdersController::class, 'customersSearch'])->name('customers.search');
     Route::post('/shipping/methods', [OrdersController::class, 'getShippingMethods'])->name('shipping.methods');
     
+    // RedBox Pickup Routes
+    Route::get('/redbox/points', [OrdersController::class, 'getRedBoxPoints'])->name('redbox.points');
+    Route::get('/redbox/map-token', [OrdersController::class, 'getRedBoxMapToken'])->name('redbox.map-token');
+    
     // Language test route
     Route::get('/test-language', function() {
         return response()->json([

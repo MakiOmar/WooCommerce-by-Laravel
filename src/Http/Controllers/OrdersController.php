@@ -486,6 +486,48 @@ class OrdersController extends Controller
         return response()->json(['methods' => $availableMethods]);
     }
 
+    /**
+     * Get RedBox pickup points
+     */
+    public function getRedBoxPoints(Request $request)
+    {
+        $redboxService = new \Makiomar\WooOrderDashboard\Services\RedBoxService();
+        
+        if (!$redboxService->isEnabled()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'RedBox pickup is not enabled'
+            ]);
+        }
+
+        $lat = $request->input('lat', config('woo-order-dashboard.redbox.map.default_lat'));
+        $lng = $request->input('lng', config('woo-order-dashboard.redbox.map.default_lng'));
+        $distance = $request->input('distance', config('woo-order-dashboard.redbox.map.search_radius'));
+
+        $result = $redboxService->getPickupPoints($lat, $lng, $distance);
+        
+        return response()->json($result);
+    }
+
+    /**
+     * Get RedBox map token
+     */
+    public function getRedBoxMapToken(Request $request)
+    {
+        $redboxService = new \Makiomar\WooOrderDashboard\Services\RedBoxService();
+        
+        if (!$redboxService->isEnabled()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'RedBox pickup is not enabled'
+            ]);
+        }
+
+        $result = $redboxService->getMapToken();
+        
+        return response()->json($result);
+    }
+
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -501,6 +543,8 @@ class OrdersController extends Controller
             'shipping_method_id' => 'nullable|string',
             'shipping_method_title' => 'nullable|string',
             'shipping_instance_id' => 'nullable|string',
+            'redbox_point' => 'nullable|string',
+            'redbox_point_id' => 'nullable|string',
         ]);
 
         $items = json_decode($data['order_items'], true);

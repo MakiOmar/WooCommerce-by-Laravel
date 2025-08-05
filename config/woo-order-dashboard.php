@@ -291,6 +291,65 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | RedBox Pickup Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Fixed configuration for RedBox pickup point integration.
+    | Dynamic settings like shipping costs are fetched from WooCommerce.
+    |
+    */
+    'redbox' => [
+        // Enable RedBox pickup functionality
+        'enabled' => env('REDBOX_ENABLED', false),
+        
+        // Fixed API Configuration
+        'api' => [
+            'base_url' => env('REDBOX_API_BASE_URL', 'https://app.redboxsa.com/api/business/v1'),
+            'host' => env('REDBOX_API_HOST', 'https://app.redboxsa.com'),
+            'key' => env('REDBOX_API_KEY', ''),
+            'timeout' => env('REDBOX_API_TIMEOUT', 30),
+        ],
+        
+        // Fixed API Endpoints
+        'endpoints' => [
+            'get_points' => '/get-points',
+            'create_shipment' => '/create-shipment-v2',
+            'update_shipment' => '/update-shipment-from-store',
+            'save_store_info' => '/create-info-store-from-wc',
+            'get_map_token' => '/apple-map-token',
+            'shipment_detail' => '/shipment-detail',
+        ],
+        
+        // Fixed Map Configuration
+        'map' => [
+            'provider' => env('REDBOX_MAP_PROVIDER', 'apple'),
+            'default_lat' => env('REDBOX_DEFAULT_LAT', 24.7135517),
+            'default_lng' => env('REDBOX_DEFAULT_LNG', 46.6752957),
+            'default_zoom' => env('REDBOX_DEFAULT_ZOOM', 10),
+            'search_radius' => env('REDBOX_SEARCH_RADIUS', 100000000),
+        ],
+        
+        // Fixed Shipping Method Identification
+        'shipping_method' => [
+            'id' => 'redbox_pickup_delivery',
+            // Title and description will be fetched from WooCommerce shipping method settings
+        ],
+        
+        // Fixed Order Meta Keys
+        'meta_keys' => [
+            'point_id' => '_redbox_point_id',
+            'point_info' => '_redbox_point',
+            'tracking_number' => 'redbox_tracking_number',
+            'shipping_label_url' => 'redbox_shipment_url_shipping_label',
+        ],
+        
+        // Fixed Language Support
+        'languages' => ['en', 'ar'],
+        'default_language' => env('REDBOX_DEFAULT_LANGUAGE', 'en'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Available Meta Keys for Filtering
     |--------------------------------------------------------------------------
     |
@@ -367,6 +426,12 @@ return [
         // Custom Meta Keys (extensible)
         // Add your custom meta keys here:
         // '_custom_field' => 'Custom Field Label',
+        
+        // RedBox Pickup Meta Keys
+        '_redbox_point_id' => 'RedBox Point ID',
+        '_redbox_point' => 'RedBox Point Information',
+        'redbox_tracking_number' => 'RedBox Tracking Number',
+        'redbox_shipment_url_shipping_label' => 'RedBox Shipping Label URL',
     ],
 
     /*

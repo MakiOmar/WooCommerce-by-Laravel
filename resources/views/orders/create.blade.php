@@ -420,24 +420,180 @@
     border-radius: 0.375rem;
     height: 38px;
 }
-#shipping-methods-btn:hover {
-    background: #6c47e5;
-    color: #fff;
-}
-#shipping-methods-dropdown {
-    right: 0;
-    left: auto;
-    min-width: 220px;
+
+/* RedBox Pickup Styles */
+.redbox-pickup-section {
+    border: 2px solid #e5e7eb;
     border-radius: 0.5rem;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-    font-size: 0.97rem;
+    transition: border-color 0.2s;
 }
-#shipping-methods-dropdown .list-group-item {
+
+.redbox-pickup-section.active {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.redbox-point-item {
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
     cursor: pointer;
-    transition: background 0.15s;
+    transition: all 0.2s;
 }
-#shipping-methods-dropdown .list-group-item:hover {
-    background: #f3f4f6;
+
+.redbox-point-item:hover {
+    border-color: #3b82f6;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.redbox-point-item.selected {
+    border-color: #3b82f6;
+    background-color: #eff6ff;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.redbox-point-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.redbox-point-icon {
+    width: 24px;
+    height: 24px;
+    margin-right: 0.5rem;
+}
+
+.redbox-point-name {
+    font-weight: 600;
+    color: #1f2937;
+}
+
+.redbox-point-type {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-left: auto;
+}
+
+.redbox-point-details {
+    font-size: 0.875rem;
+    color: #6b7280;
+}
+
+.redbox-point-address {
+    margin-bottom: 0.25rem;
+}
+
+.redbox-point-hours {
+    margin-bottom: 0.25rem;
+}
+
+.redbox-point-delivery {
+    margin-bottom: 0.25rem;
+}
+
+.redbox-point-payment {
+    margin-bottom: 0.25rem;
+}
+
+.redbox-point-restricted {
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+    margin-top: 0.5rem;
+}
+
+.redbox-point-restricted .form-check {
+    margin-top: 0.5rem;
+}
+
+.redbox-map-container {
+    position: relative;
+    height: 400px;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    overflow: hidden;
+}
+
+.redbox-map-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: #6b7280;
+}
+
+.redbox-search-container {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.redbox-search-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+}
+
+.redbox-search-result {
+    padding: 0.75rem;
+    cursor: pointer;
+    border-bottom: 1px solid #f3f4f6;
+    transition: background-color 0.2s;
+}
+
+.redbox-search-result:hover {
+    background-color: #f9fafb;
+}
+
+.redbox-search-result:last-child {
+    border-bottom: none;
+}
+
+.redbox-modal .modal-xl {
+    max-width: 1200px;
+}
+
+.redbox-points-list {
+    max-height: 400px;
+    overflow-y: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+    padding: 1rem;
+}
+
+.redbox-points-loading {
+    text-align: center;
+    padding: 2rem;
+    color: #6b7280;
+}
+
+.redbox-points-empty {
+    text-align: center;
+    padding: 2rem;
+    color: #6b7280;
+}
+
+/* RTL Support for RedBox */
+.rtl .redbox-point-icon {
+    margin-right: 0;
+    margin-left: 0.5rem;
+}
+
+.rtl .redbox-point-type {
+    margin-left: 0;
+    margin-right: auto;
 }
 
 /* Sale price styling */
@@ -1136,9 +1292,373 @@ $(document).ready(function() {
             $('#payment_method').val('bacs');
         }
     });
-    
+
+    // RedBox Pickup Functionality
+    var redboxMap = null;
+    var redboxMarkers = [];
+    var redboxPoints = [];
+    var selectedRedboxPoint = null;
+    var redboxMapToken = null;
+
+    // Check if RedBox shipping method is selected
+    function checkRedBoxShippingMethod() {
+        var shippingMethodId = $('#shipping_method_id').val();
+        var isRedBoxSelected = shippingMethodId && shippingMethodId.includes('redbox_pickup_delivery');
+        
+        if (isRedBoxSelected) {
+            $('#redbox-pickup-section').show();
+        } else {
+            $('#redbox-pickup-section').hide();
+            // Clear RedBox data when not selected
+            $('#redbox_point').val('');
+            $('#redbox_point_id').val('');
+            selectedRedboxPoint = null;
+        }
+    }
+
+    // Initialize RedBox map
+    function initRedBoxMap() {
+        if (typeof mapkit === 'undefined') {
+            console.error('Apple Maps not loaded');
+            return;
+        }
+
+        if (!redboxMapToken) {
+            loadRedBoxMapToken();
+            return;
+        }
+
+        try {
+            mapkit.init({
+                authorizationCallback: function(done) {
+                    done(redboxMapToken);
+                },
+                language: '{{ app()->getLocale() }}'
+            });
+
+            redboxMap = new mapkit.Map('redbox-map', {
+                showsUserLocationControl: true,
+                showsMapTypeControl: false
+            });
+
+            // Set default center (Riyadh)
+            var defaultLat = {{ config('woo-order-dashboard.redbox.map.default_lat', 24.7135517) }};
+            var defaultLng = {{ config('woo-order-dashboard.redbox.map.default_lng', 46.6752957) }};
+            var center = new mapkit.Coordinate(defaultLat, defaultLng);
+            redboxMap.setCenterAnimated(center);
+
+            loadRedBoxPoints(defaultLat, defaultLng);
+        } catch (error) {
+            console.error('Error initializing RedBox map:', error);
+        }
+    }
+
+    // Load RedBox map token
+    function loadRedBoxMapToken() {
+        $.ajax({
+            url: '{{ route('redbox.map-token') }}',
+            method: 'GET',
+            success: function(response) {
+                if (response.success && response.token) {
+                    redboxMapToken = response.token;
+                    initRedBoxMap();
+                } else {
+                    console.error('Failed to load RedBox map token:', response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error loading RedBox map token:', error);
+            }
+        });
+    }
+
+    // Load RedBox pickup points
+    function loadRedBoxPoints(lat, lng) {
+        var $pointsList = $('#redbox-points-list');
+        $pointsList.html('<div class="redbox-points-loading"><i class="fas fa-spinner fa-spin"></i> {{ __("woo-order-dashboard::shipping.loading_points") }}</div>');
+
+        $.ajax({
+            url: '{{ route('redbox.points') }}',
+            method: 'GET',
+            data: {
+                lat: lat,
+                lng: lng,
+                distance: {{ config('woo-order-dashboard.redbox.map.search_radius', 100000000) }}
+            },
+            success: function(response) {
+                if (response.success && response.points) {
+                    redboxPoints = response.points;
+                    renderRedBoxPoints();
+                    addRedBoxMarkers();
+                } else {
+                    $pointsList.html('<div class="redbox-points-empty"><i class="fas fa-map-marker-alt"></i> {{ __("woo-order-dashboard::shipping.no_pickup_points") }}</div>');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error loading RedBox points:', error);
+                $pointsList.html('<div class="redbox-points-empty text-danger"><i class="fas fa-exclamation-triangle"></i> Error loading pickup points</div>');
+            }
+        });
+    }
+
+    // Render RedBox points list
+    function renderRedBoxPoints() {
+        var $pointsList = $('#redbox-points-list');
+        $pointsList.empty();
+
+        if (!redboxPoints || redboxPoints.length === 0) {
+            $pointsList.html('<div class="redbox-points-empty"><i class="fas fa-map-marker-alt"></i> {{ __("woo-order-dashboard::shipping.no_pickup_points") }}</div>');
+            return;
+        }
+
+        redboxPoints.forEach(function(point) {
+            var pointHtml = createRedBoxPointHtml(point);
+            $pointsList.append(pointHtml);
+        });
+    }
+
+    // Create HTML for RedBox point
+    function createRedBoxPointHtml(point) {
+        var iconClass = getRedBoxPointIcon(point.type_point);
+        var statusClass = point.status === 'LockTemporary' ? 'text-danger' : 'text-success';
+        var statusText = point.status === 'LockTemporary' ? '{{ __("woo-order-dashboard::shipping.temporarily_closed") }}' : '{{ __("woo-order-dashboard::shipping.available") }}';
+        
+        var estimatedTime = getEstimatedDeliveryTime(point.estimateTime);
+        var acceptsPayment = point.lockers && point.lockers.find(function(l) { return l.accept_payment === true; }) ? '{{ __("woo-order-dashboard::shipping.yes") }}' : '{{ __("woo-order-dashboard::shipping.no") }}';
+        
+        var restrictedHtml = '';
+        if (!point.is_public) {
+            restrictedHtml = `
+                <div class="redbox-point-restricted">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="confirm-access-${point.id}">
+                        <label class="form-check-label" for="confirm-access-${point.id}">
+                            {{ __("woo-order-dashboard::shipping.confirm_access") }}
+                        </label>
+                    </div>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="redbox-point-item" data-point-id="${point.id}" data-lat="${point.location.lat}" data-lng="${point.location.lng}">
+                <div class="redbox-point-header">
+                    <i class="fas ${iconClass} redbox-point-icon"></i>
+                    <div class="redbox-point-name">${point.point_name}</div>
+                    <div class="redbox-point-type">${getPointTypeText(point.type_point)}</div>
+                </div>
+                <div class="redbox-point-details">
+                    <div class="redbox-point-address">
+                        <i class="fas fa-map-marker-alt"></i> ${point.address.city} - ${point.address.district} - ${point.address.street}
+                    </div>
+                    <div class="redbox-point-hours">
+                        <i class="fas fa-clock"></i> ${point.open_hour}
+                    </div>
+                    <div class="redbox-point-delivery">
+                        <i class="fas fa-truck"></i> {{ __("woo-order-dashboard::shipping.estimated_delivery") }}: ${estimatedTime}
+                    </div>
+                    <div class="redbox-point-payment">
+                        <i class="fas fa-credit-card"></i> {{ __("woo-order-dashboard::shipping.accepts_payment") }}: ${acceptsPayment}
+                    </div>
+                    <div class="${statusClass}">
+                        <i class="fas fa-circle"></i> ${statusText}
+                    </div>
+                </div>
+                ${restrictedHtml}
+                <button type="button" class="btn btn-primary btn-sm mt-2 select-point-btn" ${!point.is_public ? 'disabled' : ''}>
+                    {{ __("woo-order-dashboard::shipping.ship_to_location") }}
+                </button>
+            </div>
+        `;
+    }
+
+    // Get RedBox point icon class
+    function getRedBoxPointIcon(type) {
+        switch (type) {
+            case 'Locker': return 'fa-box';
+            case 'Counter': return 'fa-store';
+            case 'Both': return 'fa-boxes';
+            default: return 'fa-map-marker-alt';
+        }
+    }
+
+    // Get point type text
+    function getPointTypeText(type) {
+        switch (type) {
+            case 'Locker': return '{{ __("woo-order-dashboard::shipping.locker") }}';
+            case 'Counter': return '{{ __("woo-order-dashboard::shipping.counter") }}';
+            case 'Both': return '{{ __("woo-order-dashboard::shipping.counter_locker") }}';
+            default: return type;
+        }
+    }
+
+    // Get estimated delivery time
+    function getEstimatedDeliveryTime(hours) {
+        var days = hours / 24;
+        if (days < 2) {
+            return '1-2 {{ __("woo-order-dashboard::shipping.days") }}';
+        } else {
+            var floorDays = Math.floor(days);
+            return floorDays + '-' + (floorDays + 1) + ' {{ __("woo-order-dashboard::shipping.days") }}';
+        }
+    }
+
+    // Add RedBox markers to map
+    function addRedBoxMarkers() {
+        // Clear existing markers
+        redboxMarkers.forEach(function(marker) {
+            if (redboxMap) {
+                redboxMap.removeAnnotation(marker);
+            }
+        });
+        redboxMarkers = [];
+
+        if (!redboxMap || !redboxPoints) return;
+
+        redboxPoints.forEach(function(point) {
+            var coordinate = new mapkit.Coordinate(point.location.lat, point.location.lng);
+            var marker = new mapkit.ImageAnnotation(coordinate, {
+                url: {
+                    1: getRedBoxMarkerIcon(point)
+                },
+                title: point.point_name,
+                data: point,
+                anchorOffset: new DOMPoint(0, -8)
+            });
+
+            marker.addEventListener('select', function() {
+                selectRedBoxPoint(point);
+            });
+
+            redboxMap.addAnnotation(marker);
+            redboxMarkers.push(marker);
+        });
+    }
+
+    // Get RedBox marker icon
+    function getRedBoxMarkerIcon(point) {
+        // For now, use a simple colored circle
+        // In a real implementation, you'd use actual SVG icons
+        var color = '#3b82f6'; // Blue for available
+        if (point.status === 'LockTemporary') {
+            color = '#ef4444'; // Red for locked
+        }
+        
+        return `data:image/svg+xml;base64,${btoa(`
+            <svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="12" cy="12" r="8" fill="${color}" stroke="white" stroke-width="2"/>
+            </svg>
+        `)}`;
+    }
+
+    // Select RedBox point
+    function selectRedBoxPoint(point) {
+        selectedRedboxPoint = point;
+        
+        // Update UI
+        $('.redbox-point-item').removeClass('selected');
+        $(`.redbox-point-item[data-point-id="${point.id}"]`).addClass('selected');
+        
+        // Enable confirm button
+        $('#confirm-redbox-point').prop('disabled', false);
+        
+        // Center map on selected point
+        if (redboxMap) {
+            var coordinate = new mapkit.Coordinate(point.location.lat, point.location.lng);
+            redboxMap.setCenterAnimated(coordinate);
+        }
+    }
+
+    // RedBox point selection from list
+    $(document).on('click', '.select-point-btn', function() {
+        var $pointItem = $(this).closest('.redbox-point-item');
+        var pointId = $pointItem.data('point-id');
+        var point = redboxPoints.find(function(p) { return p.id === pointId; });
+        
+        if (point) {
+            selectRedBoxPoint(point);
+        }
+    });
+
+    // Confirm RedBox point selection
+    $('#confirm-redbox-point').on('click', function() {
+        if (selectedRedboxPoint) {
+            var pointInfo = selectedRedboxPoint.point_name + ' - ' + 
+                           selectedRedboxPoint.address.city + ' - ' + 
+                           selectedRedboxPoint.address.district + ' - ' + 
+                           selectedRedboxPoint.address.street;
+            
+            $('#redbox_point').val(pointInfo);
+            $('#redbox_point_id').val(selectedRedboxPoint.id);
+            
+            $('#redbox-modal').modal('hide');
+            
+            // Show success message
+            alert('{{ __("woo-order-dashboard::shipping.pickup_point_selected") }}');
+        }
+    });
+
+    // RedBox modal events
+    $('#redbox-modal').on('shown.bs.modal', function() {
+        if (!redboxMap) {
+            initRedBoxMap();
+        }
+    });
+
+    // RedBox search functionality
+    $('#redbox-search-btn').on('click', function() {
+        var searchTerm = $('#redbox-search').val();
+        if (searchTerm && redboxMap) {
+            var search = new mapkit.Search({region: redboxMap.region});
+            search.autocomplete(searchTerm, function(error, data) {
+                if (error) {
+                    console.error('Search error:', error);
+                    return;
+                }
+                
+                if (data.results && data.results.length > 0) {
+                    var result = data.results[0];
+                    if (result.coordinate) {
+                        redboxMap.setCenterAnimated(result.coordinate);
+                        loadRedBoxPoints(result.coordinate.latitude, result.coordinate.longitude);
+                    }
+                }
+            });
+        }
+    });
+
+    // RedBox search on Enter key
+    $('#redbox-search').on('keypress', function(e) {
+        if (e.which === 13) {
+            $('#redbox-search-btn').click();
+        }
+    });
+
+    // Select RedBox point button click
+    $('#select-redbox-point').on('click', function() {
+        $('#redbox-modal').modal('show');
+    });
+
+    // Monitor shipping method changes for RedBox
+    $(document).on('click', '.shipping-method-item', function() {
+        setTimeout(checkRedBoxShippingMethod, 100);
+    });
+
+    // Initial check for RedBox
+    checkRedBoxShippingMethod();
+
+    // Load Apple Maps script
+    if (!window.mapkitLoaded) {
+        var script = document.createElement('script');
+        script.src = 'https://cdn.apple-mapkit.com/mk/5.x.x/mapkit.js';
+        script.onload = function() {
+            window.mapkitLoaded = true;
+        };
+        document.head.appendChild(script);
+    }
 
 });
+
 document.addEventListener('DOMContentLoaded', function() {
     flatpickr('input[name="order_date"]', {
         dateFormat: "Y-m-d",

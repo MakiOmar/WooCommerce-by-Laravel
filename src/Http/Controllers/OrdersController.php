@@ -481,6 +481,8 @@ class OrdersController extends Controller
                 'title' => $method['title'],
                 'description' => '',
                 'cost' => $method['cost'],
+                'method_id' => $method['method_id'],
+                'instance_id' => $method['instance_id'],
             ];
         }
         return response()->json(['methods' => $availableMethods]);
